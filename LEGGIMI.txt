@@ -1,0 +1,57 @@
+DVS GESTIONALE – INSTALLAZIONE
+
+Questa cartella contiene una Progressive Web App (PWA).
+
+Per provarla sul computer:
+1. Pubblicare l'intera cartella su un servizio HTTPS (GitHub Pages, Netlify, Vercel o hosting aziendale).
+2. Aprire l'indirizzo in Safari su iPhone.
+3. Toccare Condividi > Aggiungi alla schermata Home.
+
+IMPORTANTE
+- I dati sono salvati localmente nel browser del dispositivo.
+- Usare regolarmente Altro > Esporta backup.
+- Aprire sempre l'app dallo stesso indirizzo web: cambiando dominio, Safari userà un archivio separato.
+- Per condivisione tra più iPhone servirà in seguito un database online.
+
+La versione include:
+- 15 sale
+- aggiunta, modifica ed eliminazione di computer, hardware e licenze
+- assegnazioni con controllo duplicati
+- conferma per mantenere/rimuovere la licenza Avid quando si cambia computer
+- ricerca
+- backup/importazione JSON
+- modalità installabile e uso offline dopo il primo caricamento
+
+
+NOVITÀ VERSIONE 2
+- Licenze mensili o annuali
+- Calcolo automatico della scadenza
+- Casella "Disattivazione richiesta"
+- Licenza gialla nei 5 giorni precedenti la scadenza
+- Licenza rossa dopo la scadenza se è stata richiesta la disattivazione
+- Rinnovo automatico mensile/annuale se la disattivazione non è stata richiesta
+- Colore della sala sincronizzato con lo stato della licenza
+
+NOVITÀ VERSIONE 3
+- Campo Stato eliminato da Computer, Hardware e Licenze
+- Licenze con tab SINGOLO/ULTIMATE e badge celeste/rosa
+- Ordinamento numerico di MAC, HW e AVID
+- Date visualizzate GG-MM-AAAA
+- Computer con tab macOS, checkbox Magazzino e posizione scaffale
+- Lista computer con sistema operativo e data formattazione
+- Filtri rapidi
+- Visualizzazione prima della modifica
+- Menu + unico
+- Campanella notifiche
+- Intera card Sala gialla/rossa per le scadenze
+- Icone aggiornate e simbolo aziendale rosso/grigio
+
+NOVITÀ VERSIONE 4
+- Calendario ripristinato per data formattazione e data attivazione
+- Date visualizzate sempre GG-MM-AAAA nelle schermate
+- Icone Computer e Licenze ridisegnate in SVG
+- Simbolo aziendale ridisegnato in modo pulito
+- Menu assegnazione con indicatori verde/rosso e Sala già occupata
+- Messaggi duplicati specifici per Computer, Hardware e Licenza
+- Licenze scadute indicate come "Scaduta da XX giorni"
+- Nuovo tab Sintesi, verticale, non modificabile e stampabile
