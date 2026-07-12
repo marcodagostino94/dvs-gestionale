@@ -33,3 +33,28 @@ dialog{border:0;background:transparent;padding:0;width:min(94vw,540px);max-heigh
 .empty-state{text-align:center;color:var(--muted);padding:45px 20px}.error-card{border-radius:23px;padding:22px;text-align:center}.hidden{display:none!important}
 @media(min-width:700px){body{max-width:800px;margin:auto}.room-grid{grid-template-columns:repeat(3,1fr)}}
 @media print{body{background:white;color:black;padding:0}.topbar,.tabbar,.ambient{display:none!important}.summary-row{background:white!important;border:1px solid #bbb!important;box-shadow:none!important;color:black}.summary-data span{color:#333}}
+
+.cycle-badge{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.45px;vertical-align:middle}
+.cycle-badge.monthly{background:rgba(163,116,255,.20);color:#d0b2ff;border:1px solid rgba(180,140,255,.32)}
+.cycle-badge.annual{background:rgba(255,164,70,.18);color:#ffc48a;border:1px solid rgba(255,179,94,.30)}
+
+.assignment-picker{display:grid;gap:8px}
+.assignment-option{width:100%;border-radius:16px;padding:12px 13px;border:1px solid var(--line);background:rgba(255,255,255,.055);color:#fff;display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;transition:transform .18s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease}
+.assignment-option:active{transform:scale(.985)}
+.assignment-option.free{background:linear-gradient(145deg,rgba(49,190,104,.16),rgba(27,73,45,.26));border-color:rgba(79,219,132,.32)}
+.assignment-option.used{background:linear-gradient(145deg,rgba(218,53,61,.18),rgba(89,23,29,.30));border-color:rgba(255,92,98,.35)}
+.assignment-option.selected{box-shadow:0 0 0 2px rgba(255,255,255,.60),0 8px 24px rgba(0,0,0,.20);transform:translateY(-1px)}
+.assignment-name{font-size:14px;font-weight:800}
+.assignment-status{font-size:11px;font-weight:800;padding:4px 8px;border-radius:999px}
+.assignment-status.free{background:rgba(50,200,110,.18);color:#93f2b6}
+.assignment-status.used{background:rgba(255,76,84,.18);color:#ff9da1}
+.assignment-status.neutral{background:rgba(255,255,255,.08);color:#bbb}
+
+.view-enter{animation:viewEnter .24s ease both}
+@keyframes viewEnter{from{opacity:0;transform:translateY(8px) scale(.995)}to{opacity:1;transform:translateY(0) scale(1)}}
+.modal-enter{animation:modalEnter .22s cubic-bezier(.2,.8,.2,1) both}
+.modal-leave{animation:modalLeave .16s ease both}
+@keyframes modalEnter{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes modalLeave{from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(10px) scale(.985)}}
+.room-card,.list-card,.tabbar button,.round-button{transition:transform .18s ease,box-shadow .18s ease,background .18s ease,border-color .18s ease}
+.room-card:active,.list-card:active,.round-button:active{transform:scale(.985)}

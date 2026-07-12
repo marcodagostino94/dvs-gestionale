@@ -53,6 +53,9 @@ function render() {
   updateNotifications();
 
   try {
+    app.classList.remove("view-enter");
+    void app.offsetWidth;
+    app.classList.add("view-enter");
     if (state.view === "rooms") renderRooms();
     else if (state.view === "computers" || state.view === "hardware" || state.view === "licenses") renderInventory(state.view);
     else if (state.view === "summary") renderSummary();
@@ -159,10 +162,12 @@ function inventoryCard(type,item) {
   }
 
   const status = licenseStatus(item);
+  const cycleClass = item.billingCycle === "monthly" ? "monthly" : "annual";
+  const cycleLabel = item.billingCycle === "monthly" ? "MENSILE" : "ANNUALE";
   return `<button class="list-card glass license-card ${status.level}" data-item="${escapeHtml(item.id)}">
     <div>
-      <h3>${escapeHtml(item.id)} <span class="type-badge ${item.type.toLowerCase()}">${escapeHtml(item.type.toUpperCase())}</span></h3>
-      <p>${item.billingCycle === "monthly" ? "Mensile" : "Annuale"} · Scadenza: ${displayDate(item.expiry)}</p>
+      <h3>${escapeHtml(item.id)} <span class="type-badge ${item.type.toLowerCase()}">${escapeHtml(item.type.toUpperCase())}</span> <span class="cycle-badge ${cycleClass}">${cycleLabel}</span></h3>
+      <p>Scadenza: ${displayDate(item.expiry)}</p>
       <span class="status-pill ${status.level === "expired" ? "bad" : status.level === "warning" ? "warn" : "ok"}">${escapeHtml(status.label)}</span>
     </div><span class="chevron">›</span>
   </button>`;
@@ -217,9 +222,9 @@ function editRoom(id) {
 
   modalContent.innerHTML = `
     <h2>Modifica Sala ${id}</h2>
-    ${selectField("room-computer","Computer",roomOptions("computers",room.computerId,id))}
-    ${selectField("room-hardware","Hardware video",roomOptions("hardware",room.hardwareId,id))}
-    ${selectField("room-license","Licenza Avid",roomOptions("licenses",room.licenseId,id))}
+    ${assignmentPicker("computers","Computer",room.computerId,id)}
+    ${assignmentPicker("hardware","Hardware video",room.hardwareId,id)}
+    ${assignmentPicker("licenses","Licenza Avid",room.licenseId,id)}
     ${textareaField("room-other","Altre licenze",room.otherLicenses)}
     ${textareaField("room-notes","Note / IP / computer aggiuntivo",room.notes)}
     <div class="modal-actions">
@@ -227,11 +232,20 @@ function editRoom(id) {
       <button class="primary-button" id="save-room">Salva</button>
     </div>`;
 
+  modalContent.querySelectorAll("[data-assignment-option]").forEach(button => {
+    button.onclick = () => {
+      const group = button.dataset.group;
+      modalContent.querySelectorAll(`[data-group="${group}"]`).forEach(peer => peer.classList.remove("selected"));
+      button.classList.add("selected");
+      document.getElementById(`assignment-${group}`).value = button.dataset.value;
+    };
+  });
+
   document.getElementById("cancel-room").onclick = () => openRoom(id);
   document.getElementById("save-room").onclick = () => {
-    const computerId = value("room-computer");
-    const hardwareId = value("room-hardware");
-    let licenseId = value("room-license");
+    const computerId = value("assignment-computers");
+    const hardwareId = value("assignment-hardware");
+    let licenseId = value("assignment-licenses");
 
     const duplicateComputer = computerId && assignedRoom("computers",computerId,id);
     const duplicateHardware = hardwareId && assignedRoom("hardware",hardwareId,id);
@@ -504,6 +518,28 @@ function openAddMenu() {
   openModal();
 }
 
+function assignmentPicker(type,label,current,currentRoomId) {
+  const items = sortByNumericId(state.data[type]);
+  const cards = [
+    `<button type="button" class="assignment-option ${current === "" ? "selected" : ""}" data-assignment-option data-group="${type}" data-value="">
+      <span class="assignment-name">Non assegnato</span>
+      <span class="assignment-status neutral">Nessun elemento</span>
+    </button>`,
+    ...items.map(item => {
+      const used = assignedRoom(type,item.id,currentRoomId);
+      const selected = item.id === current;
+      const statusClass = used ? "used" : "free";
+      const statusText = used ? `Assegnato alla Sala ${used.id}` : "Disponibile";
+      return `<button type="button" class="assignment-option ${statusClass} ${selected ? "selected" : ""}" data-assignment-option data-group="${type}" data-value="${escapeHtml(item.id)}">
+        <span class="assignment-name">${escapeHtml(item.id)} · ${escapeHtml(item.model || item.type)}</span>
+        <span class="assignment-status ${statusClass}">${escapeHtml(statusText)}</span>
+      </button>`;
+    })
+  ].join("");
+
+  return `<div class="field"><label>${label}</label><div class="assignment-picker">${cards}</div><input type="hidden" id="assignment-${type}" value="${escapeHtml(current)}"></div>`;
+}
+
 function inputField(id,label,inputValue="",type="text",attributes="") {
   return `<div class="field"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${escapeHtml(inputValue)}" ${attributes}></div>`;
 }
@@ -537,11 +573,18 @@ function value(id) {
 }
 
 function openModal() {
+  modalContent.classList.remove("modal-enter");
   if (!modal.open) modal.showModal();
+  void modalContent.offsetWidth;
+  modalContent.classList.add("modal-enter");
 }
 
 function closeModal() {
-  modal.close();
+  modalContent.classList.add("modal-leave");
+  setTimeout(() => {
+    modalContent.classList.remove("modal-leave");
+    modal.close();
+  }, 160);
 }
 
 function exportBackup() {

@@ -31,3 +31,10 @@ FUNZIONI
 - Notifiche
 - Sintesi non modificabile e stampabile
 - Backup/importazione JSON
+
+
+NOVITÀ REBUILD V1.1
+- Menu assegnazioni con riquadri completi verdi/rossi
+- Badge MENSILE/ANNUALE nella lista Licenze
+- Transizioni morbide tra i menu
+- Animazioni apertura/chiusura schede e sale
