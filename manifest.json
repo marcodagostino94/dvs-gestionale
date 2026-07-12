@@ -1,14 +1,13 @@
 {
-  "name": "DVS Gestionale Sale v4",
-  "short_name": "DVS Gestionale",
-  "description": "Gestione sale, computer, hardware e licenze Avid",
+  "name": "DVS Gestionale",
+  "short_name": "DVS",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#101012",
+  "background_color": "#0e0e10",
   "theme_color": "#171719",
   "icons": [
     {
-      "src": "icon.svg",
+      "src": "assets/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

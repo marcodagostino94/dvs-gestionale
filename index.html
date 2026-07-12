@@ -5,52 +5,53 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#171719">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="DVS Gestionale">
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="style.css">
+  <link rel="apple-touch-icon" href="assets/icon.svg">
+  <link rel="icon" href="assets/icon.svg">
+  <link rel="stylesheet" href="css/app.css?v=1.0.0">
   <title>DVS Gestionale</title>
 </head>
 <body>
-  <div class="bg-orb orb1"></div><div class="bg-orb orb2"></div>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
 
-  <header class="top glass">
-    <div class="brand-area">
-      <div class="brand">
-        <span class="brand-symbol" aria-label="Logo Digital Video Service">
-<svg viewBox="0 0 64 48" aria-hidden="true">
-  <rect x="2" y="8" width="10" height="32" rx="5" fill="#777b82"/>
-  <path d="M16 8h12l10 16-10 16H16l10-16z" fill="#c72c36"/>
-  <path d="M36 8h10l16 16-16 16H36l16-16z" fill="#777b82"/>
-</svg>
-</span><span>Digital Video Service</span>
+  <header class="topbar glass">
+    <div>
+      <div class="brand-row">
+        <img src="assets/logo-symbol.svg" alt="Digital Video Service" class="brand-logo">
+        <span>Digital Video Service</span>
       </div>
-      <h1 id="pageTitle">Sale</h1>
+      <h1 id="page-title">Sale</h1>
     </div>
     <div class="top-actions">
-      <button class="icon-btn bell-btn" id="bellBtn" aria-label="Notifiche">
-        <span class="bell-shape">♢</span><span id="bellDot" class="bell-dot"></span>
+      <button id="notifications-button" class="round-button" aria-label="Notifiche">
+        <span class="icon" data-icon="bell"></span>
+        <span id="notification-dot" class="notification-dot"></span>
       </button>
-      <button class="icon-btn" id="addBtn" aria-label="Aggiungi">＋</button>
+      <button id="add-button" class="round-button primary-round" aria-label="Aggiungi">
+        <span class="plus">+</span>
+      </button>
     </div>
   </header>
 
-  <main id="app"></main>
+  <main id="app" aria-live="polite"></main>
 
-  <nav class="tabbar glass">
-    <button data-view="rooms" class="active"><span class="nav-icon grid-icon">▦</span><small>Sale</small></button>
-    <button data-view="computers"><span class="nav-icon imac-icon"><svg viewBox="0 0 32 32"><rect x="4" y="5" width="24" height="17" rx="2.5"/><path d="M13 23h6l1 3H12z"/><path d="M10 27h12"/></svg></span><small>Computer</small></button>
-    <button data-view="hardware"><span class="nav-icon rec-icon">●</span><small>Hardware</small></button>
-    <button data-view="licenses"><span class="nav-icon key-icon"><svg viewBox="0 0 32 32"><circle cx="11" cy="12" r="5"/><path d="M15 16l10 10m-5-5 3-3m-7 0 3-3"/></svg></span><small>Licenze</small></button>
-<button data-view="summary"><span class="nav-icon summary-icon"><svg viewBox="0 0 32 32"><rect x="5" y="4" width="22" height="24" rx="3"/><path d="M10 10h12M10 16h12M10 22h8"/></svg></span><small>Sintesi</small></button>
-    <button data-view="settings"><span class="nav-icon gear-icon">⚙︎</span><small>Altro</small></button>
+  <nav class="tabbar glass" aria-label="Navigazione principale">
+    <button data-view="rooms" class="active"><span class="icon" data-icon="grid"></span><small>Sale</small></button>
+    <button data-view="computers"><span class="icon" data-icon="imac"></span><small>Computer</small></button>
+    <button data-view="hardware"><span class="icon rec-dot" data-icon="rec"></span><small>Hardware</small></button>
+    <button data-view="licenses"><span class="icon" data-icon="key"></span><small>Licenze</small></button>
+    <button data-view="summary"><span class="icon" data-icon="summary"></span><small>Sintesi</small></button>
+    <button data-view="settings"><span class="icon" data-icon="gear"></span><small>Altro</small></button>
   </nav>
 
   <dialog id="modal">
-    <form method="dialog" class="modal-card glass" id="modalContent"></form>
+    <div id="modal-content" class="modal-card glass"></div>
   </dialog>
 
-<script src="app.js"></script>
+  <script type="module" src="js/app.js?v=1.0.0"></script>
 </body>
 </html>
