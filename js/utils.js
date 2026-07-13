@@ -92,3 +92,40 @@ export function renewLicenses(data) {
   });
   return changed;
 }
+
+export function pluginStatus(plugin) {
+  if (!plugin || !plugin.expiry) return {level:"none",label:"Nessuna scadenza",days:null};
+  const today = parseISO(isoToday());
+  const expiry = parseISO(plugin.expiry);
+  const days = Math.ceil((expiry - today) / DAY);
+
+  if (plugin.deactivationRequested && days < 0) {
+    return {level:"expired",label:`Scaduto da ${daysSince(plugin.expiry)} giorni`,days};
+  }
+  if (days >= 0 && days <= 5) {
+    return {level:"warning",label:days === 0 ? "Scade oggi" : `Scade tra ${days} giorni`,days};
+  }
+  return {level:"ok",label:"Attivo",days};
+}
+
+export function renewPlugins(data) {
+  let changed = false;
+  const today = parseISO(isoToday());
+  data.rooms.forEach(room => {
+    (room.plugins || []).forEach(plugin => {
+      if (plugin.activation && !plugin.expiry) {
+        plugin.expiry = addCycle(plugin.activation, plugin.billingCycle);
+        changed = true;
+      }
+      if (plugin.expiry && !plugin.deactivationRequested) {
+        let expiry = parseISO(plugin.expiry);
+        while (expiry && expiry < today) {
+          plugin.expiry = addCycle(plugin.expiry, plugin.billingCycle);
+          expiry = parseISO(plugin.expiry);
+          changed = true;
+        }
+      }
+    });
+  });
+  return changed;
+}

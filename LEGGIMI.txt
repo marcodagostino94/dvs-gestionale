@@ -38,3 +38,17 @@ NOVITÀ REBUILD V1.1
 - Badge MENSILE/ANNUALE nella lista Licenze
 - Transizioni morbide tra i menu
 - Animazioni apertura/chiusura schede e sale
+
+
+NOVITÀ VERSIONE 2
+- Logo ufficiale Digital Video Service
+- Splash screen animata
+- Schermata login predisposta per cloud e Face ID/Touch ID
+- Apertura diretta sulla schermata Sale
+- Bottom sheet stile Apple per assegnare Computer, Hardware e Licenze
+- Sale con MAC + modello sulla stessa riga, badge macOS, Avid e plugin
+- Plugin Continuum/Sapphire gestiti dentro la Sala
+- Licenze assegnate prima, non assegnate in fondo
+- Stato licenza con Sala sulla stessa riga
+- Sintesi con quattro riquadri affiancati
+- Solo il riquadro Avid colorato rosa/celeste

@@ -1,6 +1,6 @@
 import {injectIcons} from "./icons.js";
 import {loadData, saveData, resetData, importDataObject} from "./data.js";
-import {escapeHtml, sortByNumericId, displayDate, isoToday, addCycle, licenseStatus, renewLicenses} from "./utils.js";
+import {escapeHtml, sortByNumericId, displayDate, isoToday, addCycle, licenseStatus, renewLicenses, pluginStatus, renewPlugins} from "./utils.js";
 
 const state = {
   data: loadData(),
@@ -9,7 +9,7 @@ const state = {
   filter: "all"
 };
 
-if (renewLicenses(state.data)) saveData(state.data);
+if (renewLicenses(state.data) || renewPlugins(state.data)) saveData(state.data);
 
 const app = document.getElementById("app");
 const title = document.getElementById("page-title");
@@ -18,6 +18,13 @@ const modalContent = document.getElementById("modal-content");
 const addButton = document.getElementById("add-button");
 const notificationsButton = document.getElementById("notifications-button");
 const notificationDot = document.getElementById("notification-dot");
+const splashScreen = document.getElementById("splash-screen");
+const loginScreen = document.getElementById("login-screen");
+const appShell = document.getElementById("app-shell");
+const loginButton = document.getElementById("login-button");
+const biometricButton = document.getElementById("biometric-button");
+const sheet = document.getElementById("sheet");
+const sheetContent = document.getElementById("sheet-content");
 
 function find(type,id) {
   return state.data[type].find(item => item.id === id);
@@ -75,12 +82,29 @@ function renderRooms() {
     const computer = find("computers",room.computerId);
     const license = find("licenses",room.licenseId);
     const status = licenseStatus(license);
+    const plugins = room.plugins || [];
+
     return `<button class="room-card glass ${status.level}" data-room="${room.id}">
       <h3>Sala ${room.id}</h3>
-      <p>${computer ? `${escapeHtml(computer.id)} · ${escapeHtml(computer.model)}` : "Nessun computer"}</p>
-      <p>${license ? `<span class="type-badge ${license.type.toLowerCase()}">${escapeHtml(license.type.toUpperCase())}</span> ${escapeHtml(license.id)}` : "Nessuna licenza"}</p>
+
+      <div class="room-line room-computer-line">
+        ${computer
+          ? `<strong>${escapeHtml(computer.id)}</strong><span class="room-model"> · ${escapeHtml(computer.model)}</span>${computer.os ? `<span class="os-badge os-${escapeHtml(computer.os.toLowerCase())}">${escapeHtml(computer.os.toUpperCase())}</span>` : ""}`
+          : `<span class="room-empty">Nessun computer</span>`}
+      </div>
+
+      <div class="room-line">
+        ${license
+          ? `<strong>${escapeHtml(license.id)}</strong><span class="type-badge ${license.type.toLowerCase()}">${escapeHtml(license.type.toUpperCase())}</span>`
+          : `<span class="room-empty">Nessuna licenza Avid</span>`}
+      </div>
+
+      ${plugins.length ? `<div class="plugin-badges">${plugins.map(plugin => {
+        const pStatus = pluginStatus(plugin);
+        return `<span class="plugin-badge ${pStatus.level}">${escapeHtml(plugin.type.toUpperCase())}</span>`;
+      }).join("")}</div>` : ""}
+
       ${license && ["warning","expired"].includes(status.level) ? `<p class="alert-copy">${escapeHtml(status.label)}</p>` : ""}
-      <span class="status-pill ${status.level === "expired" ? "bad" : status.level === "warning" ? "warn" : computer ? "ok" : "off"}">${license ? escapeHtml(status.label) : computer ? "Configurata" : "Da configurare"}</span>
     </button>`;
   }).join("")}</div>`;
 
@@ -88,7 +112,6 @@ function renderRooms() {
     button.onclick = () => openRoom(Number(button.dataset.room));
   });
 }
-
 function filterOptions(type) {
   return {
     computers:[["all","Tutti"],["available","Disponibili"],["assigned","Assegnati"],["warehouse","Magazzino"]],
@@ -98,7 +121,18 @@ function filterOptions(type) {
 }
 
 function renderInventory(type) {
-  let items = sortByNumericId(state.data[type]).filter(item =>
+  let baseItems = sortByNumericId(state.data[type]);
+  if (type === "licenses") {
+    baseItems = [...baseItems].sort((a,b) => {
+      const assignedA = assignedRoom("licenses",a.id) ? 0 : 1;
+      const assignedB = assignedRoom("licenses",b.id) ? 0 : 1;
+      if (assignedA !== assignedB) return assignedA - assignedB;
+      const na = Number((String(a.id).match(/\d+/) || ["999999"])[0]);
+      const nb = Number((String(b.id).match(/\d+/) || ["999999"])[0]);
+      return na - nb || String(a.id).localeCompare(String(b.id));
+    });
+  }
+  let items = baseItems.filter(item =>
     Object.values(item).join(" ").toLowerCase().includes(state.query.toLowerCase())
   );
 
@@ -141,11 +175,13 @@ function inventoryCard(type,item) {
   if (type === "computers") {
     const availability = room ? `Sala ${room.id}` : item.warehouse ? `Disponibile · <b class="warehouse-label">MAGAZZINO</b>` : "Disponibile";
     return `<button class="list-card glass" data-item="${escapeHtml(item.id)}">
-      <div>
-        <h3>${escapeHtml(item.id)} · ${escapeHtml(item.model)}</h3>
-        <p>macOS ${escapeHtml(item.os || "non indicato")}</p>
-        <p>Formattazione: ${displayDate(item.formatDate)}</p>
-        <span class="status-pill ${room ? "warn" : "ok"}">${availability}</span>
+      <div class="list-card-main">
+        <h3><strong>${escapeHtml(item.id)}</strong><span class="compact-model"> · ${escapeHtml(item.model)}</span></h3>
+        <div class="badge-row">
+          ${item.os ? `<span class="os-badge os-${escapeHtml(item.os.toLowerCase())}">${escapeHtml(item.os.toUpperCase())}</span>` : `<span class="os-badge os-none">macOS NON INDICATO</span>`}
+          <span class="date-badge">FORMATTATO ${displayDate(item.formatDate)}</span>
+        </div>
+        <div class="assignment-bottom ${room ? "assigned" : "available"}">${availability}</div>
         ${!room && item.warehouse && item.warehouseLocation ? `<p class="warehouse-location">${escapeHtml(item.warehouseLocation)}</p>` : ""}
       </div><span class="chevron">›</span>
     </button>`;
@@ -164,11 +200,12 @@ function inventoryCard(type,item) {
   const status = licenseStatus(item);
   const cycleClass = item.billingCycle === "monthly" ? "monthly" : "annual";
   const cycleLabel = item.billingCycle === "monthly" ? "MENSILE" : "ANNUALE";
+  const location = room ? `Sala ${room.id}` : "Non assegnata";
   return `<button class="list-card glass license-card ${status.level}" data-item="${escapeHtml(item.id)}">
     <div>
       <h3>${escapeHtml(item.id)} <span class="type-badge ${item.type.toLowerCase()}">${escapeHtml(item.type.toUpperCase())}</span> <span class="cycle-badge ${cycleClass}">${cycleLabel}</span></h3>
       <p>Scadenza: ${displayDate(item.expiry)}</p>
-      <span class="status-pill ${status.level === "expired" ? "bad" : status.level === "warning" ? "warn" : "ok"}">${escapeHtml(status.label)}</span>
+      <span class="status-pill ${status.level === "expired" ? "bad" : status.level === "warning" ? "warn" : "ok"}">${escapeHtml(status.label)} · ${escapeHtml(location)}</span>
     </div><span class="chevron">›</span>
   </button>`;
 }
@@ -192,7 +229,10 @@ function openRoom(id) {
       ["Durata",license.billingCycle === "monthly" ? "Mensile" : "Annuale"],["Attivazione",displayDate(license.activation)],
       ["Scadenza",displayDate(license.expiry)],["Disattivazione richiesta",license.deactivationRequested ? "Sì" : "No"]
     ] : [["Stato","Non assegnata"]])}
-    ${room.otherLicenses ? detailBlock("Altre licenze",[["Dettagli",room.otherLicenses]]) : ""}
+    ${(room.plugins || []).length ? `<section class="detail-block"><h4>Plugin</h4>${room.plugins.map(plugin => {
+      const ps = pluginStatus(plugin);
+      return `<div class="plugin-detail"><strong>${escapeHtml(plugin.type)}</strong><span>${escapeHtml(plugin.serial || "Nessun seriale")}</span><span>${plugin.billingCycle === "monthly" ? "Mensile" : "Annuale"} · ${displayDate(plugin.expiry)}</span><span class="status-pill ${ps.level === "expired" ? "bad" : ps.level === "warning" ? "warn" : "ok"}">${escapeHtml(ps.label)}</span></div>`;
+    }).join("")}</section>` : ""}
     ${room.notes ? detailBlock("Note / IP / computer aggiuntivo",[["Dettagli",room.notes]]) : ""}
     <div class="modal-actions"><button class="secondary-button" id="close-modal">Chiudi</button></div>`;
 
@@ -222,30 +262,32 @@ function editRoom(id) {
 
   modalContent.innerHTML = `
     <h2>Modifica Sala ${id}</h2>
-    ${assignmentPicker("computers","Computer",room.computerId,id)}
-    ${assignmentPicker("hardware","Hardware video",room.hardwareId,id)}
-    ${assignmentPicker("licenses","Licenza Avid",room.licenseId,id)}
-    ${textareaField("room-other","Altre licenze",room.otherLicenses)}
+    ${pickerField("computer-picker","Computer",selectedLabel("computers",room.computerId),room.computerId)}
+    ${pickerField("hardware-picker","Hardware video",selectedLabel("hardware",room.hardwareId),room.hardwareId)}
+    ${pickerField("license-picker","Licenza Avid",selectedLabel("licenses",room.licenseId),room.licenseId)}
+
+    <section class="plugin-editor">
+      <div class="plugin-editor-title"><h3>Plugin</h3><button id="add-plugin" class="text-button">+ Aggiungi</button></div>
+      <div id="plugin-editor-list">${renderPluginEditors(room.plugins || [])}</div>
+    </section>
+
     ${textareaField("room-notes","Note / IP / computer aggiuntivo",room.notes)}
     <div class="modal-actions">
       <button class="secondary-button" id="cancel-room">Annulla</button>
       <button class="primary-button" id="save-room">Salva</button>
     </div>`;
 
-  modalContent.querySelectorAll("[data-assignment-option]").forEach(button => {
-    button.onclick = () => {
-      const group = button.dataset.group;
-      modalContent.querySelectorAll(`[data-group="${group}"]`).forEach(peer => peer.classList.remove("selected"));
-      button.classList.add("selected");
-      document.getElementById(`assignment-${group}`).value = button.dataset.value;
-    };
-  });
+  document.getElementById("computer-picker").onclick = () => openAssignmentSheet("computers","Computer",value("computer-picker-value"),id,"computer-picker");
+  document.getElementById("hardware-picker").onclick = () => openAssignmentSheet("hardware","Hardware video",value("hardware-picker-value"),id,"hardware-picker");
+  document.getElementById("license-picker").onclick = () => openAssignmentSheet("licenses","Licenza Avid",value("license-picker-value"),id,"license-picker");
+  document.getElementById("add-plugin").onclick = () => addPluginEditor();
+  bindPluginEditorEvents();
 
   document.getElementById("cancel-room").onclick = () => openRoom(id);
   document.getElementById("save-room").onclick = () => {
-    const computerId = value("assignment-computers");
-    const hardwareId = value("assignment-hardware");
-    let licenseId = value("assignment-licenses");
+    const computerId = value("computer-picker-value");
+    const hardwareId = value("hardware-picker-value");
+    let licenseId = value("license-picker-value");
 
     const duplicateComputer = computerId && assignedRoom("computers",computerId,id);
     const duplicateHardware = hardwareId && assignedRoom("hardware",hardwareId,id);
@@ -263,14 +305,154 @@ function editRoom(id) {
     room.computerId = computerId;
     room.hardwareId = hardwareId;
     room.licenseId = licenseId;
-    room.otherLicenses = value("room-other");
+    room.plugins = collectPlugins();
     room.notes = value("room-notes");
+
+    if (renewPlugins(state.data)) {}
     saveData(state.data);
     closeModal();
     render();
   };
 }
 
+function selectedLabel(type,id) {
+  if (!id) return "Non assegnato";
+  const item = find(type,id);
+  return item ? `${item.id} · ${item.model || item.type}` : "Non assegnato";
+}
+
+function pickerField(id,label,text,currentValue) {
+  return `<div class="field"><label>${label}</label><button type="button" id="${id}" class="picker-button"><span>${escapeHtml(text)}</span><span class="picker-chevron">›</span></button><input type="hidden" id="${id}-value" value="${escapeHtml(currentValue)}"></div>`;
+}
+
+function openAssignmentSheet(type,label,current,currentRoomId,targetId) {
+  const items = sortByNumericId(state.data[type]);
+  const free = items.filter(item => !assignedRoom(type,item.id,currentRoomId));
+  const used = items.filter(item => assignedRoom(type,item.id,currentRoomId));
+
+  sheetContent.innerHTML = `
+    <div class="sheet-handle"></div>
+    <div class="sheet-title-row"><h2>Seleziona ${label}</h2><button id="close-sheet" class="text-button">Chiudi</button></div>
+    <button class="sheet-option neutral ${current === "" ? "selected" : ""}" data-sheet-value="">
+      <strong>Non assegnato</strong><span>Nessun elemento</span>
+    </button>
+    ${free.length ? `<h3 class="sheet-section-title">Disponibili</h3>${free.map(item => sheetOption(type,item,current,currentRoomId)).join("")}` : ""}
+    ${used.length ? `<h3 class="sheet-section-title">Già assegnati</h3>${used.map(item => sheetOption(type,item,current,currentRoomId)).join("")}` : ""}
+  `;
+
+  sheetContent.querySelectorAll("[data-sheet-value]").forEach(button => {
+    button.onclick = () => {
+      const id = button.dataset.sheetValue;
+      const usedRoom = id && assignedRoom(type,id,currentRoomId);
+      if (usedRoom) {
+        const name = type === "computers" ? "COMPUTER" : type === "hardware" ? "HARDWARE" : "LICENZA";
+        alert(`${name} ${id} già assegnato/a alla Sala ${usedRoom.id}.`);
+        return;
+      }
+      document.getElementById(`${targetId}-value`).value = id;
+      document.getElementById(targetId).querySelector("span").textContent = selectedLabel(type,id);
+      closeSheet();
+    };
+  });
+  document.getElementById("close-sheet").onclick = closeSheet;
+  openSheet();
+}
+
+function sheetOption(type,item,current,currentRoomId) {
+  const usedRoom = assignedRoom(type,item.id,currentRoomId);
+  const stateClass = usedRoom ? "used" : "free";
+  const subtitle = usedRoom ? `Assegnato alla Sala ${usedRoom.id}` : "Disponibile";
+  return `<button class="sheet-option ${stateClass} ${item.id === current ? "selected" : ""}" data-sheet-value="${escapeHtml(item.id)}">
+    <strong>${escapeHtml(item.id)} · ${escapeHtml(item.model || item.type)}</strong>
+    <span>${escapeHtml(subtitle)}</span>
+  </button>`;
+}
+
+function openSheet() {
+  if (!sheet.open) sheet.showModal();
+  sheetContent.classList.remove("sheet-enter");
+  void sheetContent.offsetWidth;
+  sheetContent.classList.add("sheet-enter");
+}
+
+function closeSheet() {
+  sheetContent.classList.add("sheet-leave");
+  setTimeout(() => {
+    sheetContent.classList.remove("sheet-leave");
+    sheet.close();
+  },160);
+}
+
+function renderPluginEditors(plugins) {
+  return plugins.map((plugin,index) => pluginEditor(plugin,index)).join("");
+}
+
+function pluginEditor(plugin,index) {
+  const type = plugin.type || "Continuum";
+  const cycle = plugin.billingCycle || "annual";
+  return `<div class="plugin-editor-card" data-plugin-index="${index}">
+    <div class="plugin-editor-head"><strong>Plugin ${index+1}</strong><button type="button" class="remove-plugin danger-link" data-remove-plugin="${index}">Rimuovi</button></div>
+    <div class="segmented typed plugin-type-segment">
+      <button type="button" class="${type === "Continuum" ? "selected" : ""}" data-plugin-type="Continuum">CONTINUUM</button>
+      <button type="button" class="${type === "Sapphire" ? "selected" : ""}" data-plugin-type="Sapphire">SAPPHIRE</button>
+    </div>
+    <input type="hidden" class="plugin-type-value" value="${escapeHtml(type)}">
+    <div class="field"><label>Seriale</label><input class="plugin-serial" value="${escapeHtml(plugin.serial || "")}"></div>
+    <div class="segmented">
+      <button type="button" class="${cycle === "monthly" ? "selected" : ""}" data-plugin-cycle="monthly">MENSILE</button>
+      <button type="button" class="${cycle === "annual" ? "selected" : ""}" data-plugin-cycle="annual">ANNUALE</button>
+    </div>
+    <input type="hidden" class="plugin-cycle-value" value="${escapeHtml(cycle)}">
+    <div class="field"><label>Data attivazione</label><input type="date" class="plugin-activation" value="${escapeHtml(plugin.activation || isoToday())}"></div>
+    <div class="field"><label>Data scadenza</label><input type="date" class="plugin-expiry" value="${escapeHtml(plugin.expiry || addCycle(plugin.activation || isoToday(),cycle))}" readonly></div>
+    <label class="check-card compact-check"><input type="checkbox" class="plugin-deactivation" ${plugin.deactivationRequested ? "checked" : ""}><span><strong>Sospensione richiesta</strong></span></label>
+  </div>`;
+}
+
+function addPluginEditor() {
+  const container = document.getElementById("plugin-editor-list");
+  const index = container.querySelectorAll(".plugin-editor-card").length;
+  container.insertAdjacentHTML("beforeend",pluginEditor({type:"Continuum",billingCycle:"annual",activation:isoToday(),expiry:addCycle(isoToday(),"annual")},index));
+  bindPluginEditorEvents();
+}
+
+function bindPluginEditorEvents() {
+  document.querySelectorAll(".plugin-editor-card").forEach(card => {
+    card.querySelectorAll("[data-plugin-type]").forEach(button => button.onclick = () => {
+      card.querySelectorAll("[data-plugin-type]").forEach(peer => peer.classList.remove("selected"));
+      button.classList.add("selected");
+      card.querySelector(".plugin-type-value").value = button.dataset.pluginType;
+    });
+    card.querySelectorAll("[data-plugin-cycle]").forEach(button => button.onclick = () => {
+      card.querySelectorAll("[data-plugin-cycle]").forEach(peer => peer.classList.remove("selected"));
+      button.classList.add("selected");
+      card.querySelector(".plugin-cycle-value").value = button.dataset.pluginCycle;
+      recalcPluginCard(card);
+    });
+    card.querySelector(".plugin-activation").onchange = () => recalcPluginCard(card);
+  });
+  document.querySelectorAll("[data-remove-plugin]").forEach(button => button.onclick = () => {
+    button.closest(".plugin-editor-card").remove();
+  });
+}
+
+function recalcPluginCard(card) {
+  const activation = card.querySelector(".plugin-activation").value || isoToday();
+  const cycle = card.querySelector(".plugin-cycle-value").value || "annual";
+  card.querySelector(".plugin-activation").value = activation;
+  card.querySelector(".plugin-expiry").value = addCycle(activation,cycle);
+}
+
+function collectPlugins() {
+  return [...document.querySelectorAll(".plugin-editor-card")].map(card => ({
+    type:card.querySelector(".plugin-type-value").value,
+    serial:card.querySelector(".plugin-serial").value.trim(),
+    billingCycle:card.querySelector(".plugin-cycle-value").value,
+    activation:card.querySelector(".plugin-activation").value,
+    expiry:card.querySelector(".plugin-expiry").value,
+    deactivationRequested:card.querySelector(".plugin-deactivation").checked
+  }));
+}
 function openItemView(type,id) {
   const item = find(type,id);
   const room = assignedRoom(type,id);
@@ -425,19 +607,42 @@ function renderSummary() {
     <div class="summary-heading"><h2>Riepilogo sale</h2><p>Vista non modificabile</p></div>
     ${state.data.rooms.map(room => {
       const computer = find("computers",room.computerId);
+      const hardware = find("hardware",room.hardwareId);
       const license = find("licenses",room.licenseId);
-      return `<article class="summary-row glass">
-        <div class="summary-room">Sala ${room.id}</div>
-        <div class="summary-data">
-          <strong>${computer ? escapeHtml(computer.id) : "Nessun computer"}</strong>
-          <span>${license ? `${escapeHtml(license.id)} · ${escapeHtml(license.type.toUpperCase())}` : "Nessuna licenza Avid"}</span>
-          ${room.otherLicenses ? `<span class="other-license">${escapeHtml(room.otherLicenses)}</span>` : ""}
+      const plugins = room.plugins || [];
+      const avidClass = license ? license.type.toLowerCase() : "empty";
+
+      return `<article class="summary-room-card glass">
+        <header>Sala ${room.id}</header>
+        <div class="summary-columns">
+          <section>
+            <small>COMPUTER</small>
+            <strong>${computer ? escapeHtml(computer.id) : "—"}</strong>
+            <span>${computer ? escapeHtml(computer.model) : "Non assegnato"}</span>
+            ${computer?.os ? `<span class="os-badge os-${escapeHtml(computer.os.toLowerCase())}">${escapeHtml(computer.os.toUpperCase())}</span>` : ""}
+          </section>
+          <section>
+            <small>HARDWARE</small>
+            <strong>${hardware ? escapeHtml(hardware.id) : "—"}</strong>
+            <span>${hardware ? escapeHtml(hardware.model) : "Non assegnato"}</span>
+          </section>
+          <section class="summary-avid ${avidClass}">
+            <small>AVID</small>
+            <strong>${license ? escapeHtml(license.id) : "—"}</strong>
+            <span>${license ? escapeHtml(license.type.toUpperCase()) : "Non assegnata"}</span>
+          </section>
+          <section>
+            <small>PLUGIN</small>
+            ${plugins.length ? plugins.map(plugin => {
+              const ps = pluginStatus(plugin);
+              return `<div class="summary-plugin"><strong>${escapeHtml(plugin.type.toUpperCase())}</strong><span class="${ps.level}">${escapeHtml(ps.label)}</span></div>`;
+            }).join("") : `<span>Nessun plugin</span>`}
+          </section>
         </div>
       </article>`;
     }).join("")}
   </section>`;
 }
-
 function renderSettings() {
   app.innerHTML = `
     <section class="settings-card glass">
@@ -620,8 +825,43 @@ modal.addEventListener("click", event => {
   if (event.target === modal) closeModal();
 });
 
+
+function showLoginAfterSplash() {
+  setTimeout(() => {
+    splashScreen.classList.add("splash-exit");
+    setTimeout(() => {
+      splashScreen.classList.add("hidden");
+      loginScreen.classList.remove("hidden");
+      loginScreen.classList.add("login-enter");
+    },500);
+  },900);
+}
+
+function enterApplication() {
+  loginScreen.classList.add("login-exit");
+  setTimeout(() => {
+    loginScreen.classList.add("hidden");
+    appShell.classList.remove("hidden");
+    appShell.classList.add("app-enter");
+    state.view = "rooms";
+    render();
+  },320);
+}
+
+loginButton.onclick = enterApplication;
+biometricButton.onclick = () => {
+  document.getElementById("login-note").textContent = "Face ID / Touch ID sarà operativo dopo il collegamento al login cloud sicuro.";
+  biometricButton.classList.add("biometric-pulse");
+  setTimeout(() => biometricButton.classList.remove("biometric-pulse"),600);
+};
+
+sheet.addEventListener("click",event => {
+  if (event.target === sheet) closeSheet();
+});
+
+showLoginAfterSplash();
+
 injectIcons();
-render();
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

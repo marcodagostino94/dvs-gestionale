@@ -11,47 +11,85 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="assets/icon.svg">
   <link rel="icon" href="assets/icon.svg">
-  <link rel="stylesheet" href="css/app.css?v=1.1.0">
+  <link rel="stylesheet" href="css/app.css?v=2.0.0">
   <title>DVS Gestionale</title>
 </head>
 <body>
-  <div class="ambient ambient-a"></div>
-  <div class="ambient ambient-b"></div>
+  <div id="splash-screen" class="splash-screen">
+    <img src="assets/logo-dvs-full.png" alt="Digital Video Service" class="splash-logo">
+  </div>
 
-  <header class="topbar glass">
-    <div>
-      <div class="brand-row">
-        <img src="assets/logo-symbol.svg" alt="Digital Video Service" class="brand-logo">
-        <span>Digital Video Service</span>
+  <section id="login-screen" class="login-screen hidden">
+    <div class="login-card glass">
+      <img src="assets/logo-dvs-full.png" alt="Digital Video Service" class="login-logo">
+      <h1>Gestionale Tecnico</h1>
+      <p>Accedi per gestire sale, computer, hardware e licenze.</p>
+
+      <div class="field">
+        <label for="login-email">Email</label>
+        <input id="login-email" type="email" autocomplete="username" placeholder="nome@digitalvideo.it">
       </div>
-      <h1 id="page-title">Sale</h1>
-    </div>
-    <div class="top-actions">
-      <button id="notifications-button" class="round-button" aria-label="Notifiche">
-        <span class="icon" data-icon="bell"></span>
-        <span id="notification-dot" class="notification-dot"></span>
-      </button>
-      <button id="add-button" class="round-button primary-round" aria-label="Aggiungi">
-        <span class="plus">+</span>
-      </button>
-    </div>
-  </header>
+      <div class="field">
+        <label for="login-password">Password</label>
+        <input id="login-password" type="password" autocomplete="current-password" placeholder="Password">
+      </div>
 
-  <main id="app" aria-live="polite"></main>
+      <label class="remember-row">
+        <input id="remember-login" type="checkbox" checked>
+        <span>Mantieni l'accesso</span>
+      </label>
 
-  <nav class="tabbar glass" aria-label="Navigazione principale">
-    <button data-view="rooms" class="active"><span class="icon" data-icon="grid"></span><small>Sale</small></button>
-    <button data-view="computers"><span class="icon" data-icon="imac"></span><small>Computer</small></button>
-    <button data-view="hardware"><span class="icon rec-dot" data-icon="rec"></span><small>Hardware</small></button>
-    <button data-view="licenses"><span class="icon" data-icon="key"></span><small>Licenze</small></button>
-    <button data-view="summary"><span class="icon" data-icon="summary"></span><small>Sintesi</small></button>
-    <button data-view="settings"><span class="icon" data-icon="gear"></span><small>Altro</small></button>
-  </nav>
+      <button id="login-button" class="primary-button login-main-button">Accedi</button>
+      <button id="biometric-button" class="secondary-button biometric-button">
+        <span class="face-id-symbol">◎</span>
+        Accedi con Face ID / Touch ID
+      </button>
+      <p id="login-note" class="login-note">Modalità anteprima: il login sicuro e Face ID saranno attivati con il database cloud.</p>
+    </div>
+  </section>
+
+  <div id="app-shell" class="hidden">
+    <div class="ambient ambient-a"></div>
+    <div class="ambient ambient-b"></div>
+
+    <header class="topbar glass">
+      <div>
+        <div class="brand-row">
+          <img src="assets/logo-dvs-full.png" alt="Digital Video Service" class="brand-logo-full">
+        </div>
+        <h1 id="page-title">Sale</h1>
+      </div>
+      <div class="top-actions">
+        <button id="notifications-button" class="round-button" aria-label="Notifiche">
+          <span class="icon" data-icon="bell"></span>
+          <span id="notification-dot" class="notification-dot"></span>
+        </button>
+        <button id="add-button" class="round-button primary-round" aria-label="Aggiungi">
+          <span class="plus">+</span>
+        </button>
+      </div>
+    </header>
+
+    <main id="app" aria-live="polite"></main>
+
+    <nav class="tabbar glass" aria-label="Navigazione principale">
+      <button data-view="rooms" class="active"><span class="icon" data-icon="grid"></span><small>Sale</small></button>
+      <button data-view="computers"><span class="icon" data-icon="imac"></span><small>Computer</small></button>
+      <button data-view="hardware"><span class="icon rec-dot" data-icon="rec"></span><small>Hardware</small></button>
+      <button data-view="licenses"><span class="icon" data-icon="key"></span><small>Licenze</small></button>
+      <button data-view="summary"><span class="icon" data-icon="summary"></span><small>Sintesi</small></button>
+      <button data-view="settings"><span class="icon" data-icon="gear"></span><small>Altro</small></button>
+    </nav>
+  </div>
 
   <dialog id="modal">
     <div id="modal-content" class="modal-card glass"></div>
   </dialog>
 
-  <script type="module" src="js/app.js?v=1.1.0"></script>
+  <dialog id="sheet">
+    <div id="sheet-content" class="bottom-sheet glass"></div>
+  </dialog>
+
+  <script type="module" src="js/app.js?v=2.0.0"></script>
 </body>
 </html>

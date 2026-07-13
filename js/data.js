@@ -1,4 +1,4 @@
-const STORAGE_KEY = "dvs_rebuild_data_v1";
+const STORAGE_KEY = "dvs_rebuild_data_v2";
 
 export const DEFAULT_DATA = {
   rooms: Array.from({length: 15}, (_, i) => ({
@@ -7,6 +7,7 @@ export const DEFAULT_DATA = {
     hardwareId: "",
     licenseId: "",
     otherLicenses: "",
+    plugins: [],
     notes: ""
   })),
   computers: [
@@ -57,9 +58,22 @@ function normalize(data) {
       hardwareId: "",
       licenseId: "",
       otherLicenses: "",
+      plugins: [],
       notes: "",
       ...(byId.get(id) || {})
     };
+  });
+
+  result.rooms.forEach(room => {
+    room.plugins = Array.isArray(room.plugins) ? room.plugins.filter(Boolean) : [];
+    room.plugins = room.plugins.map(plugin => ({
+      type: plugin.type === "Sapphire" ? "Sapphire" : "Continuum",
+      serial: plugin.serial || "",
+      billingCycle: plugin.billingCycle === "monthly" ? "monthly" : "annual",
+      activation: plugin.activation || "",
+      expiry: plugin.expiry || "",
+      deactivationRequested: Boolean(plugin.deactivationRequested)
+    }));
   });
 
   result.computers.forEach(item => {
