@@ -108,24 +108,18 @@ export function pluginStatus(plugin) {
   return {level:"ok",label:"Attivo",days};
 }
 
-export function renewPlugins(data) {
-  let changed = false;
-  const today = parseISO(isoToday());
-  data.rooms.forEach(room => {
-    (room.plugins || []).forEach(plugin => {
-      if (plugin.activation && !plugin.expiry) {
-        plugin.expiry = addCycle(plugin.activation, plugin.billingCycle);
-        changed = true;
-      }
-      if (plugin.expiry && !plugin.deactivationRequested) {
-        let expiry = parseISO(plugin.expiry);
-        while (expiry && expiry < today) {
-          plugin.expiry = addCycle(plugin.expiry, plugin.billingCycle);
-          expiry = parseISO(plugin.expiry);
-          changed = true;
-        }
-      }
-    });
+
+
+export function softwareStatus(item) { return licenseStatus(item); }
+export function renewAllSoftware(data) {
+  let changed=false;
+  const today=parseISO(isoToday());
+  data.licenses.forEach(item=>{
+    if(item.activation&&!item.expiry){item.expiry=addCycle(item.activation,item.billingCycle);changed=true;}
+    if(item.expiry&&!item.deactivationRequested){
+      let expiry=parseISO(item.expiry);
+      while(expiry&&expiry<today){item.expiry=addCycle(item.expiry,item.billingCycle);expiry=parseISO(item.expiry);changed=true;}
+    }
   });
   return changed;
 }

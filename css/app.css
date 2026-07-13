@@ -114,3 +114,24 @@ dialog{border:0;background:transparent;padding:0;width:min(94vw,540px);max-heigh
 .biometric-button:disabled{opacity:.48;cursor:not-allowed}
 .login-error{color:#ff9da1!important;font-weight:700}
 .login-main-button:disabled{opacity:.72}
+
+#app-shell{min-height:100vh}.desktop-sidebar{display:none}.desktop-content{min-width:0}
+@media(min-width:900px){
+ body{max-width:none;margin:0;padding:0;overflow-x:hidden}
+ #app-shell{display:grid;grid-template-columns:260px minmax(0,1fr);min-height:100vh}
+ .desktop-sidebar{display:flex;position:sticky;top:0;height:100vh;flex-direction:column;border-radius:0;padding:28px 18px;background:rgba(19,22,27,.8);border-width:0 1px 0 0;z-index:30}
+ .sidebar-logo{width:210px;max-height:82px;object-fit:contain;object-position:left center;margin:4px 0 34px}
+ .sidebar-nav{display:flex;flex-direction:column;gap:8px}.sidebar-nav button{border:0;background:transparent;color:#c0c2c7;border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:13px;text-align:left;font-weight:700}
+ .sidebar-nav button.active{background:linear-gradient(90deg,rgba(190,24,33,.86),rgba(117,18,24,.72));color:white}
+ .sidebar-nav .icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+ .desktop-content{padding:22px 26px 40px}.topbar{position:relative;top:auto;margin-bottom:22px}.brand-row{display:none}.topbar h1{margin:0}.tabbar{display:none}
+ .room-grid{grid-template-columns:repeat(3,minmax(260px,1fr))}dialog{width:min(720px,92vw)}
+ .bottom-sheet{left:50%;right:auto;transform:translateX(-50%);width:min(760px,92vw);border-radius:28px 28px 0 0}
+}
+@media(min-width:900px) and (max-width:1150px){#app-shell{grid-template-columns:220px minmax(0,1fr)}.room-grid{grid-template-columns:repeat(2,minmax(260px,1fr))}.sidebar-logo{width:180px}}
+.station-block{padding:10px 0}.station-block.extra-station{border-top:1px solid rgba(255,255,255,.12);margin-top:8px;padding-top:16px}
+.room-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 0}.room-row>div{min-width:0}.room-row strong{display:block;font-size:14px}.room-row small{display:block;color:var(--muted);font-size:11px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room-warning-text{font-size:11px;font-weight:800;margin-top:8px;color:#fff}.room-card.warning{border-color:rgba(255,193,58,.85)}.room-card.expired{border-color:rgba(255,73,79,.9)}
+.plugin-kind-badge{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:900;background:rgba(48,185,107,.15);color:#9aefbb;border:1px solid rgba(62,200,119,.25)}
+.station-editor-card{border:1px solid var(--line);background:rgba(255,255,255,.045);border-radius:20px;padding:14px;margin:12px 0}.station-editor-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.full-button{width:100%;border:0;border-radius:15px;padding:13px;color:#fff;font-weight:800}
+.summary-room-card .summary-columns + .summary-columns{margin-top:9px;padding-top:9px;border-top:1px solid rgba(255,255,255,.08)}

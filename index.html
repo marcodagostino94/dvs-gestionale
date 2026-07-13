@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="assets/icon.svg">
   <link rel="icon" href="assets/icon.svg">
-  <link rel="stylesheet" href="css/app.css?v=2.1.0">
+  <link rel="stylesheet" href="css/app.css?v=3.0.0">
   <title>DVS Gestionale</title>
 </head>
 <body>
@@ -52,6 +52,18 @@
     <div class="ambient ambient-a"></div>
     <div class="ambient ambient-b"></div>
 
+    <aside class="desktop-sidebar glass">
+      <img src="assets/logo-dvs-full.png" alt="Digital Video Service" class="sidebar-logo">
+      <nav class="sidebar-nav">
+        <button data-view="rooms" class="active"><span class="icon" data-icon="grid"></span><span>Sale</span></button>
+        <button data-view="computers"><span class="icon" data-icon="imac"></span><span>Computer</span></button>
+        <button data-view="hardware"><span class="icon rec-dot" data-icon="rec"></span><span>Hardware</span></button>
+        <button data-view="licenses"><span class="icon" data-icon="key"></span><span>Licenze</span></button>
+        <button data-view="summary"><span class="icon" data-icon="summary"></span><span>Sintesi</span></button>
+        <button data-view="settings"><span class="icon" data-icon="gear"></span><span>Altro</span></button>
+      </nav>
+    </aside>
+    <div class="desktop-content">
     <header class="topbar glass">
       <div>
         <div class="brand-row">
@@ -72,6 +84,7 @@
 
     <main id="app" aria-live="polite"></main>
 
+    </div>
     <nav class="tabbar glass" aria-label="Navigazione principale">
       <button data-view="rooms" class="active"><span class="icon" data-icon="grid"></span><small>Sale</small></button>
       <button data-view="computers"><span class="icon" data-icon="imac"></span><small>Computer</small></button>
@@ -116,6 +129,6 @@
       });
     })();
   </script>
-  <script type="module" src="js/app.js?v=2.1.0"></script>
+  <script type="module" src="js/app.js?v=3.0.0"></script>
 </body>
 </html>

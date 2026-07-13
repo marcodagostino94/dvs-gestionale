@@ -1,6 +1,6 @@
 import {injectIcons} from "./icons.js";
 import {loadData, saveData, resetData, importDataObject} from "./data.js";
-import {escapeHtml, sortByNumericId, displayDate, isoToday, addCycle, licenseStatus, renewLicenses, pluginStatus, renewPlugins} from "./utils.js";
+import {escapeHtml, sortByNumericId, displayDate, isoToday, addCycle, licenseStatus, renewLicenses, softwareStatus, renewAllSoftware} from "./utils.js";
 
 const state = {
   data: loadData(),
@@ -9,7 +9,7 @@ const state = {
   filter: "all"
 };
 
-if (renewLicenses(state.data) || renewPlugins(state.data)) saveData(state.data);
+if (renewAllSoftware(state.data)) saveData(state.data);
 
 const app = document.getElementById("app");
 const title = document.getElementById("page-title");
@@ -31,10 +31,27 @@ function find(type,id) {
 }
 
 function assignedRoom(type,id,excludeRoomId=null) {
-  const key = type === "computers" ? "computerId" : type === "hardware" ? "hardwareId" : "licenseId";
-  return state.data.rooms.find(room => room.id !== excludeRoomId && room[key] === id);
+  for (const room of state.data.rooms) {
+    if (room.id === excludeRoomId) continue;
+    for (const station of room.stations || []) {
+      if (type === "computers" && station.computerId === id) return room;
+      if (type === "hardware" && station.hardwareId === id) return room;
+      if (type === "licenses" && (station.avidLicenseId === id || (station.pluginLicenseIds || []).includes(id))) return room;
+    }
+  }
+  return null;
 }
 
+function assignedStationLabel(type,id) {
+  for (const room of state.data.rooms) {
+    for (let i=0;i<(room.stations||[]).length;i++) {
+      const station=room.stations[i];
+      const found=type==="computers"?station.computerId===id:type==="hardware"?station.hardwareId===id:station.avidLicenseId===id||(station.pluginLicenseIds||[]).includes(id);
+      if(found)return `Sala ${room.id}${room.stations.length>1?` · ${i+1}`:""}`;
+    }
+  }
+  return "";
+}
 function setView(view) {
   state.view = view;
   state.query = "";
@@ -43,7 +60,7 @@ function setView(view) {
 }
 
 function render() {
-  document.querySelectorAll(".tabbar button").forEach(button => {
+  document.querySelectorAll(".tabbar button, .sidebar-nav button").forEach(button => {
     button.classList.toggle("active", button.dataset.view === state.view);
   });
 
@@ -51,7 +68,7 @@ function render() {
     rooms:"Sale",
     computers:"Computer",
     hardware:"Hardware",
-    licenses:"Licenze Avid",
+    licenses:"Licenze",
     summary:"Sintesi",
     settings:"Altro"
   }[state.view];
@@ -79,59 +96,43 @@ function render() {
 
 function renderRooms() {
   app.innerHTML = `<div class="room-grid">${state.data.rooms.map(room => {
-    const computer = find("computers",room.computerId);
-    const license = find("licenses",room.licenseId);
-    const status = licenseStatus(license);
-    const plugins = room.plugins || [];
-
-    return `<button class="room-card glass ${status.level}" data-room="${room.id}">
-      <h3>Sala ${room.id}</h3>
-
-      <div class="room-line room-computer-line">
-        ${computer
-          ? `<strong>${escapeHtml(computer.id)}</strong><span class="room-model"> · ${escapeHtml(computer.model)}</span>${computer.os ? `<span class="os-badge os-${escapeHtml(computer.os.toLowerCase())}">${escapeHtml(computer.os.toUpperCase())}</span>` : ""}`
-          : `<span class="room-empty">Nessun computer</span>`}
-      </div>
-
-      <div class="room-line">
-        ${license
-          ? `<strong>${escapeHtml(license.id)}</strong><span class="type-badge ${license.type.toLowerCase()}">${escapeHtml(license.type.toUpperCase())}</span>`
-          : `<span class="room-empty">Nessuna licenza Avid</span>`}
-      </div>
-
-      ${plugins.length ? `<div class="plugin-badges">${plugins.map(plugin => {
-        const pStatus = pluginStatus(plugin);
-        return `<span class="plugin-badge ${pStatus.level}">${escapeHtml(plugin.type.toUpperCase())}</span>`;
-      }).join("")}</div>` : ""}
-
-      ${license && ["warning","expired"].includes(status.level) ? `<p class="alert-copy">${escapeHtml(status.label)}</p>` : ""}
-    </button>`;
+    const stations=(room.stations||[]).map((station,index)=>{
+      const computer=find("computers",station.computerId);
+      const avid=find("licenses",station.avidLicenseId);
+      const plugins=(station.pluginLicenseIds||[]).map(id=>find("licenses",id)).filter(Boolean);
+      const all=[avid,...plugins].filter(Boolean).map(softwareStatus);
+      const warningTexts=[avid,...plugins].filter(Boolean).map(item=>({item,status:softwareStatus(item)})).filter(x=>["warning","expired"].includes(x.status.level)).map(x=>x.item.category==="plugin"?`${x.item.pluginType}: ${x.status.label}`:x.status.label);
+      return `<div class="station-block ${index>0?"extra-station":""}">
+        <div class="room-row"><div><strong>${computer?escapeHtml(computer.id):"Nessun computer"}</strong>${computer?`<small>${escapeHtml(computer.model)}</small>`:""}</div>${computer?.os?`<span class="os-badge os-${escapeHtml(computer.os.toLowerCase())}">${escapeHtml(computer.os.toUpperCase())}</span>`:""}</div>
+        <div class="room-row"><div><strong>${avid?escapeHtml(avid.id):"Nessuna Avid"}</strong></div>${avid?`<span class="type-badge ${avid.type.toLowerCase()}">${escapeHtml(avid.type.toUpperCase())}</span>`:""}</div>
+        ${plugins.map(p=>`<div class="room-row"><div><strong>${escapeHtml(p.pluginType.toUpperCase())}</strong></div><span class="cycle-badge ${p.billingCycle==="monthly"?"monthly":"annual"}">${p.billingCycle==="monthly"?"MENSILE":"ANNUALE"}</span></div>`).join("")}
+        ${warningTexts.length?`<div class="room-warning-text">${warningTexts.map(escapeHtml).join("<br>")}</div>`:""}
+      </div>`;
+    }).join("");
+    const statuses=(room.stations||[]).flatMap(st=>[st.avidLicenseId,...(st.pluginLicenseIds||[])].filter(Boolean).map(id=>softwareStatus(find("licenses",id))));
+    const level=statuses.some(s=>s.level==="expired")?"expired":statuses.some(s=>s.level==="warning")?"warning":"";
+    return `<button class="room-card glass ${level}" data-room="${room.id}"><h3>Sala ${room.id}</h3>${stations}</button>`;
   }).join("")}</div>`;
-
-  app.querySelectorAll("[data-room]").forEach(button => {
-    button.onclick = () => openRoom(Number(button.dataset.room));
-  });
+  app.querySelectorAll("[data-room]").forEach(button=>button.onclick=()=>openRoom(Number(button.dataset.room)));
 }
 function filterOptions(type) {
   return {
     computers:[["all","Tutti"],["available","Disponibili"],["assigned","Assegnati"],["warehouse","Magazzino"]],
     hardware:[["all","Tutti"],["available","Disponibili"],["assigned","Assegnati"]],
-    licenses:[["all","Tutte"],["active","Attive"],["warning","In scadenza"],["expired","Scadute"]]
+    licenses:[["all","Tutte"],["avid","Avid"],["plugin","Plugin"],["assigned","Assegnate"],["available","Magazzino"],["warning","In scadenza"],["expired","Scadute"]]
   }[type];
 }
 
 function renderInventory(type) {
   let baseItems = sortByNumericId(state.data[type]);
-  if (type === "licenses") {
-    baseItems = [...baseItems].sort((a,b) => {
-      const assignedA = assignedRoom("licenses",a.id) ? 0 : 1;
-      const assignedB = assignedRoom("licenses",b.id) ? 0 : 1;
-      if (assignedA !== assignedB) return assignedA - assignedB;
-      const na = Number((String(a.id).match(/\d+/) || ["999999"])[0]);
-      const nb = Number((String(b.id).match(/\d+/) || ["999999"])[0]);
-      return na - nb || String(a.id).localeCompare(String(b.id));
-    });
-  }
+  baseItems = [...baseItems].sort((a,b) => {
+    const assignedA = assignedRoom(type,a.id) ? 0 : 1;
+    const assignedB = assignedRoom(type,b.id) ? 0 : 1;
+    if (assignedA !== assignedB) return assignedA - assignedB;
+    const na = Number((String(a.id).match(/\d+/) || ["999999"])[0]);
+    const nb = Number((String(b.id).match(/\d+/) || ["999999"])[0]);
+    return na - nb || String(a.id).localeCompare(String(b.id));
+  });
   let items = baseItems.filter(item =>
     Object.values(item).join(" ").toLowerCase().includes(state.query.toLowerCase())
   );
@@ -141,6 +142,8 @@ function renderInventory(type) {
     if (state.filter === "available") return !room;
     if (state.filter === "assigned") return Boolean(room);
     if (state.filter === "warehouse") return type === "computers" && item.warehouse;
+    if (type === "licenses" && state.filter === "avid") return item.category === "avid";
+    if (type === "licenses" && state.filter === "plugin") return item.category === "plugin";
     if (type === "licenses" && ["active","warning","expired"].includes(state.filter)) {
       return licenseStatus(item).level === state.filter;
     }
@@ -197,261 +200,53 @@ function inventoryCard(type,item) {
     </button>`;
   }
 
-  const status = licenseStatus(item);
-  const cycleClass = item.billingCycle === "monthly" ? "monthly" : "annual";
-  const cycleLabel = item.billingCycle === "monthly" ? "MENSILE" : "ANNUALE";
-  const location = room ? `Sala ${room.id}` : "Non assegnata";
-  return `<button class="list-card glass license-card ${status.level}" data-item="${escapeHtml(item.id)}">
-    <div>
-      <h3>${escapeHtml(item.id)} <span class="type-badge ${item.type.toLowerCase()}">${escapeHtml(item.type.toUpperCase())}</span> <span class="cycle-badge ${cycleClass}">${cycleLabel}</span></h3>
-      <p>Scadenza: ${displayDate(item.expiry)}</p>
-      <span class="status-pill ${status.level === "expired" ? "bad" : status.level === "warning" ? "warn" : "ok"}">${escapeHtml(status.label)} · ${escapeHtml(location)}</span>
-    </div><span class="chevron">›</span>
-  </button>`;
+  const status = softwareStatus(item);
+  const cycleClass=item.billingCycle==="monthly"?"monthly":"annual";
+  const cycleLabel=item.billingCycle==="monthly"?"MENSILE":"ANNUALE";
+  const location=room?assignedStationLabel("licenses",item.id):"Magazzino";
+  const mainBadge=item.category==="avid"?`<span class="type-badge ${item.type.toLowerCase()}">${escapeHtml(item.type.toUpperCase())}</span>`:`<span class="plugin-kind-badge">${escapeHtml(item.pluginType.toUpperCase())}</span>`;
+  return `<button class="list-card glass license-card ${status.level}" data-item="${escapeHtml(item.id)}"><div><h3>${escapeHtml(item.id)} ${mainBadge} <span class="cycle-badge ${cycleClass}">${cycleLabel}</span></h3><p>Scadenza: ${displayDate(item.expiry)}</p><span class="status-pill ${status.level==="expired"?"bad":status.level==="warning"?"warn":"ok"}">${escapeHtml(status.label)} · ${escapeHtml(location)}</span></div><span class="chevron">›</span></button>`;
 }
 
 function openRoom(id) {
-  const room = state.data.rooms.find(item => item.id === id);
-  const computer = find("computers",room.computerId);
-  const hardware = find("hardware",room.hardwareId);
-  const license = find("licenses",room.licenseId);
-
-  modalContent.innerHTML = `
-    <div class="modal-title-row"><h2>Sala ${id}</h2><button class="text-button" id="edit-room">Modifica</button></div>
-    ${detailBlock("Computer", computer ? [
-      ["ID",computer.id],["Modello",computer.model],["Processore",computer.processor],["RAM",computer.ram],
-      ["Grafica",computer.gpu],["Seriale",computer.serial],["Sistema operativo",computer.os ? `macOS ${computer.os}` : "—"],
-      ["Formattazione",displayDate(computer.formatDate)]
-    ] : [["Stato","Non assegnato"]])}
-    ${detailBlock("Hardware", hardware ? [["ID",hardware.id],["Modello",hardware.model],["Seriale",hardware.serial],["Driver",hardware.driver]] : [["Stato","Non assegnato"]])}
-    ${detailBlock("Licenza Avid", license ? [
-      ["ID",license.id],["Tipo",license.type],["System ID",license.systemId],["Codice",license.code],["Versione",license.version],
-      ["Durata",license.billingCycle === "monthly" ? "Mensile" : "Annuale"],["Attivazione",displayDate(license.activation)],
-      ["Scadenza",displayDate(license.expiry)],["Disattivazione richiesta",license.deactivationRequested ? "Sì" : "No"]
-    ] : [["Stato","Non assegnata"]])}
-    ${(room.plugins || []).length ? `<section class="detail-block"><h4>Plugin</h4>${room.plugins.map(plugin => {
-      const ps = pluginStatus(plugin);
-      return `<div class="plugin-detail"><strong>${escapeHtml(plugin.type)}</strong><span>${escapeHtml(plugin.serial || "Nessun seriale")}</span><span>${plugin.billingCycle === "monthly" ? "Mensile" : "Annuale"} · ${displayDate(plugin.expiry)}</span><span class="status-pill ${ps.level === "expired" ? "bad" : ps.level === "warning" ? "warn" : "ok"}">${escapeHtml(ps.label)}</span></div>`;
-    }).join("")}</section>` : ""}
-    ${room.notes ? detailBlock("Note / IP / computer aggiuntivo",[["Dettagli",room.notes]]) : ""}
-    <div class="modal-actions"><button class="secondary-button" id="close-modal">Chiudi</button></div>`;
-
-  document.getElementById("edit-room").onclick = () => editRoom(id);
-  document.getElementById("close-modal").onclick = closeModal;
-  openModal();
-}
-
-function detailBlock(titleText,rows) {
-  return `<section class="detail-block"><h4>${titleText}</h4><div class="detail-grid">${rows.filter(([,value]) => value !== "" && value != null).map(([label,value]) =>
-    `<span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong>`
-  ).join("")}</div></section>`;
-}
-
-function roomOptions(type,current,currentRoomId) {
-  return `<option value="">Non assegnato</option>` + sortByNumericId(state.data[type]).map(item => {
-    const used = assignedRoom(type,item.id,currentRoomId);
-    const label = `${used ? "🔴" : "🟢"} ${item.id} · ${item.model || item.type}${used ? ` · Sala ${used.id}` : " · Disponibile"}`;
-    return `<option value="${escapeHtml(item.id)}" ${item.id === current ? "selected" : ""}>${escapeHtml(label)}</option>`;
-  }).join("");
+  const room=state.data.rooms.find(item=>item.id===id);
+  modalContent.innerHTML=`<div class="modal-title-row"><h2>Sala ${id}</h2><button class="text-button" id="edit-room">Modifica</button></div>
+    ${(room.stations||[]).map((station,index)=>{
+      const computer=find("computers",station.computerId),hardware=find("hardware",station.hardwareId),avid=find("licenses",station.avidLicenseId),plugins=(station.pluginLicenseIds||[]).map(pid=>find("licenses",pid)).filter(Boolean);
+      return `<section class="detail-block">${room.stations.length>1?`<h4>Postazione ${index+1}</h4>`:""}${detailBlock("Computer",computer?[["ID",computer.id],["Modello",computer.model],["Sistema operativo",computer.os]]:[["Stato","Non assegnato"]])}${detailBlock("Hardware",hardware?[["ID",hardware.id],["Modello",hardware.model]]:[["Stato","Non assegnato"]])}${detailBlock("Avid",avid?[["ID",avid.id],["Tipo",avid.type],["Scadenza",displayDate(avid.expiry)]]:[["Stato","Non assegnata"]])}${plugins.length?detailBlock("Plugin",plugins.map(p=>[p.pluginType,`${p.billingCycle==="monthly"?"Mensile":"Annuale"} · ${displayDate(p.expiry)}`])):""}</section>`;
+    }).join("")}
+    ${room.notes?detailBlock("Note",[["Dettagli",room.notes]]):""}<div class="modal-actions"><button class="secondary-button" id="close-modal">Chiudi</button></div>`;
+  document.getElementById("edit-room").onclick=()=>editRoom(id);document.getElementById("close-modal").onclick=closeModal;openModal();
 }
 
 function editRoom(id) {
-  const room = state.data.rooms.find(item => item.id === id);
-  const oldComputer = room.computerId;
-  const oldLicense = room.licenseId;
-
-  modalContent.innerHTML = `
-    <h2>Modifica Sala ${id}</h2>
-    ${pickerField("computer-picker","Computer",selectedLabel("computers",room.computerId),room.computerId)}
-    ${pickerField("hardware-picker","Hardware video",selectedLabel("hardware",room.hardwareId),room.hardwareId)}
-    ${pickerField("license-picker","Licenza Avid",selectedLabel("licenses",room.licenseId),room.licenseId)}
-
-    <section class="plugin-editor">
-      <div class="plugin-editor-title"><h3>Plugin</h3><button id="add-plugin" class="text-button">+ Aggiungi</button></div>
-      <div id="plugin-editor-list">${renderPluginEditors(room.plugins || [])}</div>
-    </section>
-
-    ${textareaField("room-notes","Note / IP / computer aggiuntivo",room.notes)}
-    <div class="modal-actions">
-      <button class="secondary-button" id="cancel-room">Annulla</button>
-      <button class="primary-button" id="save-room">Salva</button>
-    </div>`;
-
-  document.getElementById("computer-picker").onclick = () => openAssignmentSheet("computers","Computer",value("computer-picker-value"),id,"computer-picker");
-  document.getElementById("hardware-picker").onclick = () => openAssignmentSheet("hardware","Hardware video",value("hardware-picker-value"),id,"hardware-picker");
-  document.getElementById("license-picker").onclick = () => openAssignmentSheet("licenses","Licenza Avid",value("license-picker-value"),id,"license-picker");
-  document.getElementById("add-plugin").onclick = () => addPluginEditor();
-  bindPluginEditorEvents();
-
-  document.getElementById("cancel-room").onclick = () => openRoom(id);
-  document.getElementById("save-room").onclick = () => {
-    const computerId = value("computer-picker-value");
-    const hardwareId = value("hardware-picker-value");
-    let licenseId = value("license-picker-value");
-
-    const duplicateComputer = computerId && assignedRoom("computers",computerId,id);
-    const duplicateHardware = hardwareId && assignedRoom("hardware",hardwareId,id);
-    const duplicateLicense = licenseId && assignedRoom("licenses",licenseId,id);
-
-    if (duplicateComputer) return alert(`COMPUTER ${computerId} già assegnato alla Sala ${duplicateComputer.id}.`);
-    if (duplicateHardware) return alert(`HARDWARE ${hardwareId} già assegnato alla Sala ${duplicateHardware.id}.`);
-    if (duplicateLicense) return alert(`LICENZA ${licenseId} già assegnata alla Sala ${duplicateLicense.id}.`);
-
-    if (oldComputer !== computerId && oldLicense) {
-      const keep = confirm(`Hai cambiato computer. Vuoi mantenere la licenza Avid ${oldLicense} assegnata alla Sala ${id}?\n\nOK = mantieni\nAnnulla = rimuovi`);
-      if (!keep) licenseId = "";
-    }
-
-    room.computerId = computerId;
-    room.hardwareId = hardwareId;
-    room.licenseId = licenseId;
-    room.plugins = collectPlugins();
-    room.notes = value("room-notes");
-
-    if (renewPlugins(state.data)) {}
-    saveData(state.data);
-    closeModal();
-    render();
-  };
+  const room=state.data.rooms.find(item=>item.id===id);
+  modalContent.innerHTML=`<h2>Modifica Sala ${id}</h2><div id="stations-editor">${(room.stations||[]).map((station,index)=>stationEditor(station,index,room.id,room.stations.length)).join("")}</div><button id="add-station" class="secondary-button full-button">+ Aggiungi postazione</button>${textareaField("room-notes","Note / IP",room.notes)}<div class="modal-actions"><button class="secondary-button" id="cancel-room">Annulla</button><button class="primary-button" id="save-room">Salva</button></div>`;
+  bindStationEditorEvents(room.id);
+  document.getElementById("add-station").onclick=()=>{const c=document.getElementById("stations-editor"),i=c.querySelectorAll(".station-editor-card").length;c.insertAdjacentHTML("beforeend",stationEditor({computerId:"",hardwareId:"",avidLicenseId:"",pluginLicenseIds:[]},i,room.id,i+1));bindStationEditorEvents(room.id);};
+  document.getElementById("cancel-room").onclick=()=>openRoom(id);
+  document.getElementById("save-room").onclick=()=>{room.stations=collectStations();room.notes=value("room-notes");saveData(state.data);closeModal();render();};
+  openModal();
 }
 
-function selectedLabel(type,id) {
-  if (!id) return "Non assegnato";
-  const item = find(type,id);
-  return item ? `${item.id} · ${item.model || item.type}` : "Non assegnato";
+function stationEditor(station,index,roomId,total) {
+  return `<section class="station-editor-card" data-station-index="${index}"><div class="station-editor-header">${total>1?`<strong>Postazione ${index+1}</strong>`:"<strong>Configurazione sala</strong>"}${index>0?`<button class="danger-link" data-remove-station="${index}">Rimuovi</button>`:""}</div>${pickerField(`station-${index}-computer`,"Computer",selectedLabel("computers",station.computerId),station.computerId)}${pickerField(`station-${index}-hardware`,"Hardware",selectedLabel("hardware",station.hardwareId),station.hardwareId)}${pickerField(`station-${index}-avid`,"Licenza Avid",selectedLabel("licenses",station.avidLicenseId),station.avidLicenseId)}${multiPickerField(`station-${index}-plugins`,"Plugin",(station.pluginLicenseIds||[]))}</section>`;
 }
 
-function pickerField(id,label,text,currentValue) {
-  return `<div class="field"><label>${label}</label><button type="button" id="${id}" class="picker-button"><span>${escapeHtml(text)}</span><span class="picker-chevron">›</span></button><input type="hidden" id="${id}-value" value="${escapeHtml(currentValue)}"></div>`;
+function multiPickerField(id,label,ids){const text=ids.length?ids.map(x=>find("licenses",x)?.pluginType||x).join(", "):"Nessun plugin";return `<div class="field"><label>${label}</label><button type="button" id="${id}" class="picker-button"><span>${escapeHtml(text)}</span><span class="picker-chevron">›</span></button><input type="hidden" id="${id}-value" value="${escapeHtml(ids.join(","))}"></div>`;}
+
+function bindStationEditorEvents(roomId){
+  document.querySelectorAll(".station-editor-card").forEach(card=>{const i=card.dataset.stationIndex;document.getElementById(`station-${i}-computer`).onclick=()=>openAssignmentSheet("computers","Computer",value(`station-${i}-computer-value`),roomId,`station-${i}-computer`);document.getElementById(`station-${i}-hardware`).onclick=()=>openAssignmentSheet("hardware","Hardware",value(`station-${i}-hardware-value`),roomId,`station-${i}-hardware`);document.getElementById(`station-${i}-avid`).onclick=()=>openLicenseSheet("avid",value(`station-${i}-avid-value`),roomId,`station-${i}-avid`,false);document.getElementById(`station-${i}-plugins`).onclick=()=>openLicenseSheet("plugin",value(`station-${i}-plugins-value`),roomId,`station-${i}-plugins`,true);});
+  document.querySelectorAll("[data-remove-station]").forEach(btn=>btn.onclick=()=>btn.closest(".station-editor-card").remove());
 }
+function collectStations(){return [...document.querySelectorAll(".station-editor-card")].map(card=>{const i=card.dataset.stationIndex;return {computerId:value(`station-${i}-computer-value`),hardwareId:value(`station-${i}-hardware-value`),avidLicenseId:value(`station-${i}-avid-value`),pluginLicenseIds:value(`station-${i}-plugins-value`).split(",").filter(Boolean)};});}
 
-function openAssignmentSheet(type,label,current,currentRoomId,targetId) {
-  const items = sortByNumericId(state.data[type]);
-  const free = items.filter(item => !assignedRoom(type,item.id,currentRoomId));
-  const used = items.filter(item => assignedRoom(type,item.id,currentRoomId));
-
-  sheetContent.innerHTML = `
-    <div class="sheet-handle"></div>
-    <div class="sheet-title-row"><h2>Seleziona ${label}</h2><button id="close-sheet" class="text-button">Chiudi</button></div>
-    <button class="sheet-option neutral ${current === "" ? "selected" : ""}" data-sheet-value="">
-      <strong>Non assegnato</strong><span>Nessun elemento</span>
-    </button>
-    ${free.length ? `<h3 class="sheet-section-title">Disponibili</h3>${free.map(item => sheetOption(type,item,current,currentRoomId)).join("")}` : ""}
-    ${used.length ? `<h3 class="sheet-section-title">Già assegnati</h3>${used.map(item => sheetOption(type,item,current,currentRoomId)).join("")}` : ""}
-  `;
-
-  sheetContent.querySelectorAll("[data-sheet-value]").forEach(button => {
-    button.onclick = () => {
-      const id = button.dataset.sheetValue;
-      const usedRoom = id && assignedRoom(type,id,currentRoomId);
-      if (usedRoom) {
-        const name = type === "computers" ? "COMPUTER" : type === "hardware" ? "HARDWARE" : "LICENZA";
-        alert(`${name} ${id} già assegnato/a alla Sala ${usedRoom.id}.`);
-        return;
-      }
-      document.getElementById(`${targetId}-value`).value = id;
-      document.getElementById(targetId).querySelector("span").textContent = selectedLabel(type,id);
-      closeSheet();
-    };
-  });
-  document.getElementById("close-sheet").onclick = closeSheet;
-  openSheet();
-}
-
-function sheetOption(type,item,current,currentRoomId) {
-  const usedRoom = assignedRoom(type,item.id,currentRoomId);
-  const stateClass = usedRoom ? "used" : "free";
-  const subtitle = usedRoom ? `Assegnato alla Sala ${usedRoom.id}` : "Disponibile";
-  return `<button class="sheet-option ${stateClass} ${item.id === current ? "selected" : ""}" data-sheet-value="${escapeHtml(item.id)}">
-    <strong>${escapeHtml(item.id)} · ${escapeHtml(item.model || item.type)}</strong>
-    <span>${escapeHtml(subtitle)}</span>
-  </button>`;
-}
-
-function openSheet() {
-  if (!sheet.open) sheet.showModal();
-  sheetContent.classList.remove("sheet-enter");
-  void sheetContent.offsetWidth;
-  sheetContent.classList.add("sheet-enter");
-}
-
-function closeSheet() {
-  sheetContent.classList.add("sheet-leave");
-  setTimeout(() => {
-    sheetContent.classList.remove("sheet-leave");
-    sheet.close();
-  },160);
-}
-
-function renderPluginEditors(plugins) {
-  return plugins.map((plugin,index) => pluginEditor(plugin,index)).join("");
-}
-
-function pluginEditor(plugin,index) {
-  const type = plugin.type || "Continuum";
-  const cycle = plugin.billingCycle || "annual";
-  return `<div class="plugin-editor-card" data-plugin-index="${index}">
-    <div class="plugin-editor-head"><strong>Plugin ${index+1}</strong><button type="button" class="remove-plugin danger-link" data-remove-plugin="${index}">Rimuovi</button></div>
-    <div class="segmented typed plugin-type-segment">
-      <button type="button" class="${type === "Continuum" ? "selected" : ""}" data-plugin-type="Continuum">CONTINUUM</button>
-      <button type="button" class="${type === "Sapphire" ? "selected" : ""}" data-plugin-type="Sapphire">SAPPHIRE</button>
-    </div>
-    <input type="hidden" class="plugin-type-value" value="${escapeHtml(type)}">
-    <div class="field"><label>Seriale</label><input class="plugin-serial" value="${escapeHtml(plugin.serial || "")}"></div>
-    <div class="segmented">
-      <button type="button" class="${cycle === "monthly" ? "selected" : ""}" data-plugin-cycle="monthly">MENSILE</button>
-      <button type="button" class="${cycle === "annual" ? "selected" : ""}" data-plugin-cycle="annual">ANNUALE</button>
-    </div>
-    <input type="hidden" class="plugin-cycle-value" value="${escapeHtml(cycle)}">
-    <div class="field"><label>Data attivazione</label><input type="date" class="plugin-activation" value="${escapeHtml(plugin.activation || isoToday())}"></div>
-    <div class="field"><label>Data scadenza</label><input type="date" class="plugin-expiry" value="${escapeHtml(plugin.expiry || addCycle(plugin.activation || isoToday(),cycle))}" readonly></div>
-    <label class="check-card compact-check"><input type="checkbox" class="plugin-deactivation" ${plugin.deactivationRequested ? "checked" : ""}><span><strong>Sospensione richiesta</strong></span></label>
-  </div>`;
-}
-
-function addPluginEditor() {
-  const container = document.getElementById("plugin-editor-list");
-  const index = container.querySelectorAll(".plugin-editor-card").length;
-  container.insertAdjacentHTML("beforeend",pluginEditor({type:"Continuum",billingCycle:"annual",activation:isoToday(),expiry:addCycle(isoToday(),"annual")},index));
-  bindPluginEditorEvents();
-}
-
-function bindPluginEditorEvents() {
-  document.querySelectorAll(".plugin-editor-card").forEach(card => {
-    card.querySelectorAll("[data-plugin-type]").forEach(button => button.onclick = () => {
-      card.querySelectorAll("[data-plugin-type]").forEach(peer => peer.classList.remove("selected"));
-      button.classList.add("selected");
-      card.querySelector(".plugin-type-value").value = button.dataset.pluginType;
-    });
-    card.querySelectorAll("[data-plugin-cycle]").forEach(button => button.onclick = () => {
-      card.querySelectorAll("[data-plugin-cycle]").forEach(peer => peer.classList.remove("selected"));
-      button.classList.add("selected");
-      card.querySelector(".plugin-cycle-value").value = button.dataset.pluginCycle;
-      recalcPluginCard(card);
-    });
-    card.querySelector(".plugin-activation").onchange = () => recalcPluginCard(card);
-  });
-  document.querySelectorAll("[data-remove-plugin]").forEach(button => button.onclick = () => {
-    button.closest(".plugin-editor-card").remove();
-  });
-}
-
-function recalcPluginCard(card) {
-  const activation = card.querySelector(".plugin-activation").value || isoToday();
-  const cycle = card.querySelector(".plugin-cycle-value").value || "annual";
-  card.querySelector(".plugin-activation").value = activation;
-  card.querySelector(".plugin-expiry").value = addCycle(activation,cycle);
-}
-
-function collectPlugins() {
-  return [...document.querySelectorAll(".plugin-editor-card")].map(card => ({
-    type:card.querySelector(".plugin-type-value").value,
-    serial:card.querySelector(".plugin-serial").value.trim(),
-    billingCycle:card.querySelector(".plugin-cycle-value").value,
-    activation:card.querySelector(".plugin-activation").value,
-    expiry:card.querySelector(".plugin-expiry").value,
-    deactivationRequested:card.querySelector(".plugin-deactivation").checked
-  }));
+function openLicenseSheet(category,current,roomId,targetId,multiple){
+  const currentIds=multiple?(current?current.split(","):[]):[current].filter(Boolean),items=sortByNumericId(state.data.licenses.filter(x=>x.category===category));
+  sheetContent.innerHTML=`<div class="sheet-handle"></div><div class="sheet-title-row"><h2>Seleziona ${category==="avid"?"Avid":"Plugin"}</h2><button id="close-sheet" class="text-button">Chiudi</button></div>${items.map(item=>{const used=assignedRoom("licenses",item.id,roomId);return `<button class="sheet-option ${used?"used":"free"} ${currentIds.includes(item.id)?"selected":""}" data-license-value="${escapeHtml(item.id)}"><strong>${escapeHtml(item.id)} · ${escapeHtml(item.category==="avid"?item.type:item.pluginType)}</strong><span>${used?`Assegnata alla Sala ${used.id}`:"Disponibile"}</span></button>`;}).join("")}<div class="modal-actions"><button id="confirm-license-sheet" class="primary-button">Conferma</button></div>`;
+  let selected=[...currentIds];
+  sheetContent.querySelectorAll("[data-license-value]").forEach(btn=>btn.onclick=()=>{const id=btn.dataset.licenseValue,used=assignedRoom("licenses",id,roomId);if(used){alert(`LICENZA ${id} già assegnata alla Sala ${used.id}.`);return;}if(multiple){selected=selected.includes(id)?selected.filter(x=>x!==id):[...selected,id];btn.classList.toggle("selected");}else{selected=[id];sheetContent.querySelectorAll("[data-license-value]").forEach(x=>x.classList.remove("selected"));btn.classList.add("selected");}});
+  document.getElementById("confirm-license-sheet").onclick=()=>{document.getElementById(`${targetId}-value`).value=selected.join(",");document.getElementById(targetId).querySelector("span").textContent=multiple?(selected.length?selected.map(x=>find("licenses",x)?.pluginType||x).join(", "):"Nessun plugin"):selectedLabel("licenses",selected[0]||"");closeSheet();};document.getElementById("close-sheet").onclick=closeSheet;openSheet();
 }
 function openItemView(type,id) {
   const item = find(type,id);
@@ -462,6 +257,8 @@ function openItemView(type,id) {
     ["Magazzino",item.warehouse ? "Sì" : "No"],["Posizione",item.warehouseLocation],["Assegnazione",room ? `Sala ${room.id}` : "Disponibile"],["Note",item.notes]
   ] : type === "hardware" ? [
     ["Modello",item.model],["Seriale",item.serial],["Driver",item.driver],["Assegnazione",room ? `Sala ${room.id}` : "Disponibile"],["Note",item.notes]
+  ] : item.category === "plugin" ? [
+    ["Tipo","Plugin"],["Plugin",item.pluginType],["Seriale",item.serial],["Durata",item.billingCycle==="monthly"?"Mensile":"Annuale"],["Attivazione",displayDate(item.activation)],["Scadenza",displayDate(item.expiry)],["Sospensione richiesta",item.deactivationRequested?"Sì":"No"],["Assegnazione",room?assignedStationLabel("licenses",item.id):"Magazzino"],["Note",item.notes]
   ] : [
     ["Tipo",item.type],["System ID",item.systemId],["Codice",item.code],["Versione",item.version],
     ["Durata",item.billingCycle === "monthly" ? "Mensile" : "Annuale"],["Attivazione",displayDate(item.activation)],
@@ -568,7 +365,7 @@ function saveItem(type,oldId) {
     item = {id:value("item-id"),model:value("model"),serial:value("serial"),driver:value("driver"),notes:value("notes")};
   } else {
     item = {
-      id:value("item-id"),type:value("license-type-value"),systemId:value("system-id"),code:value("code"),
+      id:value("item-id"),category:"avid",type:value("license-type-value"),systemId:value("system-id"),code:value("code"),
       version:value("version"),billingCycle:value("billing-cycle-value"),activation:value("activation"),
       expiry:value("expiry"),deactivationRequested:document.getElementById("deactivation").checked,notes:value("notes")
     };
@@ -603,45 +400,7 @@ function deleteItem(type,id) {
 }
 
 function renderSummary() {
-  app.innerHTML = `<section class="summary-sheet">
-    <div class="summary-heading"><h2>Riepilogo sale</h2><p>Vista non modificabile</p></div>
-    ${state.data.rooms.map(room => {
-      const computer = find("computers",room.computerId);
-      const hardware = find("hardware",room.hardwareId);
-      const license = find("licenses",room.licenseId);
-      const plugins = room.plugins || [];
-      const avidClass = license ? license.type.toLowerCase() : "empty";
-
-      return `<article class="summary-room-card glass">
-        <header>Sala ${room.id}</header>
-        <div class="summary-columns">
-          <section>
-            <small>COMPUTER</small>
-            <strong>${computer ? escapeHtml(computer.id) : "—"}</strong>
-            <span>${computer ? escapeHtml(computer.model) : "Non assegnato"}</span>
-            ${computer?.os ? `<span class="os-badge os-${escapeHtml(computer.os.toLowerCase())}">${escapeHtml(computer.os.toUpperCase())}</span>` : ""}
-          </section>
-          <section>
-            <small>HARDWARE</small>
-            <strong>${hardware ? escapeHtml(hardware.id) : "—"}</strong>
-            <span>${hardware ? escapeHtml(hardware.model) : "Non assegnato"}</span>
-          </section>
-          <section class="summary-avid ${avidClass}">
-            <small>AVID</small>
-            <strong>${license ? escapeHtml(license.id) : "—"}</strong>
-            <span>${license ? escapeHtml(license.type.toUpperCase()) : "Non assegnata"}</span>
-          </section>
-          <section>
-            <small>PLUGIN</small>
-            ${plugins.length ? plugins.map(plugin => {
-              const ps = pluginStatus(plugin);
-              return `<div class="summary-plugin"><strong>${escapeHtml(plugin.type.toUpperCase())}</strong><span class="${ps.level}">${escapeHtml(ps.label)}</span></div>`;
-            }).join("") : `<span>Nessun plugin</span>`}
-          </section>
-        </div>
-      </article>`;
-    }).join("")}
-  </section>`;
+  app.innerHTML=`<section class="summary-sheet"><div class="summary-heading"><h2>Riepilogo sale</h2><p>Vista non modificabile</p></div>${state.data.rooms.map(room=>`<article class="summary-room-card glass"><header>Sala ${room.id}</header>${(room.stations||[]).map(station=>{const computer=find("computers",station.computerId),hardware=find("hardware",station.hardwareId),avid=find("licenses",station.avidLicenseId),plugins=(station.pluginLicenseIds||[]).map(id=>find("licenses",id)).filter(Boolean);return `<div class="summary-columns"><section><small>COMPUTER</small><strong>${computer?escapeHtml(computer.id):"—"}</strong><span>${computer?escapeHtml(computer.model):"Non assegnato"}</span>${computer?.os?`<span class="os-badge os-${escapeHtml(computer.os.toLowerCase())}">${escapeHtml(computer.os.toUpperCase())}</span>`:""}</section><section><small>HARDWARE</small><strong>${hardware?escapeHtml(hardware.id):"—"}</strong><span>${hardware?escapeHtml(hardware.model):"Non assegnato"}</span></section><section class="summary-avid ${avid?avid.type.toLowerCase():"empty"}"><small>AVID</small><strong>${avid?escapeHtml(avid.id):"—"}</strong><span>${avid?escapeHtml(avid.type.toUpperCase()):"Non assegnata"}</span></section><section><small>PLUGIN</small>${plugins.length?plugins.map(p=>`<div class="summary-plugin"><strong>${escapeHtml(p.pluginType.toUpperCase())}</strong><span>${p.billingCycle==="monthly"?"MENSILE":"ANNUALE"}</span></div>`).join(""):`<span>Nessun plugin</span>`}</section></div>`;}).join("")}</article>`).join("")}</section>`;
 }
 function renderSettings() {
   app.innerHTML = `
@@ -707,44 +466,23 @@ function openNotifications() {
 }
 
 function openAddMenu() {
-  modalContent.innerHTML = `
-    <h2>Aggiungi</h2>
-    <div class="add-menu">
-      <button data-add="computers"><span class="add-icon">🖥</span><strong>Nuovo computer</strong></button>
-      <button data-add="hardware"><span class="add-icon rec-add">●</span><strong>Nuovo hardware</strong></button>
-      <button data-add="licenses"><span class="add-icon">🔑</span><strong>Nuova licenza</strong></button>
-    </div>
-    <div class="modal-actions"><button class="secondary-button" id="close-modal">Annulla</button></div>`;
-
-  modalContent.querySelectorAll("[data-add]").forEach(button => {
-    button.onclick = () => openItemEdit(button.dataset.add);
-  });
-  document.getElementById("close-modal").onclick = closeModal;
-  openModal();
+  modalContent.innerHTML=`<h2>Aggiungi</h2><div class="add-menu">${state.view==="licenses"?`<button data-license-kind="avid"><span class="add-icon">A</span><strong>Licenza Avid</strong></button><button data-license-kind="plugin"><span class="add-icon">P</span><strong>Plugin</strong></button>`:`<button data-add="computers"><span class="add-icon">🖥</span><strong>Nuovo computer</strong></button><button data-add="hardware"><span class="add-icon rec-add">●</span><strong>Nuovo hardware</strong></button><button data-add="licenses"><span class="add-icon">🔑</span><strong>Nuova licenza</strong></button>`}</div><div class="modal-actions"><button class="secondary-button" id="close-modal">Annulla</button></div>`;
+  modalContent.querySelectorAll("[data-add]").forEach(button=>button.onclick=()=>openItemEdit(button.dataset.add));
+  modalContent.querySelectorAll("[data-license-kind]").forEach(button=>button.onclick=()=>openLicenseEdit(button.dataset.licenseKind));
+  document.getElementById("close-modal").onclick=closeModal;openModal();
 }
 
-function assignmentPicker(type,label,current,currentRoomId) {
-  const items = sortByNumericId(state.data[type]);
-  const cards = [
-    `<button type="button" class="assignment-option ${current === "" ? "selected" : ""}" data-assignment-option data-group="${type}" data-value="">
-      <span class="assignment-name">Non assegnato</span>
-      <span class="assignment-status neutral">Nessun elemento</span>
-    </button>`,
-    ...items.map(item => {
-      const used = assignedRoom(type,item.id,currentRoomId);
-      const selected = item.id === current;
-      const statusClass = used ? "used" : "free";
-      const statusText = used ? `Assegnato alla Sala ${used.id}` : "Disponibile";
-      return `<button type="button" class="assignment-option ${statusClass} ${selected ? "selected" : ""}" data-assignment-option data-group="${type}" data-value="${escapeHtml(item.id)}">
-        <span class="assignment-name">${escapeHtml(item.id)} · ${escapeHtml(item.model || item.type)}</span>
-        <span class="assignment-status ${statusClass}">${escapeHtml(statusText)}</span>
-      </button>`;
-    })
-  ].join("");
-
-  return `<div class="field"><label>${label}</label><div class="assignment-picker">${cards}</div><input type="hidden" id="assignment-${type}" value="${escapeHtml(current)}"></div>`;
+function openLicenseEdit(kind,id=""){
+  const item=id?find("licenses",id):{},isNew=!id,category=kind||item.category||"avid";
+  if(category==="plugin"){
+    const activation=item.activation||isoToday(),cycle=item.billingCycle||"annual";
+    modalContent.innerHTML=`<h2>${isNew?"Aggiungi":"Modifica"} plugin</h2>${inputField("item-id","ID licenza",item.id||"")}<div class="field"><label>Plugin</label>${segmentControl("plugin-type",["Continuum","Sapphire"],item.pluginType||"Continuum","typed")}</div>${inputField("serial","Seriale",item.serial||"")}<div class="field"><label>Durata</label>${segmentControl("billing-cycle",["monthly","annual"],cycle)}</div>${inputField("activation","Data attivazione",activation,"date")}${inputField("expiry","Data scadenza",item.expiry||addCycle(activation,cycle),"date","readonly")}<label class="check-card"><input id="deactivation" type="checkbox" ${item.deactivationRequested?"checked":""}><span><strong>Sospensione richiesta</strong></span></label>${textareaField("notes","Note",item.notes||"")}${editActions("licenses",id,isNew)}`;
+  }else{openItemEdit("licenses",id);return;}
+  modalContent.querySelectorAll("[data-segment-group]").forEach(button=>button.onclick=()=>{const group=button.dataset.segmentGroup;modalContent.querySelectorAll(`[data-segment-group="${group}"]`).forEach(peer=>peer.classList.remove("selected"));button.classList.add("selected");document.getElementById(`${group}-value`).value=button.dataset.value;if(group==="billing-cycle")recalculateExpiry();});
+  document.getElementById("activation").onchange=recalculateExpiry;document.getElementById("cancel-edit").onclick=()=>id?openItemView("licenses",id):closeModal();
+  document.getElementById("save-edit").onclick=()=>{const obj={id:value("item-id"),category:"plugin",pluginType:value("plugin-type-value"),serial:value("serial"),billingCycle:value("billing-cycle-value"),activation:value("activation"),expiry:value("expiry"),deactivationRequested:document.getElementById("deactivation").checked,notes:value("notes")};if(!obj.id)return alert("Inserisci un ID.");if(!id&&find("licenses",obj.id))return alert("Esiste già un elemento con questo ID.");if(id)Object.assign(find("licenses",id),obj);else state.data.licenses.push(obj);saveData(state.data);closeModal();render();};
+  if(!isNew)document.getElementById("delete-edit").onclick=()=>deleteItem("licenses",id);openModal();
 }
-
 function inputField(id,label,inputValue="",type="text",attributes="") {
   return `<div class="field"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${escapeHtml(inputValue)}" ${attributes}></div>`;
 }
@@ -816,7 +554,7 @@ function importBackup(file) {
   reader.readAsText(file);
 }
 
-document.querySelectorAll(".tabbar button").forEach(button => {
+document.querySelectorAll(".tabbar button, .sidebar-nav button").forEach(button => {
   button.onclick = () => setView(button.dataset.view);
 });
 addButton.onclick = openAddMenu;

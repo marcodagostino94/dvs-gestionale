@@ -1,13 +1,9 @@
-const STORAGE_KEY = "dvs_rebuild_data_v2";
+const STORAGE_KEY = "dvs_rebuild_data_v3";
 
 export const DEFAULT_DATA = {
   rooms: Array.from({length: 15}, (_, i) => ({
     id: i + 1,
-    computerId: i === 0 ? "MAC 4" : "",
-    hardwareId: "",
-    licenseId: "",
-    otherLicenses: "",
-    plugins: [],
+    stations: [{computerId:i === 0 ? "MAC 4" : "",hardwareId:"",avidLicenseId:"",pluginLicenseIds:[]}],
     notes: ""
   })),
   computers: [
@@ -30,11 +26,13 @@ export const DEFAULT_DATA = {
     {id:"HW EXPRESS 1",model:"Avid Express",serial:"3155387",driver:"",notes:"Storico"}
   ],
   licenses: [
-    {id:"AVID 02",type:"Ultimate",systemId:"3496914",code:"MUHA-YNSD-RQ8V-DU6F",version:"2022.12.6",billingCycle:"annual",activation:"",expiry:"",deactivationRequested:true,notes:"1 anno – disattivazione richiesta"},
-    {id:"AVID 05",type:"Ultimate",systemId:"",code:"",version:"",billingCycle:"annual",activation:"",expiry:"",deactivationRequested:true,notes:"Completare codici"},
-    {id:"AVID 06",type:"Ultimate",systemId:"10769244273",code:"MUHA-G39S-5P8D-TYCH",version:"2022.12.5",billingCycle:"annual",activation:"",expiry:"",deactivationRequested:true,notes:"Da verificare"},
-    {id:"AVID 09",type:"Ultimate",systemId:"633901897",code:"MUHA-QHXN-RFMP-ZSPF",version:"",billingCycle:"annual",activation:"",expiry:"",deactivationRequested:false,notes:"Da verificare"},
-    {id:"AVID 21",type:"Singolo",systemId:"10620086202",code:"MTHA-VGF5-WEZJ-VKRF",version:"2023.8.2",billingCycle:"annual",activation:"",expiry:"",deactivationRequested:true,notes:"1 anno – disattivazione richiesta"}
+    {id:"AVID 02",category:"avid",type:"Ultimate",systemId:"3496914",code:"MUHA-YNSD-RQ8V-DU6F",version:"2022.12.6",billingCycle:"annual",activation:"",expiry:"",deactivationRequested:true,notes:"1 anno – disattivazione richiesta"},
+    {id:"AVID 05",category:"avid",type:"Ultimate",systemId:"",code:"",version:"",billingCycle:"annual",activation:"",expiry:"",deactivationRequested:true,notes:"Completare codici"},
+    {id:"AVID 06",category:"avid",type:"Ultimate",systemId:"10769244273",code:"MUHA-G39S-5P8D-TYCH",version:"2022.12.5",billingCycle:"annual",activation:"",expiry:"",deactivationRequested:true,notes:"Da verificare"},
+    {id:"AVID 09",category:"avid",type:"Ultimate",systemId:"633901897",code:"MUHA-QHXN-RFMP-ZSPF",version:"",billingCycle:"annual",activation:"",expiry:"",deactivationRequested:false,notes:"Da verificare"},
+    {id:"AVID 21",category:"avid",type:"Singolo",systemId:"10620086202",code:"MTHA-VGF5-WEZJ-VKRF",version:"2023.8.2",billingCycle:"annual",activation:"",expiry:"",deactivationRequested:true,notes:"1 anno – disattivazione richiesta"},
+    {id:"CONT 01",category:"plugin",pluginType:"Continuum",serial:"CONT-DEMO-001",billingCycle:"annual",activation:"",expiry:"",deactivationRequested:false,notes:"Licenza demo"},
+    {id:"SAPP 01",category:"plugin",pluginType:"Sapphire",serial:"SAPP-DEMO-001",billingCycle:"monthly",activation:"",expiry:"",deactivationRequested:false,notes:"Licenza demo"}
   ]
 };
 
@@ -54,26 +52,28 @@ function normalize(data) {
     const id = i + 1;
     return {
       id,
-      computerId: "",
-      hardwareId: "",
-      licenseId: "",
-      otherLicenses: "",
-      plugins: [],
+      stations: [{computerId:"",hardwareId:"",avidLicenseId:"",pluginLicenseIds:[]}],
       notes: "",
       ...(byId.get(id) || {})
     };
   });
 
   result.rooms.forEach(room => {
-    room.plugins = Array.isArray(room.plugins) ? room.plugins.filter(Boolean) : [];
-    room.plugins = room.plugins.map(plugin => ({
-      type: plugin.type === "Sapphire" ? "Sapphire" : "Continuum",
-      serial: plugin.serial || "",
-      billingCycle: plugin.billingCycle === "monthly" ? "monthly" : "annual",
-      activation: plugin.activation || "",
-      expiry: plugin.expiry || "",
-      deactivationRequested: Boolean(plugin.deactivationRequested)
+    if (!Array.isArray(room.stations)) {
+      room.stations = [{
+        computerId: room.computerId || "",
+        hardwareId: room.hardwareId || "",
+        avidLicenseId: room.licenseId || "",
+        pluginLicenseIds: []
+      }];
+    }
+    room.stations = room.stations.filter(Boolean).map(station => ({
+      computerId: station.computerId || "",
+      hardwareId: station.hardwareId || "",
+      avidLicenseId: station.avidLicenseId || station.licenseId || "",
+      pluginLicenseIds: Array.isArray(station.pluginLicenseIds) ? station.pluginLicenseIds : []
     }));
+    if (!room.stations.length) room.stations.push({computerId:"",hardwareId:"",avidLicenseId:"",pluginLicenseIds:[]});
   });
 
   result.computers.forEach(item => {
@@ -90,7 +90,9 @@ function normalize(data) {
   });
 
   result.licenses.forEach(item => {
-    item.type = item.type === "Singolo" ? "Singolo" : "Ultimate";
+    item.category = item.category === "plugin" ? "plugin" : "avid";
+    if (item.category === "avid") item.type = item.type === "Singolo" ? "Singolo" : "Ultimate";
+    if (item.category === "plugin") item.pluginType = item.pluginType === "Sapphire" ? "Sapphire" : "Continuum";
     item.billingCycle = item.billingCycle === "monthly" ? "monthly" : "annual";
     item.activation ||= "";
     item.expiry ||= "";

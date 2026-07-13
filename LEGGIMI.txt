@@ -60,3 +60,12 @@ CORREZIONE VERSIONE 2.1
 - Nessuna credenziale richiesta finché il login cloud non è collegato
 - Face ID/Touch ID mostrato come funzione futura e disattivato
 - Cache aggiornata alla versione 2.1
+
+VERSIONE 3 MAC/IPAD
+- Sidebar laterale automatica da 900 px in su
+- Barra inferiore mantenuta su iPhone
+- Licenze unificate: Avid e Plugin
+- Plugin creati nella sezione Licenze e assegnati alle Sale
+- Più postazioni per ogni Sala
+- Nessuna scritta Postazione nella Sintesi
+- Assegnati prima, Magazzino dopo
