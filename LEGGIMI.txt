@@ -95,3 +95,9 @@ DVS GESTIONALE v4.1 RELEASE CANDIDATE
 - Settings → Informazioni con dati societari e copyright
 - Nessuna animazione strutturale
 - Per database già configurati eseguire sql/migrate_v4_1.sql una sola volta
+
+
+HOTFIX v4.1.0.1
+- Corretta la dichiarazione duplicata della funzione addAction.
+- Risolto il blocco sulla schermata iniziale.
+- Nessuna modifica al database o alla grafica.
