@@ -1,94 +1,31 @@
-DVS GESTIONALE — REBUILD V1
+DVS GESTIONALE v4.0 — BASE PULITA
 
-Questa versione è stata ricostruita da zero con file separati:
-- index.html
-- css/app.css
-- js/app.js
-- js/data.js
-- js/utils.js
-- js/icons.js
+1. Apri Supabase > SQL Editor > New query.
+2. Copia e incolla tutto il contenuto di sql/setup.sql.
+3. Premi Run.
+4. Pubblica questa cartella su GitHub Pages come facevi con le versioni precedenti.
+5. Apri il link e accedi con email/password dell'utente già creato in Supabase.
 
-INSTALLAZIONE SU GITHUB
-1. Estrai lo ZIP.
-2. Copia il contenuto nella cartella locale del repository dvs-gestionale.
-3. Sostituisci tutti i file esistenti.
-4. In GitHub Desktop: Commit to main.
-5. Push origin.
-6. Attendi 1-2 minuti e ricarica il sito con Cmd+Shift+R.
+Questa v4.0 non contiene i dati reali. Il database crea soltanto le 15 sale e una postazione vuota per sala.
+I dati del File Master verranno importati nella v4.1.
 
-FUNZIONI
-- 15 sale
-- Computer, Hardware, Licenze
-- Magazzino e posizione scaffale
-- Sistemi macOS tramite pulsanti
-- Calendari reali per le date
-- Date visualizzate GG-MM-AAAA
-- Licenze mensili/annuali
-- Rinnovo automatico
-- Disattivazione richiesta
-- Giallo a 5 giorni
-- Rosso alla scadenza
-- Notifiche
-- Sintesi non modificabile e stampabile
-- Backup/importazione JSON
+SICUREZZA
+- Nell'app è presente soltanto la Publishable Key, adatta all'uso nel browser.
+- Non inserire mai una Secret Key / service_role nel repository.
+- Tutte le tabelle hanno Row Level Security e sono accessibili solo agli utenti autenticati.
 
+FUNZIONI PRESENTI
+- Login Supabase e sessione persistente
+- Dashboard separata
+- Sidebar Mac/iPad e barra inferiore iPhone
+- Sale con postazioni multiple
+- CRUD Computer, Hardware, Avid e Plugin
+- Assegnazioni dalla Sala o dalla scheda dell'elemento
+- Sostituzione automatica: il vecchio elemento torna in Magazzino
+- Sintesi non modificabile
+- Archivio e registro modifiche predisposti
 
-NOVITÀ REBUILD V1.1
-- Menu assegnazioni con riquadri completi verdi/rossi
-- Badge MENSILE/ANNUALE nella lista Licenze
-- Transizioni morbide tra i menu
-- Animazioni apertura/chiusura schede e sale
-
-
-NOVITÀ VERSIONE 2
-- Logo ufficiale Digital Video Service
-- Splash screen animata
-- Schermata login predisposta per cloud e Face ID/Touch ID
-- Apertura diretta sulla schermata Sale
-- Bottom sheet stile Apple per assegnare Computer, Hardware e Licenze
-- Sale con MAC + modello sulla stessa riga, badge macOS, Avid e plugin
-- Plugin Continuum/Sapphire gestiti dentro la Sala
-- Licenze assegnate prima, non assegnate in fondo
-- Stato licenza con Sala sulla stessa riga
-- Sintesi con quattro riquadri affiancati
-- Solo il riquadro Avid colorato rosa/celeste
-
-
-CORREZIONE VERSIONE 2.1
-- Splash screen con chiusura di sicurezza indipendente dal modulo principale
-- Pulsante esplicito “Entra in modalità anteprima”
-- Nessuna credenziale richiesta finché il login cloud non è collegato
-- Face ID/Touch ID mostrato come funzione futura e disattivato
-- Cache aggiornata alla versione 2.1
-
-VERSIONE 3 MAC/IPAD
-- Sidebar laterale automatica da 900 px in su
-- Barra inferiore mantenuta su iPhone
-- Licenze unificate: Avid e Plugin
-- Plugin creati nella sezione Licenze e assegnati alle Sale
-- Più postazioni per ogni Sala
-- Nessuna scritta Postazione nella Sintesi
-- Assegnati prima, Magazzino dopo
-
-
-CORREZIONE VERSIONE 3.1
-- Ripristinata apertura dettagli di Sale, Computer, Hardware e Licenze
-- Ripristinata funzione di impaginazione delle informazioni
-- Modifica dei Plugin collegata al relativo modulo Plugin
-- Cache aggiornata per evitare il caricamento del JavaScript precedente
-
-
-CORREZIONE VERSIONE 3.2
-- Ripristinato il pulsante Modifica nelle Sale
-- Ripristinati i selettori stile Apple per Computer e Hardware
-- Eliminato l’annidamento errato delle schede di dettaglio
-- Allineamento etichette/valori corretto
-- Spaziature ottimizzate per Mac e iPhone
-
-
-CORREZIONE VERSIONE 3.3
-- Ripristinate le funzioni di apertura e chiusura del pannello Apple
-- Selettori Computer, Hardware, Avid e Plugin nuovamente funzionanti
-- Compatibilità migliorata con Safari: una sola finestra modale alla volta
-- Il pulsante + nelle Sale propone ora AVID oppure PLUGIN
-- Messaggio chiaro quando non esistono licenze/plugin selezionabili
+NON ANCORA PRESENTI
+- Importazione File Master (v4.1)
+- Face ID / Touch ID e ricerca globale (v4.2)
+- Allegati e backup completi (versioni successive)
