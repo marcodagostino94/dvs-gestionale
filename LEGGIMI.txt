@@ -70,12 +70,13 @@ VERSIONE 4.0.3 SAFE
 - Hardware con ● REC
 
 
-VERSIONE 4.0.4 POLISH
-- Singolo celeste e Ultimate rosa
-- Mensile arancione, Annuale verde, Trial giallo
-- Colore differenziato per ogni versione di macOS
-- Nelle Sale, Avid mostra tipo + durata + Trial
-- Menu di selezione con ingresso/uscita animati
-- Sottomenu del + con ingresso laterale da destra
-- Splash screen con logo che si riduce verso l’angolo
-- Micro-animazioni su pulsanti e card
+VERSIONE 4.0.5 — RICERCA E STILE STABILE
+- Rimosse tutte le animazioni strutturali
+- Ombre statiche su card, menu, pannelli e barra laterale
+- Colori definitivi dei badge Avid, durata, Trial e macOS
+- Nelle Sale Avid mostra tipo, durata e Trial
+- Ricerca globale tramite lente
+- Scorciatoia Command-K su Mac e Control-K sugli altri sistemi
+- Ricerca per Sale, ID, modello, macOS, hardware, Avid, Plugin e assegnazione
+- Apertura diretta del dettaglio dai risultati
+- Nessuna modifica richiesta a Supabase
