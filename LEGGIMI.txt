@@ -144,3 +144,11 @@ HOTFIX v4.2.1 — VAPID
 - Settings → Notifiche mostra “Aggiorna notifiche” quando necessario.
 - Valori dei secret ripuliti da spazi o ritorni a capo nella Edge Function.
 - Nessuna nuova migrazione SQL richiesta.
+
+
+DVS GESTIONALE v4.2.2 — ICONA FINALE
+- Inserita assets/icon.svg.
+- Manifest semplificati e coerenti.
+- Nome app definitivo: DVS Gestionale.
+- Icona collegata in index.html per browser, PWA e dispositivi Apple.
+- Dopo il push, rimuovere e reinstallare la PWA per vedere la nuova icona.
