@@ -110,3 +110,7 @@ dialog{border:0;background:transparent;padding:0;width:min(94vw,540px);max-heigh
   .room-model{max-width:62%}
   .summary-room-card{min-width:680px}
 }
+
+.biometric-button:disabled{opacity:.48;cursor:not-allowed}
+.login-error{color:#ff9da1!important;font-weight:700}
+.login-main-button:disabled{opacity:.72}

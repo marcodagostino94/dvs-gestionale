@@ -827,14 +827,9 @@ modal.addEventListener("click", event => {
 
 
 function showLoginAfterSplash() {
-  setTimeout(() => {
-    splashScreen.classList.add("splash-exit");
-    setTimeout(() => {
-      splashScreen.classList.add("hidden");
-      loginScreen.classList.remove("hidden");
-      loginScreen.classList.add("login-enter");
-    },500);
-  },900);
+  if (typeof window.__dvsRevealLogin === "function") {
+    window.__dvsRevealLogin();
+  }
 }
 
 function enterApplication() {
@@ -848,12 +843,16 @@ function enterApplication() {
   },320);
 }
 
-loginButton.onclick = enterApplication;
-biometricButton.onclick = () => {
-  document.getElementById("login-note").textContent = "Face ID / Touch ID sarà operativo dopo il collegamento al login cloud sicuro.";
-  biometricButton.classList.add("biometric-pulse");
-  setTimeout(() => biometricButton.classList.remove("biometric-pulse"),600);
+loginButton.onclick = () => {
+  loginButton.disabled = true;
+  loginButton.textContent = "Apertura…";
+  enterApplication();
 };
+if (biometricButton && !biometricButton.disabled) {
+  biometricButton.onclick = () => {
+    document.getElementById("login-note").textContent = "Face ID / Touch ID sarà operativo dopo il collegamento al login cloud sicuro.";
+  };
+}
 
 sheet.addEventListener("click",event => {
   if (event.target === sheet) closeSheet();
@@ -868,7 +867,7 @@ if ("serviceWorker" in navigator) {
     try {
       const registrations = await navigator.serviceWorker.getRegistrations();
       for (const registration of registrations) await registration.unregister();
-      await navigator.serviceWorker.register("sw.js?v=1.0.0");
+      await navigator.serviceWorker.register("sw.js?v=2.1.0");
     } catch (error) {
       console.warn("Service worker non disponibile:",error);
     }

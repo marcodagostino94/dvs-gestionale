@@ -52,3 +52,11 @@ NOVITÀ VERSIONE 2
 - Stato licenza con Sala sulla stessa riga
 - Sintesi con quattro riquadri affiancati
 - Solo il riquadro Avid colorato rosa/celeste
+
+
+CORREZIONE VERSIONE 2.1
+- Splash screen con chiusura di sicurezza indipendente dal modulo principale
+- Pulsante esplicito “Entra in modalità anteprima”
+- Nessuna credenziale richiesta finché il login cloud non è collegato
+- Face ID/Touch ID mostrato come funzione futura e disattivato
+- Cache aggiornata alla versione 2.1

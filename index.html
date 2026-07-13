@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="assets/icon.svg">
   <link rel="icon" href="assets/icon.svg">
-  <link rel="stylesheet" href="css/app.css?v=2.0.0">
+  <link rel="stylesheet" href="css/app.css?v=2.1.0">
   <title>DVS Gestionale</title>
 </head>
 <body>
@@ -39,12 +39,12 @@
         <span>Mantieni l'accesso</span>
       </label>
 
-      <button id="login-button" class="primary-button login-main-button">Accedi</button>
-      <button id="biometric-button" class="secondary-button biometric-button">
+      <button id="login-button" class="primary-button login-main-button">Entra in modalità anteprima</button>
+      <button id="biometric-button" class="secondary-button biometric-button" disabled>
         <span class="face-id-symbol">◎</span>
-        Accedi con Face ID / Touch ID
+        Face ID / Touch ID — disponibile con il cloud
       </button>
-      <p id="login-note" class="login-note">Modalità anteprima: il login sicuro e Face ID saranno attivati con il database cloud.</p>
+      <p id="login-note" class="login-note">Non servono credenziali in questa fase. Il login sicuro sarà attivato con il database cloud.</p>
     </div>
   </section>
 
@@ -90,6 +90,32 @@
     <div id="sheet-content" class="bottom-sheet glass"></div>
   </dialog>
 
-  <script type="module" src="js/app.js?v=2.0.0"></script>
+
+  <script>
+    (function () {
+      function revealLogin() {
+        var splash = document.getElementById("splash-screen");
+        var login = document.getElementById("login-screen");
+        if (!splash || !login) return;
+        splash.classList.add("splash-exit");
+        window.setTimeout(function () {
+          splash.classList.add("hidden");
+          login.classList.remove("hidden");
+          login.classList.add("login-enter");
+        }, 450);
+      }
+      window.__dvsRevealLogin = revealLogin;
+      window.setTimeout(revealLogin, 1100);
+
+      window.addEventListener("error", function (event) {
+        var note = document.getElementById("login-note");
+        if (note) {
+          note.textContent = "Errore di caricamento: ricarica la pagina ignorando la cache.";
+          note.classList.add("login-error");
+        }
+      });
+    })();
+  </script>
+  <script type="module" src="js/app.js?v=2.1.0"></script>
 </body>
 </html>
