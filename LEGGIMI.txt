@@ -84,3 +84,11 @@ CORREZIONE VERSIONE 3.2
 - Eliminato l’annidamento errato delle schede di dettaglio
 - Allineamento etichette/valori corretto
 - Spaziature ottimizzate per Mac e iPhone
+
+
+CORREZIONE VERSIONE 3.3
+- Ripristinate le funzioni di apertura e chiusura del pannello Apple
+- Selettori Computer, Hardware, Avid e Plugin nuovamente funzionanti
+- Compatibilità migliorata con Safari: una sola finestra modale alla volta
+- Il pulsante + nelle Sale propone ora AVID oppure PLUGIN
+- Messaggio chiaro quando non esistono licenze/plugin selezionabili

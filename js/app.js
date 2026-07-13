@@ -293,6 +293,40 @@ function pickerField(id,label,text,currentValue) {
   </div>`;
 }
 
+
+function openSheet() {
+  // Safari is more reliable if only one modal dialog is open at a time.
+  const reopenEditor = modal.open;
+  sheet.dataset.reopenEditor = reopenEditor ? "true" : "false";
+
+  if (reopenEditor) modal.close();
+
+  if (!sheet.open) sheet.showModal();
+  sheetContent.classList.remove("sheet-leave","sheet-enter");
+  void sheetContent.offsetWidth;
+  sheetContent.classList.add("sheet-enter");
+}
+
+function closeSheet() {
+  if (!sheet.open) return;
+
+  const reopenEditor = sheet.dataset.reopenEditor === "true";
+  sheetContent.classList.remove("sheet-enter");
+  sheetContent.classList.add("sheet-leave");
+
+  window.setTimeout(() => {
+    sheetContent.classList.remove("sheet-leave");
+    sheet.close();
+
+    if (reopenEditor && !modal.open) {
+      modal.showModal();
+      modalContent.classList.remove("modal-leave","modal-enter");
+      void modalContent.offsetWidth;
+      modalContent.classList.add("modal-enter");
+    }
+  },160);
+}
+
 function openAssignmentSheet(type,label,current,currentRoomId,targetId) {
   const items = sortByNumericId(state.data[type]);
   const currentIds = [current].filter(Boolean);
@@ -363,7 +397,7 @@ function collectStations(){return [...document.querySelectorAll(".station-editor
 
 function openLicenseSheet(category,current,roomId,targetId,multiple){
   const currentIds=multiple?(current?current.split(","):[]):[current].filter(Boolean),items=sortByNumericId(state.data.licenses.filter(x=>x.category===category));
-  sheetContent.innerHTML=`<div class="sheet-handle"></div><div class="sheet-title-row"><h2>Seleziona ${category==="avid"?"Avid":"Plugin"}</h2><button id="close-sheet" class="text-button">Chiudi</button></div>${items.map(item=>{const used=assignedRoom("licenses",item.id,roomId);return `<button class="sheet-option ${used?"used":"free"} ${currentIds.includes(item.id)?"selected":""}" data-license-value="${escapeHtml(item.id)}"><strong>${escapeHtml(item.id)} · ${escapeHtml(item.category==="avid"?item.type:item.pluginType)}</strong><span>${used?`Assegnata alla Sala ${used.id}`:"Disponibile"}</span></button>`;}).join("")}<div class="modal-actions"><button id="confirm-license-sheet" class="primary-button">Conferma</button></div>`;
+  sheetContent.innerHTML=`<div class="sheet-handle"></div><div class="sheet-title-row"><h2>Seleziona ${category==="avid"?"Avid":"Plugin"}</h2><button type="button" id="close-sheet" class="text-button">Chiudi</button></div>${items.length ? items.map(item=>{const used=assignedRoom("licenses",item.id,roomId);return `<button class="sheet-option ${used?"used":"free"} ${currentIds.includes(item.id)?"selected":""}" data-license-value="${escapeHtml(item.id)}"><strong>${escapeHtml(item.id)} · ${escapeHtml(item.category==="avid"?item.type:item.pluginType)}</strong><span>${used?`Assegnata alla Sala ${used.id}`:"Disponibile"}</span></button>`;}).join("") : `<div class="sheet-empty">Nessun elemento disponibile. Crealo prima nella sezione Licenze.</div>`}<div class="modal-actions"><button type="button" id="confirm-license-sheet" class="primary-button">Conferma</button></div>`;
   let selected=[...currentIds];
   sheetContent.querySelectorAll("[data-license-value]").forEach(btn=>btn.onclick=()=>{const id=btn.dataset.licenseValue,used=assignedRoom("licenses",id,roomId);if(used){alert(`LICENZA ${id} già assegnata alla Sala ${used.id}.`);return;}if(multiple){selected=selected.includes(id)?selected.filter(x=>x!==id):[...selected,id];btn.classList.toggle("selected");}else{selected=[id];sheetContent.querySelectorAll("[data-license-value]").forEach(x=>x.classList.remove("selected"));btn.classList.add("selected");}});
   document.getElementById("confirm-license-sheet").onclick=()=>{document.getElementById(`${targetId}-value`).value=selected.join(",");document.getElementById(targetId).querySelector("span").textContent=multiple?(selected.length?selected.map(x=>find("licenses",x)?.pluginType||x).join(", "):"Nessun plugin"):selectedLabel("licenses",selected[0]||"");closeSheet();};document.getElementById("close-sheet").onclick=closeSheet;openSheet();
@@ -589,7 +623,7 @@ function openNotifications() {
 }
 
 function openAddMenu() {
-  modalContent.innerHTML=`<h2>Aggiungi</h2><div class="add-menu">${state.view==="licenses"?`<button data-license-kind="avid"><span class="add-icon">A</span><strong>Licenza Avid</strong></button><button data-license-kind="plugin"><span class="add-icon">P</span><strong>Plugin</strong></button>`:`<button data-add="computers"><span class="add-icon">🖥</span><strong>Nuovo computer</strong></button><button data-add="hardware"><span class="add-icon rec-add">●</span><strong>Nuovo hardware</strong></button><button data-add="licenses"><span class="add-icon">🔑</span><strong>Nuova licenza</strong></button>`}</div><div class="modal-actions"><button class="secondary-button" id="close-modal">Annulla</button></div>`;
+  modalContent.innerHTML=`<h2>Aggiungi</h2><div class="add-menu">${["licenses","rooms"].includes(state.view)?`<button type="button" data-license-kind="avid"><span class="add-icon">A</span><strong>Licenza Avid</strong></button><button type="button" data-license-kind="plugin"><span class="add-icon">P</span><strong>Plugin</strong></button>`:`<button type="button" data-add="computers"><span class="add-icon">🖥</span><strong>Nuovo computer</strong></button><button type="button" data-add="hardware"><span class="add-icon rec-add">●</span><strong>Nuovo hardware</strong></button><button type="button" data-add="licenses"><span class="add-icon">🔑</span><strong>Nuova licenza</strong></button>`}</div><div class="modal-actions"><button class="secondary-button" id="close-modal">Annulla</button></div>`;
   modalContent.querySelectorAll("[data-add]").forEach(button=>button.onclick=()=>openItemEdit(button.dataset.add));
   modalContent.querySelectorAll("[data-license-kind]").forEach(button=>button.onclick=()=>openLicenseEdit(button.dataset.licenseKind));
   document.getElementById("close-modal").onclick=closeModal;openModal();
