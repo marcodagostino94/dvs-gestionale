@@ -56,3 +56,15 @@ HOTFIX 4.0.2.1
 - Rimossa la doppia dichiarazione della funzione todayISO
 - Corretto il blocco sulla schermata iniziale
 - Nessuna modifica richiesta al database
+
+
+VERSIONE 4.0.3
+- Rimosso il pulsante + dalla Dashboard
+- Conferma prima di spostare o sostituire Computer, Hardware, Avid e Plugin
+- Aggiunto pulsante Stampa nella Sintesi
+- Anno/variante accanto al modello nelle Sale e nella Sintesi
+- Il + in Licenze apre direttamente Nuova licenza
+- Ordinamento: Avid assegnate, Plugin assegnati, poi non assegnate
+- Solo “Non assegnato” è rosso
+- Icone definitive e voce Settings
+- Hardware con indicatore personalizzato ● REC
