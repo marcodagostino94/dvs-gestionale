@@ -152,3 +152,17 @@ DVS GESTIONALE v4.2.2 — ICONA FINALE
 - Nome app definitivo: DVS Gestionale.
 - Icona collegata in index.html per browser, PWA e dispositivi Apple.
 - Dopo il push, rimuovere e reinstallare la PWA per vedere la nuova icona.
+
+
+DVS GESTIONALE v4.3 — SINTESI INTERATTIVA EXPERIMENTAL
+- La sezione Sale originale rimane invariata.
+- La Sintesi diventa modificabile direttamente.
+- Click sulle mini-card Computer, Hardware, Avid e Plugin:
+  apre immediatamente il selettore già esistente.
+- Rimangono attive le conferme prima dello spostamento di un asset occupato.
+- Aggiunta area Non assegnati con quattro colonne indipendenti.
+- Il numero di elementi liberi è visibile nell'intestazione di ogni colonna.
+- Gli elementi non assegnati aprono il proprio dettaglio.
+- Stampa e riepilogo finale restano presenti.
+- Nessuna migrazione SQL e nessuna modifica al database.
+- Per tornare indietro basta ripubblicare la v4.2.2.
