@@ -48,3 +48,35 @@
 @media(max-width:620px){
   .segmented button{min-width:calc(50% - 4px)}
 }
+
+.option-check{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:10px!important;
+  min-height:48px;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.045);
+  border-radius:14px;
+  cursor:pointer;
+  color:var(--text)!important;
+}
+.option-check input{
+  flex:0 0 auto;
+  width:19px!important;
+  height:19px!important;
+  margin:0!important;
+  accent-color:var(--red);
+}
+.option-check span{
+  font-size:13px;
+  line-height:1;
+  font-weight:800;
+}
+.badge.trial{
+  background:rgba(255,191,71,.16);
+  border-color:rgba(255,191,71,.38);
+  color:#ffd47f;
+}

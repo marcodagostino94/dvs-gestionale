@@ -33,6 +33,7 @@ create table if not exists public.licenses (
   plugin_type text check (plugin_type in ('Continuum','Sapphire')),
   system_id text, activation_code text, plugin_serial text, version text,
   billing_cycle text not null default 'annual' check (billing_cycle in ('monthly','annual')),
+  is_trial boolean not null default false,
   activation_date date, expiry_date date, deactivation_requested boolean not null default false,
   notes text not null default '', attachments_count integer not null default 0,
   archived_at timestamptz, created_at timestamptz not null default now(), updated_at timestamptz not null default now(),
