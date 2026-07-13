@@ -1,4 +1,4 @@
-DVS GESTIONALE v4.0 — BASE PULITA
+DVS GESTIONALE v4.0 — BASE PULITA 
 
 1. Apri Supabase > SQL Editor > New query.
 2. Copia e incolla tutto il contenuto di sql/setup.sql.
