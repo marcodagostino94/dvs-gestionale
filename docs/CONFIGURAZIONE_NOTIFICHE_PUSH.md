@@ -8,7 +8,7 @@
 
 La chiave pubblica VAPID è già inclusa nell'app:
 
-`BH3-UsCmM4AuQHKdfZLCwRi5j-qM8HsfItLcr9eezb8dBSAZQz72yvzVaPI9bNOBXkjdqdZvnjDkRoNAPgb4L3o`
+`BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc`
 
 La chiave privata è fornita separatamente e non deve essere inserita su GitHub.
 
@@ -74,3 +74,16 @@ Sostituire `YOUR_SERVICE_ROLE_KEY` con la chiave `service_role` del progetto Sup
 ## Sicurezza
 
 La chiave privata VAPID e la service_role key non devono essere pubblicate né inserite nel repository GitHub.
+
+
+## Correzione v4.2.1
+
+Nuova chiave pubblica VAPID:
+
+`BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc`
+
+Aggiornare i secret `VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY`, quindi eseguire
+`Deploy updates` sulla Edge Function.
+
+Dopo aver pubblicato l'app v4.2.1, aprire Settings → Notifiche e premere
+`Aggiorna notifiche` sui dispositivi già registrati.

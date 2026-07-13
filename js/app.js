@@ -2,7 +2,7 @@ import { supabase } from './supabase.js';
 import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, addAudit } from './api.js';
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
-const VAPID_PUBLIC_KEY='BH3-UsCmM4AuQHKdfZLCwRi5j-qM8HsfItLcr9eezb8dBSAZQz72yvzVaPI9bNOBXkjdqdZvnjDkRoNAPgb4L3o';
+const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
 
 const splash=document.getElementById('splash'),login=document.getElementById('login'),shell=document.getElementById('shell'),app=document.getElementById('app'),title=document.getElementById('title'),greeting=document.getElementById('greeting'),modal=document.getElementById('modal'),modalBody=document.getElementById('modal-body'),sheet=document.getElementById('sheet'),sheetBody=document.getElementById('sheet-body'),toast=document.getElementById('toast');
 const views=[['dashboard','dashboard','Dashboard'],['rooms','chair','Sale'],['computers','computer','Computer'],['hardware','rec','Hardware'],['licenses','key','Licenze'],['summary','summary','Sintesi'],['settings','settings','Settings']];
@@ -499,10 +499,23 @@ function pushSupported(){
 function isStandaloneApp(){
   return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 }
-async function currentPushSubscription(){
+async function rawPushSubscription(){
   if(!pushSupported())return null;
   const registration=await navigator.serviceWorker.ready;
   return registration.pushManager.getSubscription();
+}
+function bytesEqual(left,right){
+  if(!left||!right||left.byteLength!==right.byteLength)return false;
+  const a=new Uint8Array(left),b=new Uint8Array(right);
+  return a.every((value,index)=>value===b[index]);
+}
+function subscriptionUsesCurrentKey(subscription){
+  const current=subscription?.options?.applicationServerKey;
+  return !!current&&bytesEqual(current,base64UrlToUint8Array(VAPID_PUBLIC_KEY));
+}
+async function currentPushSubscription(){
+  const subscription=await rawPushSubscription();
+  return subscriptionUsesCurrentKey(subscription)?subscription:null;
 }
 async function savePushSubscription(subscription){
   const json=subscription.toJSON();
@@ -524,6 +537,14 @@ async function enablePushNotifications(){
   if(permission!=='granted')throw new Error('Autorizzazione alle notifiche non concessa.');
   const registration=await navigator.serviceWorker.ready;
   let subscription=await registration.pushManager.getSubscription();
+
+  if(subscription&&!subscriptionUsesCurrentKey(subscription)){
+    const oldEndpoint=subscription.endpoint;
+    await subscription.unsubscribe();
+    await supabase.from('push_subscriptions').delete().eq('endpoint',oldEndpoint);
+    subscription=null;
+  }
+
   if(!subscription){
     subscription=await registration.pushManager.subscribe({
       userVisibleOnly:true,
@@ -534,7 +555,7 @@ async function enablePushNotifications(){
   return subscription;
 }
 async function disablePushNotifications(){
-  const subscription=await currentPushSubscription();
+  const subscription=await rawPushSubscription();
   if(!subscription)return;
   const endpoint=subscription.endpoint;
   await subscription.unsubscribe();
@@ -552,15 +573,17 @@ async function showLocalPushTest(){
 }
 async function openNotificationsSetting(){
   const supported=pushSupported();
-  const subscription=supported?await currentPushSubscription():null;
+  const rawSubscription=supported?await rawPushSubscription():null;
+  const subscription=rawSubscription&&subscriptionUsesCurrentKey(rawSubscription)?rawSubscription:null;
+  const needsUpdate=!!rawSubscription&&!subscription;
   const installed=isStandaloneApp();
   const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
 
   openModal(`<div class="modal-head"><h2>Notifiche</h2><button class="close" data-close>×</button></div>
     <section class="notification-settings">
       <div class="notification-state ${subscription?'enabled':'disabled'}">
-        <strong>${subscription?'Notifiche attive':'Notifiche non attive'}</strong>
-        <span>${supported?'Questo dispositivo può ricevere gli avvisi delle scadenze.':'Questo browser non supporta le notifiche push.'}</span>
+        <strong>${subscription?'Notifiche attive':needsUpdate?'Aggiornamento notifiche richiesto':'Notifiche non attive'}</strong>
+        <span>${supported?(needsUpdate?'Premi Aggiorna notifiche per registrare la nuova chiave di sicurezza.':'Questo dispositivo può ricevere gli avvisi delle scadenze.'):'Questo browser non supporta le notifiche push.'}</span>
       </div>
 
       ${isiOS&&!installed?`<div class="notification-notice"><strong>Su iPhone e iPad</strong><span>Apri il gestionale da Safari, scegli Condividi → Aggiungi alla schermata Home, poi riaprilo dall’icona.</span></div>`:''}
@@ -578,7 +601,7 @@ async function openNotificationsSetting(){
       <div class="actions">
         ${subscription
           ? '<button class="secondary" id="test-notifications">Prova notifica</button><button class="danger" id="disable-notifications">Disattiva</button>'
-          : '<button class="primary" id="enable-notifications" '+(!supported?'disabled':'')+'>Attiva notifiche</button>'}
+          : '<button class="primary" id="enable-notifications" '+(!supported?'disabled':'')+'>'+(needsUpdate?'Aggiorna notifiche':'Attiva notifiche')+'</button>'}
       </div>
     </section>`);
 
@@ -619,7 +642,7 @@ function openSetting(k){
         <h3>DVS Gestionale</h3>
         <p>Gestione Sale, Computer, Hardware e Licenze</p>
         <dl>
-          <div><dt>Versione</dt><dd>4.2 Push Setup</dd></div>
+          <div><dt>Versione</dt><dd>4.2.1 Push</dd></div>
           <div><dt>Build</dt><dd>2026.07.13</dd></div>
           <div><dt>Database</dt><dd>Supabase · Schema 4.2</dd></div>
           <div><dt>Sviluppato da</dt><dd>Marco D'Agostino</dd></div>
@@ -681,4 +704,4 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.2.0.1');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.2.1');boot();

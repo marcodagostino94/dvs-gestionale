@@ -136,3 +136,11 @@ HOTFIX v4.2.0.1
 - Risolto il possibile blocco sulla schermata iniziale dopo l'aggiornamento.
 - Nessuna nuova query Supabase richiesta.
 - La chiave privata VAPID resta separata e non deve essere caricata su GitHub.
+
+
+HOTFIX v4.2.1 — VAPID
+- Nuova coppia VAPID generata con web-push 3.6.7.
+- Aggiornamento automatico delle sottoscrizioni create con la vecchia chiave.
+- Settings → Notifiche mostra “Aggiorna notifiche” quando necessario.
+- Valori dei secret ripuliti da spazi o ritorni a capo nella Edge Function.
+- Nessuna nuova migrazione SQL richiesta.

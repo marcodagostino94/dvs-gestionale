@@ -47,9 +47,9 @@ export default {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const vapidPublic = Deno.env.get("VAPID_PUBLIC_KEY");
-    const vapidPrivate = Deno.env.get("VAPID_PRIVATE_KEY");
-    const vapidSubject = Deno.env.get("VAPID_SUBJECT") || "mailto:admin@example.com";
+    const vapidPublic = Deno.env.get("VAPID_PUBLIC_KEY")?.trim();
+    const vapidPrivate = Deno.env.get("VAPID_PRIVATE_KEY")?.trim();
+    const vapidSubject = Deno.env.get("VAPID_SUBJECT")?.trim() || "mailto:admin@example.com";
 
     if (!supabaseUrl || !serviceRoleKey || !vapidPublic || !vapidPrivate) {
       return new Response(JSON.stringify({ error: "Secret mancanti" }), {
