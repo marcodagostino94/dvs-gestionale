@@ -1,7 +1,8 @@
 import { supabase } from './supabase.js';
 import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, addAudit } from './api.js';
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
-import { VAPID_PUBLIC_KEY } from './config.js';
+
+const VAPID_PUBLIC_KEY='BH3-UsCmM4AuQHKdfZLCwRi5j-qM8HsfItLcr9eezb8dBSAZQz72yvzVaPI9bNOBXkjdqdZvnjDkRoNAPgb4L3o';
 
 const splash=document.getElementById('splash'),login=document.getElementById('login'),shell=document.getElementById('shell'),app=document.getElementById('app'),title=document.getElementById('title'),greeting=document.getElementById('greeting'),modal=document.getElementById('modal'),modalBody=document.getElementById('modal-body'),sheet=document.getElementById('sheet'),sheetBody=document.getElementById('sheet-body'),toast=document.getElementById('toast');
 const views=[['dashboard','dashboard','Dashboard'],['rooms','chair','Sale'],['computers','computer','Computer'],['hardware','rec','Hardware'],['licenses','key','Licenze'],['summary','summary','Sintesi'],['settings','settings','Settings']];
@@ -680,4 +681,4 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.2.push');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.2.0.1');boot();

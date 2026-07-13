@@ -128,3 +128,11 @@ DVS GESTIONALE v4.2 — PUSH SETUP
 - Avviso giornaliero per licenze già scadute.
 - Programmazione automatica tramite Supabase Cron.
 - Consultare docs/CONFIGURAZIONE_NOTIFICHE_PUSH.md.
+
+
+HOTFIX v4.2.0.1
+- Rimossa la dipendenza di avvio dalla copia cache di config.js.
+- La chiave pubblica VAPID è incorporata direttamente nel frontend.
+- Risolto il possibile blocco sulla schermata iniziale dopo l'aggiornamento.
+- Nessuna nuova query Supabase richiesta.
+- La chiave privata VAPID resta separata e non deve essere caricata su GitHub.
