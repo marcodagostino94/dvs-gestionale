@@ -141,3 +141,22 @@ dialog{border:0;background:transparent;padding:0;width:min(94vw,540px);max-heigh
 .detail-row:first-child{border-top:0}
 .detail-row span{font-size:11px;color:var(--muted)}
 .detail-row strong{font-size:12px;overflow-wrap:anywhere;text-align:right}
+
+/* Detail modal alignment fix */
+.room-detail-wrapper{display:grid;gap:14px}
+.station-detail{border:1px solid var(--line);background:rgba(255,255,255,.035);border-radius:22px;padding:14px}
+.station-detail-title{font-size:13px;font-weight:900;color:#d8d8dd;margin:0 0 10px}
+.detail-section{background:rgba(255,255,255,.055);border:1px solid var(--line);border-radius:18px;padding:14px;margin:10px 0}
+.detail-section h4{margin:0 0 10px;font-size:16px}
+.detail-list{display:grid}
+.detail-item{display:grid;grid-template-columns:minmax(130px,.75fr) minmax(0,1.25fr);gap:18px;align-items:center;padding:10px 0;border-top:1px solid rgba(255,255,255,.075)}
+.detail-item:first-child{border-top:0}
+.detail-label{color:var(--muted);font-size:12px;line-height:1.3}
+.detail-value{text-align:right;font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+.modal-title-row{position:relative;z-index:2}
+#edit-room{position:relative;z-index:3;cursor:pointer;pointer-events:auto}
+.picker-button{cursor:pointer}
+@media(max-width:620px){
+  .detail-item{grid-template-columns:110px minmax(0,1fr);gap:12px}
+  .detail-value{font-size:12px}
+}

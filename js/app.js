@@ -210,27 +210,133 @@ function inventoryCard(type,item) {
 
 
 function detailBlock(title,rows) {
-  return `<section class="detail-block">
+  return `<section class="detail-section">
     <h4>${escapeHtml(title)}</h4>
-    <div class="detail-grid">
+    <div class="detail-list">
       ${rows.map(([label,content]) => `
-        <div class="detail-row">
-          <span>${escapeHtml(label)}</span>
-          <strong>${escapeHtml(content ?? "—")}</strong>
+        <div class="detail-item">
+          <span class="detail-label">${escapeHtml(label)}</span>
+          <strong class="detail-value">${escapeHtml(content ?? "—")}</strong>
         </div>`).join("")}
     </div>
   </section>`;
 }
 
 function openRoom(id) {
-  const room=state.data.rooms.find(item=>item.id===id);
-  modalContent.innerHTML=`<div class="modal-title-row"><h2>Sala ${id}</h2><button class="text-button" id="edit-room">Modifica</button></div>
-    ${(room.stations||[]).map((station,index)=>{
-      const computer=find("computers",station.computerId),hardware=find("hardware",station.hardwareId),avid=find("licenses",station.avidLicenseId),plugins=(station.pluginLicenseIds||[]).map(pid=>find("licenses",pid)).filter(Boolean);
-      return `<section class="detail-block">${room.stations.length>1?`<h4>Postazione ${index+1}</h4>`:""}${detailBlock("Computer",computer?[["ID",computer.id],["Modello",computer.model],["Sistema operativo",computer.os]]:[["Stato","Non assegnato"]])}${detailBlock("Hardware",hardware?[["ID",hardware.id],["Modello",hardware.model]]:[["Stato","Non assegnato"]])}${detailBlock("Avid",avid?[["ID",avid.id],["Tipo",avid.type],["Scadenza",displayDate(avid.expiry)]]:[["Stato","Non assegnata"]])}${plugins.length?detailBlock("Plugin",plugins.map(p=>[p.pluginType,`${p.billingCycle==="monthly"?"Mensile":"Annuale"} · ${displayDate(p.expiry)}`])):""}</section>`;
+  const room = state.data.rooms.find(item => item.id === id);
+
+  modalContent.innerHTML = `
+    <div class="modal-title-row">
+      <h2>Sala ${id}</h2>
+      <button type="button" class="text-button" id="edit-room">Modifica</button>
+    </div>
+
+    <div class="room-detail-wrapper">
+      ${(room.stations || []).map((station,index) => {
+        const computer = find("computers",station.computerId);
+        const hardware = find("hardware",station.hardwareId);
+        const avid = find("licenses",station.avidLicenseId);
+        const plugins = (station.pluginLicenseIds || []).map(pid => find("licenses",pid)).filter(Boolean);
+
+        return `<section class="station-detail">
+          ${room.stations.length > 1 ? `<div class="station-detail-title">Postazione ${index + 1}</div>` : ""}
+          ${detailBlock("Computer", computer ? [
+            ["ID",computer.id],
+            ["Modello",computer.model],
+            ["Sistema operativo",computer.os]
+          ] : [["Stato","Non assegnato"]])}
+
+          ${detailBlock("Hardware", hardware ? [
+            ["ID",hardware.id],
+            ["Modello",hardware.model],
+            ["Seriale",hardware.serial]
+          ] : [["Stato","Non assegnato"]])}
+
+          ${detailBlock("Avid", avid ? [
+            ["ID",avid.id],
+            ["Tipo",avid.type],
+            ["Scadenza",displayDate(avid.expiry)]
+          ] : [["Stato","Non assegnata"]])}
+
+          ${plugins.length ? detailBlock("Plugin",plugins.flatMap(plugin => [
+            [plugin.pluginType,plugin.billingCycle === "monthly" ? "Mensile" : "Annuale"],
+            ["Scadenza",displayDate(plugin.expiry)]
+          ])) : ""}
+        </section>`;
+      }).join("")}
+    </div>
+
+    ${room.notes ? detailBlock("Note",[["Dettagli",room.notes]]) : ""}
+
+    <div class="modal-actions">
+      <button class="secondary-button" id="close-modal">Chiudi</button>
+    </div>`;
+
+  document.getElementById("edit-room").addEventListener("click",() => editRoom(id));
+  document.getElementById("close-modal").addEventListener("click",closeModal);
+  openModal();
+}
+function selectedLabel(type,id) {
+  if (!id) return "Non assegnato";
+  const item = find(type,id);
+  return item ? `${item.id} · ${item.model || item.type || item.pluginType || ""}` : "Non assegnato";
+}
+
+function pickerField(id,label,text,currentValue) {
+  return `<div class="field">
+    <label>${label}</label>
+    <button type="button" id="${id}" class="picker-button">
+      <span>${escapeHtml(text)}</span>
+      <span class="picker-chevron">›</span>
+    </button>
+    <input type="hidden" id="${id}-value" value="${escapeHtml(currentValue || "")}">
+  </div>`;
+}
+
+function openAssignmentSheet(type,label,current,currentRoomId,targetId) {
+  const items = sortByNumericId(state.data[type]);
+  const currentIds = [current].filter(Boolean);
+
+  sheetContent.innerHTML = `
+    <div class="sheet-handle"></div>
+    <div class="sheet-title-row">
+      <h2>Seleziona ${label}</h2>
+      <button id="close-sheet" class="text-button">Chiudi</button>
+    </div>
+
+    <button class="sheet-option neutral ${!current ? "selected" : ""}" data-assignment-value="">
+      <strong>Non assegnato</strong>
+      <span>Nessun elemento</span>
+    </button>
+
+    ${items.map(item => {
+      const usedRoom = assignedRoom(type,item.id,currentRoomId);
+      const used = Boolean(usedRoom);
+      return `<button class="sheet-option ${used ? "used" : "free"} ${currentIds.includes(item.id) ? "selected" : ""}" data-assignment-value="${escapeHtml(item.id)}">
+        <strong>${escapeHtml(item.id)} · ${escapeHtml(item.model || item.type || item.pluginType || "")}</strong>
+        <span>${used ? `Assegnato alla Sala ${usedRoom.id}` : "Disponibile"}</span>
+      </button>`;
     }).join("")}
-    ${room.notes?detailBlock("Note",[["Dettagli",room.notes]]):""}<div class="modal-actions"><button class="secondary-button" id="close-modal">Chiudi</button></div>`;
-  document.getElementById("edit-room").onclick=()=>editRoom(id);document.getElementById("close-modal").onclick=closeModal;openModal();
+  `;
+
+  sheetContent.querySelectorAll("[data-assignment-value]").forEach(button => {
+    button.addEventListener("click",() => {
+      const id = button.dataset.assignmentValue;
+      const usedRoom = id && assignedRoom(type,id,currentRoomId);
+      if (usedRoom) {
+        const labelType = type === "computers" ? "COMPUTER" : type === "hardware" ? "HARDWARE" : "LICENZA";
+        alert(`${labelType} ${id} già assegnato/a alla Sala ${usedRoom.id}.`);
+        return;
+      }
+
+      document.getElementById(`${targetId}-value`).value = id;
+      document.getElementById(targetId).querySelector("span").textContent = selectedLabel(type,id);
+      closeSheet();
+    });
+  });
+
+  document.getElementById("close-sheet").addEventListener("click",closeSheet);
+  openSheet();
 }
 
 function editRoom(id) {

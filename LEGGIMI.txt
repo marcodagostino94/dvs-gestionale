@@ -76,3 +76,11 @@ CORREZIONE VERSIONE 3.1
 - Ripristinata funzione di impaginazione delle informazioni
 - Modifica dei Plugin collegata al relativo modulo Plugin
 - Cache aggiornata per evitare il caricamento del JavaScript precedente
+
+
+CORREZIONE VERSIONE 3.2
+- Ripristinato il pulsante Modifica nelle Sale
+- Ripristinati i selettori stile Apple per Computer e Hardware
+- Eliminato l’annidamento errato delle schede di dettaglio
+- Allineamento etichette/valori corretto
+- Spaziature ottimizzate per Mac e iPhone
