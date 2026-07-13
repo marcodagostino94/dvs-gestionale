@@ -30,11 +30,133 @@ function stationCard(s){const c=state.data.computers.find(x=>x.id===s.computer_i
 function inventory(type){const source=state.data[type].filter(x=>!x.archived_at);const mapped=source.map(x=>({x,loc:type==='computers'?stationOf('computer',x.id):type==='hardware'?stationOf('hardware',x.id):x.category==='plugin'?pluginStation(x.id):stationOf('license',x.id)})).sort((a,b)=>{const au=a.loc?0:1,bu=b.loc?0:1;if(au!==bu)return au-bu;if(type==='licenses'&&au===0){const ac=a.x.category==='avid'?0:1,bc=b.x.category==='avid'?0:1;if(ac!==bc)return ac-bc}return numSort(a.x,b.x)});const filtered=mapped.filter(({x,loc})=>state.filter==='all'||state.filter==='assigned'&&loc||state.filter==='warehouse'&&!loc||type==='licenses'&&state.filter===x.category);return `${filters(type)}<div class="list">${filtered.length?filtered.map(({x})=>inventoryCard(type,x)).join(''):`<div class="empty">Nessun elemento.</div>`}</div>`}
 function filters(type){const fs=type==='licenses'?[['all','Tutte'],['avid','Avid'],['plugin','Plugin'],['assigned','Assegnate'],['warehouse','Magazzino']]:[['all','Tutti'],['assigned','Assegnati'],['warehouse','Magazzino']];return `<div class="filters">${fs.map(([id,l])=>`<button class="filter ${state.filter===id?'active':''}" data-filter="${id}">${l}</button>`).join('')}</div>`}
 function locationMarkup(text){return text==='Non assegnato'?'<span class="unassigned-text">Non assegnato</span>':esc(text)}
-function inventoryCard(type,x){if(type==='computers')return `<button class="list-card" data-item="computers:${x.id}"><div><h3>${esc(x.code)} · ${esc(x.model||'')}</h3><div class="badges">${x.os_name?`<span class="badge os os-${esc(x.os_name.toLowerCase())}">${esc(x.os_name.toUpperCase())}</span>`:''}</div><p>${locationMarkup(currentLocation('computer',x.id))} · Formattazione ${fmtDate(x.formatted_at)}</p></div><span>›</span></button>`;if(type==='hardware')return `<button class="list-card" data-item="hardware:${x.id}"><div><h3>${esc(x.code)} · ${esc(x.model||'')}</h3><p>${locationMarkup(currentLocation('hardware',x.id))}</p></div><span>›</span></button>`;const st=licenseStatus(x),kind=x.category==='avid'?x.avid_type:x.plugin_type,loc=currentLocation(x.category==='plugin'?'plugin':'license',x.id);return `<button class="list-card" data-item="licenses:${x.id}"><div><h3>${esc(x.code)} <span class="badge ${x.category==='avid'?(x.avid_type==='Ultimate'?'ultimate':'singolo'):'annual'}">${esc((kind||'').toUpperCase())}</span> ${x.is_trial?'<span class="badge trial">TRIAL</span>':''} <span class="badge ${x.billing_cycle}">${cycleLabel(x.billing_cycle)}</span></h3><p>Scadenza ${fmtDate(x.expiry_date)}</p><span class="status ${st.level}">${esc(st.text)} · ${locationMarkup(loc)}</span></div><span>›</span></button>`}
+function inventoryCard(type,x){
+  if(type==='computers')return `<button class="list-card" data-item="computers:${x.id}"><div><h3>${esc(x.code)} · ${esc([x.model,x.variant].filter(Boolean).join(' · '))}</h3><div class="badges">${x.os_name?`<span class="badge os os-${esc(x.os_name.toLowerCase())}">${esc(x.os_name.toUpperCase())}</span>`:''}</div><p>${locationMarkup(currentLocation('computer',x.id))} · Formattazione ${fmtDate(x.formatted_at)}</p></div><span>›</span></button>`;
+  if(type==='hardware')return `<button class="list-card" data-item="hardware:${x.id}"><div><h3>${esc(x.code)} · ${esc(x.model||'')}</h3><p>${locationMarkup(currentLocation('hardware',x.id))}</p></div><span>›</span></button>`;
 
-function summary(){return `<div class="summary-toolbar"><button type="button" class="secondary" id="print-summary">Stampa</button></div><div class="summary-wrap">${state.data.rooms.sort((a,b)=>a.position-b.position).map(r=>`<section class="summary-room glass"><h3>${esc(r.name)}</h3>${state.data.stations.filter(s=>s.room_id===r.id).sort((a,b)=>a.position-b.position).map(s=>{const c=state.data.computers.find(x=>x.id===s.computer_id),h=state.data.hardware.find(x=>x.id===s.hardware_id),a=state.data.licenses.find(x=>x.id===s.avid_license_id),ps=state.data.station_plugins.filter(x=>x.station_id===s.id).map(x=>state.data.licenses.find(l=>l.id===x.license_id)).filter(Boolean);return `<div class="summary-row"><div class="summary-cell"><small>COMPUTER</small><strong>${c?esc(c.code):'—'}</strong><span>${c?esc([c.model,c.variant].filter(Boolean).join(' · ')):'Non assegnato'}</span>${c?.os_name?`<span class="badge os os-${esc(c.os_name.toLowerCase())}">${esc(c.os_name.toUpperCase())}</span>`:''}</div><div class="summary-cell"><small>HARDWARE</small><strong>${h?esc(h.code):'—'}</strong><span>${h?esc(h.model||''):'Non assegnato'}</span></div><div class="summary-cell ${a?.avid_type?.toLowerCase()||''}"><small>AVID</small><strong>${a?esc(a.code):'—'}</strong><span>${a?`${a.is_trial?'TRIAL · ':''}${esc(a.avid_type)}`:'Non assegnata'}</span></div><div class="summary-cell"><small>PLUGIN</small>${ps.length?ps.map(p=>`<strong>${esc(p.plugin_type)}</strong><span>${p.is_trial?'TRIAL · ':''}${cycleLabel(p.billing_cycle)}</span>`).join(''):'<span>Nessun plugin</span>'}</div></div>`}).join('')}</section>`).join('')}</div>`}
+  const st=licenseStatus(x);
+  const kind=x.category==='avid'?x.avid_type:x.plugin_type;
+  const loc=currentLocation(x.category==='plugin'?'plugin':'license',x.id);
+  const sid=x.category==='avid'&&x.system_id?`SID ${esc(x.system_id)}`:'';
 
-function settings(){return `<div class="list"><button class="list-card" data-setting="audit"><div><h3>Registro modifiche</h3><p>Storico automatico delle operazioni.</p></div><span>›</span></button><button class="list-card" data-setting="archive"><div><h3>Archivio</h3><p>Elementi archiviati e ripristino.</p></div><span>›</span></button><button class="list-card" data-setting="backup"><div><h3>Backup ed esportazione</h3><p>Disponibile in una versione successiva.</p></div><span>›</span></button><button class="list-card" id="logout"><div><h3>Logout</h3><p>${esc(state.session?.user?.email||'')}</p></div><span>›</span></button></div>`}
+  return `<button class="list-card license-card ${st.level==='warning'?'license-warning':st.level==='expired'?'license-expired':''}" data-item="licenses:${x.id}">
+    <div class="license-card-content">
+      <div class="license-card-top">
+        <h3>${esc(x.code)}</h3>
+        <span class="license-sid">${sid}</span>
+      </div>
+      <div class="badges">
+        <span class="badge ${x.category==='avid'?(x.avid_type==='Ultimate'?'ultimate':'singolo'):'plugin'}">${esc((kind||'').toUpperCase())}</span>
+        <span class="badge ${x.billing_cycle}">${cycleLabel(x.billing_cycle)}</span>
+        ${x.is_trial?'<span class="badge trial">TRIAL</span>':''}
+      </div>
+      <div class="license-card-bottom">
+        <span class="license-time">${esc(st.text)}</span>
+        <span class="license-location">${locationMarkup(loc)}</span>
+      </div>
+    </div>
+    <span class="card-chevron">›</span>
+  </button>`;
+}
+
+
+function expiryLabel(license){
+  if(!license)return '';
+  const status=licenseStatus(license);
+  if(!license.expiry_date)return status.text;
+  const today=new Date();today.setHours(0,0,0,0);
+  const exp=new Date(license.expiry_date+'T00:00:00');
+  const days=Math.ceil((exp-today)/86400000);
+  if(days>90)return `Scadenza ${fmtDate(license.expiry_date)}`;
+  return status.text.replace(/^Attiva • /,'');
+}
+function productionLabel(room){
+  return [room.client_type,room.production_name].filter(Boolean).join(' • ');
+}
+function summaryLevel(room){
+  const avids=state.data.stations
+    .filter(s=>s.room_id===room.id)
+    .map(s=>state.data.licenses.find(l=>l.id===s.avid_license_id))
+    .filter(Boolean);
+  const levels=avids.map(l=>licenseStatus(l).level);
+  return levels.includes('expired')?'expired':levels.includes('warning')?'warning':'ok';
+}
+
+function summary(){
+  const rooms=[...state.data.rooms].sort((a,b)=>a.position-b.position);
+  const counts=rooms.reduce((acc,room)=>{acc[summaryLevel(room)]++;return acc},{ok:0,warning:0,expired:0});
+
+  return `<div class="summary-toolbar"><button type="button" class="secondary" id="print-summary">Stampa</button></div>
+    <div class="summary-v41">
+      ${rooms.map(room=>{
+        const stations=state.data.stations.filter(s=>s.room_id===room.id).sort((a,b)=>a.position-b.position);
+        const primaryAvid=stations.map(s=>state.data.licenses.find(x=>x.id===s.avid_license_id)).find(Boolean);
+        const level=summaryLevel(room);
+        const production=productionLabel(room);
+
+        return `<section class="summary-production-card ${level}">
+          <header class="summary-production-head">
+            <div>
+              <h3>${esc(room.name)}</h3>
+              ${production?`<p>${esc(production)}</p>`:'<p class="summary-no-production">Produzione non indicata</p>'}
+            </div>
+            <span class="summary-avid-expiry ${primaryAvid?licenseStatus(primaryAvid).level:'ok'}">${primaryAvid?esc(expiryLabel(primaryAvid)):'Nessuna Avid'}</span>
+          </header>
+
+          <div class="summary-stations">
+            ${stations.map((station,index)=>{
+              const computer=state.data.computers.find(x=>x.id===station.computer_id);
+              const hardware=state.data.hardware.find(x=>x.id===station.hardware_id);
+              const avid=state.data.licenses.find(x=>x.id===station.avid_license_id);
+              const plugins=state.data.station_plugins.filter(x=>x.station_id===station.id).map(x=>state.data.licenses.find(l=>l.id===x.license_id)).filter(Boolean);
+
+              return `<div class="summary-station">
+                ${stations.length>1?`<div class="summary-station-label">POSTAZIONE ${index+1}</div>`:''}
+                <div class="summary-resource computer">
+                  <small>COMPUTER</small>
+                  <strong>${computer?esc(computer.code):'—'}</strong>
+                  <span>${computer?esc([computer.model,computer.variant].filter(Boolean).join(' · ')):'Non assegnato'}</span>
+                  ${computer?.os_name?`<span class="badge os os-${esc(computer.os_name.toLowerCase())}">${esc(computer.os_name.toUpperCase())}</span>`:''}
+                </div>
+                <div class="summary-resource hardware">
+                  <small>HARDWARE</small>
+                  <strong>${hardware?esc(hardware.code):'—'}</strong>
+                  <span>${hardware?esc(hardware.model||''):'Non assegnato'}</span>
+                </div>
+                <div class="summary-resource avid">
+                  <small>AVID</small>
+                  <strong>${avid?esc(avid.code):'—'}</strong>
+                  ${avid?`<div class="badges"><span class="badge ${avid.avid_type==='Ultimate'?'ultimate':'singolo'}">${esc(avid.avid_type.toUpperCase())}</span><span class="badge ${avid.billing_cycle}">${cycleLabel(avid.billing_cycle)}</span>${avid.is_trial?'<span class="badge trial">TRIAL</span>':''}</div>`:'<span>Non assegnata</span>'}
+                </div>
+                <div class="summary-resource plugins">
+                  <small>PLUGIN</small>
+                  ${plugins.length?plugins.map(plugin=>{const st=licenseStatus(plugin);return `<div class="summary-plugin"><strong>${esc(plugin.plugin_type)}</strong><div class="badges"><span class="badge ${plugin.billing_cycle}">${cycleLabel(plugin.billing_cycle)}</span>${plugin.is_trial?'<span class="badge trial">TRIAL</span>':''}</div><span class="plugin-expiry ${st.level}">${esc(expiryLabel(plugin))}</span></div>`}).join(''):'<span>Nessun plugin</span>'}
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </section>`;
+      }).join('')}
+
+      <footer class="summary-footer glass">
+        <div><strong>${rooms.length}</strong><span>Sale</span></div>
+        <div class="ok"><strong>${counts.ok}</strong><span>OK</span></div>
+        <div class="warning"><strong>${counts.warning}</strong><span>In scadenza</span></div>
+        <div class="expired"><strong>${counts.expired}</strong><span>Scadute</span></div>
+        <small>Aggiornato ${new Date().toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}</small>
+      </footer>
+    </div>`;
+}
+
+function settings(){
+  return `<div class="list">
+    <button class="list-card" data-setting="audit"><div><h3>Registro modifiche</h3><p>Storico automatico delle operazioni.</p></div><span>›</span></button>
+    <button class="list-card" data-setting="archive"><div><h3>Archivio</h3><p>Elementi archiviati e ripristino.</p></div><span>›</span></button>
+    <button class="list-card" data-setting="backup"><div><h3>Backup ed esportazione</h3><p>Disponibile in una versione successiva.</p></div><span>›</span></button>
+    <button class="list-card" data-setting="about"><div><h3>Informazioni</h3><p>Versione, società e note della release.</p></div><span>›</span></button>
+    <button class="list-card" id="logout"><div><h3>Logout</h3><p>${esc(state.session?.user?.email||'')}</p></div><span>›</span></button>
+  </div>`;
+}
 
 function render(){if(!state.data)return;const add=document.getElementById('add-btn');if(add)add.hidden=state.view==='dashboard';app.innerHTML=state.view==='dashboard'?dashboard():state.view==='rooms'?rooms():state.view==='computers'?inventory('computers'):state.view==='hardware'?inventory('hardware'):state.view==='licenses'?inventory('licenses'):state.view==='summary'?summary():settings();bindContent()}
 function bindContent(){document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter;render()});document.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>{const [t,id]=b.dataset.item.split(':');openDetail(t,id)});document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>openRoom(b.dataset.room));document.querySelectorAll('[data-open-license]').forEach(b=>b.onclick=()=>openDetail('licenses',b.dataset.openLicense));document.querySelectorAll('[data-setting]').forEach(b=>b.onclick=()=>openSetting(b.dataset.setting));document.getElementById('logout')?.addEventListener('click',async()=>supabase.auth.signOut());document.getElementById('print-summary')?.addEventListener('click',()=>window.print())}
@@ -157,7 +279,52 @@ async function confirmAssignment(kind,item,newStationId){
 
 async function saveEditor(type,x,isNew){try{let row={id:x.id};let assignment=val('assignment');if(type==='computers')Object.assign(row,{code:val('code'),model:val('model'),variant:val('variant'),cpu:val('cpu'),ram:val('ram'),gpu:val('gpu'),storage:val('storage'),serial:val('serial'),os_name:val('os'),os_version:val('osv'),formatted_at:val('formatted')||null,notes:val('notes'),attachments_count:x.attachments_count||0});else if(type==='hardware')Object.assign(row,{code:val('code'),category:val('category'),model:val('model'),serial:val('serial'),driver_version:val('driver'),notes:val('notes'),attachments_count:x.attachments_count||0});else Object.assign(row,{code:val('code'),category:val('category'),avid_type:val('category')==='avid'?val('avid-type'):null,plugin_type:val('category')==='plugin'?val('plugin-type'):null,system_id:val('system')||null,activation_code:val('activation-code')||null,plugin_serial:val('plugin-serial')||null,version:val('version')||null,billing_cycle:val('cycle'),is_trial:checked('trial'),activation_date:val('activation')||null,expiry_date:val('expiry')||null,deactivation_requested:checked('deactivation'),notes:val('notes'),attachments_count:x.attachments_count||0});const kind=type==='computers'?'computer':type==='hardware'?'hardware':row.category==='plugin'?'plugin':'license';if(!(await confirmAssignment(kind,{...x,...row},assignment)))return;const saved=await saveRow(type,row);if(type==='computers')await assignResource('computer',saved.id,assignment||null);if(type==='hardware')await assignResource('hardware',saved.id,assignment||null);if(type==='licenses'){if(saved.category==='plugin')await assignPlugin(saved.id,assignment||null);else await assignResource('license',saved.id,assignment||null)}await addAudit(isNew?'create':'update',type,saved.id,{code:saved.code});modal.close();showToast('Salvato');await refresh()}catch(e){alert(e.message)}}
 
-function openRoom(id){const room=state.data.rooms.find(r=>r.id===id),sts=state.data.stations.filter(s=>s.room_id===id).sort((a,b)=>a.position-b.position);openModal(`<div class="modal-head"><h2>${esc(room.name)}</h2><button class="close" data-close>×</button></div><div class="fields">${sts.map((s,i)=>`<section class="card"><div class="resource-row"><strong>${sts.length>1?`Postazione ${i+1}`:'Configurazione sala'}</strong>${i>0?`<button class="danger" data-delete-station="${s.id}">Elimina</button>`:''}</div>${assignmentButton('computer',s)}${assignmentButton('hardware',s)}${assignmentButton('license',s)}${pluginButton(s)}</section>`).join('')}</div><div class="actions"><button class="secondary" id="add-station">＋ Aggiungi postazione</button><button class="primary" data-close>Chiudi</button></div>`);document.querySelectorAll('[data-assign]').forEach(b=>b.onclick=()=>assignmentSheet(b.dataset.assign,b.dataset.station));document.getElementById('add-station').onclick=async()=>{await saveRow('stations',{id:uuid(),room_id:room.id,position:sts.length+1});await addAudit('create','stations',room.id,{room:room.name});modal.close();await refresh();openRoom(id)};document.querySelectorAll('[data-delete-station]').forEach(b=>b.onclick=async()=>{if(confirm('Eliminare questa postazione? Gli elementi assegnati torneranno in Magazzino.')){await removeRow('stations',b.dataset.deleteStation);modal.close();await refresh();openRoom(id)}})}
+function openRoom(id){
+  const room=state.data.rooms.find(r=>r.id===id);
+  const sts=state.data.stations.filter(s=>s.room_id===id).sort((a,b)=>a.position-b.position);
+
+  openModal(`<div class="modal-head"><h2>${esc(room.name)}</h2><button class="close" data-close>×</button></div>
+    <div class="fields">
+      ${sts.map((s,i)=>`<section class="card"><div class="resource-row"><strong>${sts.length>1?`Postazione ${i+1}`:'Configurazione sala'}</strong>${i>0?`<button class="danger" data-delete-station="${s.id}">Elimina</button>`:''}</div>${assignmentButton('computer',s)}${assignmentButton('hardware',s)}${assignmentButton('license',s)}${pluginButton(s)}</section>`).join('')}
+    </div>
+    <div class="actions room-actions">
+      <button class="secondary" id="edit-production">Produzione</button>
+      <button class="secondary" id="add-station">＋ Aggiungi postazione</button>
+      <button class="primary" data-close>Chiudi</button>
+    </div>`);
+
+  document.querySelectorAll('[data-assign]').forEach(b=>b.onclick=()=>assignmentSheet(b.dataset.assign,b.dataset.station));
+  document.getElementById('edit-production').onclick=()=>openProductionEditor(room);
+  document.getElementById('add-station').onclick=async()=>{
+    await saveRow('stations',{id:uuid(),room_id:room.id,position:sts.length+1});
+    await addAudit('create','stations',room.id,{room:room.name});
+    modal.close();await refresh();openRoom(id);
+  };
+  document.querySelectorAll('[data-delete-station]').forEach(b=>b.onclick=async()=>{
+    if(confirm('Eliminare questa postazione? Gli elementi assegnati torneranno Non assegnati.')){
+      await removeRow('stations',b.dataset.deleteStation);
+      modal.close();await refresh();openRoom(id);
+    }
+  });
+}
+
+function openProductionEditor(room){
+  openModal(`<div class="modal-head"><h2>Produzione · ${esc(room.name)}</h2><button class="close" data-close>×</button></div>
+    <div class="fields">
+      ${segmented('client-type','Committente',[['RAI','RAI'],['PRIVATO','PRIVATO'],['ALTRO','ALTRO']],room.client_type||'RAI')}
+      ${field('production-name','Produzione',room.production_name||'')}
+    </div>
+    <p class="production-help">Questa informazione sarà visibile soltanto nella Sintesi e nella relativa stampa.</p>
+    <div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save-production">Salva</button></div>`);
+  bindSegments(modalBody);
+  document.getElementById('save-production').onclick=async()=>{
+    try{
+      await saveRow('rooms',{...room,client_type:val('client-type'),production_name:val('production-name')});
+      await addAudit('update','rooms',room.id,{production:val('production-name')});
+      modal.close();showToast('Produzione salvata');await refresh();openRoom(room.id);
+    }catch(error){alert(error.message)}
+  };
+}
 function assignmentButton(kind,s){const id=kind==='computer'?s.computer_id:kind==='hardware'?s.hardware_id:s.avid_license_id;const table=kind==='computer'?'computers':kind==='hardware'?'hardware':'licenses';const x=state.data[table].find(v=>v.id===id);return `<button class="list-card" data-assign="${kind}" data-station="${s.id}"><div><h3>${kind==='computer'?'Computer':kind==='hardware'?'Hardware':'Licenza Avid'}</h3><p>${x?`${esc(x.code)} · ${esc(x.model||x.avid_type||'')}`:'Non assegnato'}</p></div><span>›</span></button>`}
 function pluginButton(s){const ps=state.data.station_plugins.filter(x=>x.station_id===s.id).map(x=>state.data.licenses.find(l=>l.id===x.license_id)).filter(Boolean);return `<button class="list-card" data-assign="plugin" data-station="${s.id}"><div><h3>Plugin</h3><p>${ps.length?ps.map(p=>p.plugin_type).join(', '):'Nessun plugin'}</p></div><span>›</span></button>`}
 function assignmentSheet(kind,stationId){let items;if(kind==='computer')items=state.data.computers.filter(x=>!x.archived_at);else if(kind==='hardware')items=state.data.hardware.filter(x=>!x.archived_at);else items=state.data.licenses.filter(x=>!x.archived_at&&x.category===(kind==='plugin'?'plugin':'avid'));const current=kind==='plugin'?state.data.station_plugins.filter(x=>x.station_id===stationId).map(x=>x.license_id):[kind==='computer'?state.data.stations.find(s=>s.id===stationId).computer_id:kind==='hardware'?state.data.stations.find(s=>s.id===stationId).hardware_id:state.data.stations.find(s=>s.id===stationId).avid_license_id].filter(Boolean);openSheet(`<div class="modal-head"><h2>Seleziona ${kind==='computer'?'Computer':kind==='hardware'?'Hardware':kind==='plugin'?'Plugin':'Avid'}</h2><button class="close" data-close-sheet>×</button></div>${kind!=='plugin'?`<button class="choice" data-choice="">Non assegnato</button>`:''}${items.sort(numSort).map(x=>{const used=kind==='plugin'?pluginStation(x.id):stationOf(kind==='license'?'license':kind,x.id);return `<button class="choice ${used&&used.id!==stationId?'used':'free'} ${current.includes(x.id)?'selected':''}" data-choice="${x.id}"><strong>${esc(x.code)} · ${esc(x.model||x.avid_type||x.plugin_type||'')}</strong><br><small>${used?esc(stationLabel(used)):'Disponibile'}</small></button>`}).join('')}`);sheetBody.querySelectorAll('[data-choice]').forEach(b=>b.onclick=async()=>{const id=b.dataset.choice||null;try{if(kind==='plugin'){const selected=current.includes(id);const item=state.data.licenses.find(x=>x.id===id);if(!selected&&!(await confirmAssignment('plugin',item,stationId)))return;await assignPlugin(id,selected?null:stationId)}else{if(id){const list=kind==='computer'?state.data.computers:kind==='hardware'?state.data.hardware:state.data.licenses;const item=list.find(x=>x.id===id);if(!(await confirmAssignment(kind==='license'?'license':kind,item,stationId)))return}await assignResource(kind,id,stationId)}sheet.close();modal.close();await refresh();openRoom(state.data.stations.find(s=>s.id===stationId).room_id)}catch(e){alert(e.message)}})}
@@ -168,7 +335,7 @@ function buildSearchIndex(){
 
   [...state.data.rooms].sort((a,b)=>a.position-b.position).forEach(room=>{
     const stations=state.data.stations.filter(s=>s.room_id===room.id);
-    const terms=[room.name];
+    const terms=[room.name,room.client_type,room.production_name];
     stations.forEach(station=>{
       const computer=state.data.computers.find(x=>x.id===station.computer_id);
       const hardware=state.data.hardware.find(x=>x.id===station.hardware_id);
@@ -186,7 +353,7 @@ function buildSearchIndex(){
       kind:'room',
       id:room.id,
       title:room.name,
-      subtitle:`${stations.length} ${stations.length===1?'postazione':'postazioni'}`,
+      subtitle:[productionLabel(room),`${stations.length} ${stations.length===1?'postazione':'postazioni'}`].filter(Boolean).join(' · '),
       terms:terms.filter(Boolean).join(' ').toLowerCase()
     });
   });
@@ -268,9 +435,35 @@ function openGlobalSearch(){
   requestAnimationFrame(()=>input.focus());
 }
 
-function openSetting(k){if(k==='audit')openModal(`<div class="modal-head"><h2>Registro modifiche</h2><button class="close" data-close>×</button></div><div class="list">${state.data.audit_log.length?state.data.audit_log.slice(0,100).map(x=>`<div class="card"><strong>${esc(x.action)} · ${esc(x.entity_type)}</strong><p>${new Date(x.created_at).toLocaleString('it-IT')}</p></div>`).join(''):'<div class="empty">Registro vuoto.</div>'}</div>`);else if(k==='archive'){const all=[...state.data.computers.map(x=>({...x,_table:'computers'})),...state.data.hardware.map(x=>({...x,_table:'hardware'})),...state.data.licenses.map(x=>({...x,_table:'licenses'}))].filter(x=>x.archived_at);openModal(`<div class="modal-head"><h2>Archivio</h2><button class="close" data-close>×</button></div>${all.length?all.map(x=>`<div class="list-card"><div><h3>${esc(x.code)}</h3><p>${esc(x._table)}</p></div></div>`).join(''):'<div class="empty">Nessun elemento archiviato.</div>'}`)}else showToast('Funzione prevista in una versione successiva')}
+function openSetting(k){
+  if(k==='audit'){
+    openModal(`<div class="modal-head"><h2>Registro modifiche</h2><button class="close" data-close>×</button></div><div class="list">${state.data.audit_log.length?state.data.audit_log.slice(0,100).map(x=>`<div class="card"><strong>${esc(x.action)} · ${esc(x.entity_type)}</strong><p>${new Date(x.created_at).toLocaleString('it-IT')}</p></div>`).join(''):'<div class="empty">Registro vuoto.</div>'}</div>`);
+  }else if(k==='archive'){
+    const all=[...state.data.computers.map(x=>({...x,_table:'computers'})),...state.data.hardware.map(x=>({...x,_table:'hardware'})),...state.data.licenses.map(x=>({...x,_table:'licenses'}))].filter(x=>x.archived_at);
+    openModal(`<div class="modal-head"><h2>Archivio</h2><button class="close" data-close>×</button></div>${all.length?all.map(x=>`<div class="list-card"><div><h3>${esc(x.code)}</h3><p>${esc(x._table)}</p></div></div>`).join(''):'<div class="empty">Nessun elemento archiviato.</div>'}`);
+  }else if(k==='about'){
+    openModal(`<div class="modal-head"><h2>Informazioni</h2><button class="close" data-close>×</button></div>
+      <section class="about-card">
+        <img src="./assets/logo-dvs.png" alt="Digital Video Service">
+        <h3>DVS Gestionale</h3>
+        <p>Gestione Sale, Computer, Hardware e Licenze</p>
+        <dl>
+          <div><dt>Versione</dt><dd>4.1 Release Candidate</dd></div>
+          <div><dt>Build</dt><dd>2026.07.13</dd></div>
+          <div><dt>Database</dt><dd>Supabase · Schema 4.1</dd></div>
+          <div><dt>Sviluppato da</dt><dd>Marco D'Agostino</dd></div>
+          <div><dt>Per</dt><dd>Digital Video Service S.r.l.</dd></div>
+          <div><dt>Sede</dt><dd>Via Antonio Chinotto, 1 · 00195 Roma</dd></div>
+          <div><dt>P. IVA</dt><dd>04964701009</dd></div>
+        </dl>
+        <p class="copyright">© 2026 Marco D'Agostino per Digital Video Service S.r.l.</p>
+      </section>`);
+  }else{
+    showToast('Funzione prevista in una versione successiva');
+  }
+}
 
-function addAction(){if(state.view==='computers')editItem('computers');else if(state.view==='hardware')editItem('hardware');else if(state.view==='licenses')editItem('licenses',{_new:true,id:uuid(),category:'avid'});else if(state.view==='rooms')openSheet(`<div class="modal-head"><h2>Aggiungi</h2><button class="close" data-close-sheet>×</button></div><button class="choice" id="a-comp">Nuovo computer</button><button class="choice" id="a-hw">Nuovo hardware</button><button class="choice" id="a-license">Nuova licenza</button>`),setTimeout(()=>{document.getElementById('a-comp').onclick=()=>{sheet.close();editItem('computers')};document.getElementById('a-hw').onclick=()=>{sheet.close();editItem('hardware')};document.getElementById('a-license').onclick=()=>{sheet.close();editItem('licenses',{_new:true,id:uuid(),category:'avid'})}},0);else showToast('Apri Computer, Hardware, Licenze o Sale')}
+function addActionfunction addAction(){if(state.view==='computers')editItem('computers');else if(state.view==='hardware')editItem('hardware');else if(state.view==='licenses')editItem('licenses',{_new:true,id:uuid(),category:'avid'});else if(state.view==='rooms')openSheet(`<div class="modal-head"><h2>Aggiungi</h2><button class="close" data-close-sheet>×</button></div><button class="choice" id="a-comp">Nuovo computer</button><button class="choice" id="a-hw">Nuovo hardware</button><button class="choice" id="a-license">Nuova licenza</button>`),setTimeout(()=>{document.getElementById('a-comp').onclick=()=>{sheet.close();editItem('computers')};document.getElementById('a-hw').onclick=()=>{sheet.close();editItem('hardware')};document.getElementById('a-license').onclick=()=>{sheet.close();editItem('licenses',{_new:true,id:uuid(),category:'avid'})}},0);else showToast('Apri Computer, Hardware, Licenze o Sale')}
 
 async function boot(){
   document.getElementById('desktop-nav').innerHTML=navHTML();
@@ -317,4 +510,4 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.0.5');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.1.0');boot();

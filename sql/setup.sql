@@ -5,6 +5,8 @@ create table if not exists public.rooms (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
   position integer not null default 1,
+  client_type text not null default '',
+  production_name text not null default '',
   notes text not null default '',
   created_at timestamptz not null default now()
 );

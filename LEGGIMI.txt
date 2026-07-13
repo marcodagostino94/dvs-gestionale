@@ -1,4 +1,4 @@
-DVS GESTIONALE v4.0 — BASE PULITA 
+DVS GESTIONALE v4.0 — BASE PULITA
 
 1. Apri Supabase > SQL Editor > New query.
 2. Copia e incolla tutto il contenuto di sql/setup.sql.
@@ -80,3 +80,18 @@ VERSIONE 4.0.5 — RICERCA E STILE STABILE
 - Ricerca per Sale, ID, modello, macOS, hardware, Avid, Plugin e assegnazione
 - Apertura diretta del dettaglio dai risultati
 - Nessuna modifica richiesta a Supabase
+
+
+DVS GESTIONALE v4.1 RELEASE CANDIDATE
+- Computer: anno/variante visibile accanto al modello
+- Licenze: System ID a destra, stato/scadenza a sinistra e assegnazione a destra
+- Evidenza gialla negli ultimi 10 giorni e rossa a scadenza avvenuta
+- Sintesi completamente ridisegnata
+- Produzione e committente modificabili dalla scheda Sala, visibili solo nella Sintesi
+- Stato in alto basato sulla licenza Avid
+- Scadenza Plugin mostrata sulla propria riga
+- Riepilogo Sale in fondo alla Sintesi
+- Ricerca estesa a Committente e Produzione
+- Settings → Informazioni con dati societari e copyright
+- Nessuna animazione strutturale
+- Per database già configurati eseguire sql/migrate_v4_1.sql una sola volta
