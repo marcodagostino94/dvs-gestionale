@@ -88,17 +88,14 @@
 .rec-nav-icon b{font-size:9px;letter-spacing:.6px;color:currentColor}
 .unassigned-text{color:#ff6269!important;font-weight:800}
 .summary-toolbar{display:flex;justify-content:flex-end;margin-bottom:14px}
-.print-summary{min-width:110px}
 #add-btn[hidden]{display:none!important}
 @media print{
-  body{background:white!important;color:#111!important}
+  body{background:#fff!important;color:#111!important}
   .sidebar,.mobile-nav,.topbar,.summary-toolbar,.ambient,#toast{display:none!important}
   #shell,.content{display:block!important;padding:0!important;margin:0!important}
-  #app{padding:0!important}
-  .summary-wrap{display:block!important}
-  .summary-room{break-inside:avoid;background:white!important;color:#111!important;border:1px solid #bbb!important;box-shadow:none!important;margin:0 0 12px!important}
+  #app{padding:0!important}.summary-wrap{display:block!important}
+  .summary-room{break-inside:avoid;background:#fff!important;color:#111!important;border:1px solid #bbb!important;box-shadow:none!important;margin:0 0 12px!important}
   .summary-row{grid-template-columns:1.3fr 1fr 1fr 1fr!important}
-  .summary-cell{background:white!important;color:#111!important;border:1px solid #ddd!important}
+  .summary-cell{background:#fff!important;color:#111!important;border:1px solid #ddd!important}
   .summary-cell span,.summary-cell small{color:#333!important}
-  .badge{border:1px solid #777!important;color:#111!important;background:white!important}
 }

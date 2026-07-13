@@ -58,13 +58,13 @@ HOTFIX 4.0.2.1
 - Nessuna modifica richiesta al database
 
 
-VERSIONE 4.0.3
-- Rimosso il pulsante + dalla Dashboard
-- Conferma prima di spostare o sostituire Computer, Hardware, Avid e Plugin
-- Aggiunto pulsante Stampa nella Sintesi
-- Anno/variante accanto al modello nelle Sale e nella Sintesi
-- Il + in Licenze apre direttamente Nuova licenza
-- Ordinamento: Avid assegnate, Plugin assegnati, poi non assegnate
-- Solo “Non assegnato” è rosso
-- Icone definitive e voce Settings
-- Hardware con indicatore personalizzato ● REC
+VERSIONE 4.0.3 SAFE
+- Dashboard senza pulsante +
+- Conferme di spostamento e sostituzione
+- Stampa Sintesi
+- Anno accanto al modello nelle Sale e Sintesi
+- Aggiunta licenza diretta
+- Ordinamento Avid / Plugin / Non assegnate
+- “Non assegnato” in rosso
+- Icone definitive e Settings
+- Hardware con ● REC
