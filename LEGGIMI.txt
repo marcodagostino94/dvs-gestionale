@@ -101,3 +101,18 @@ HOTFIX v4.1.0.1
 - Corretta la dichiarazione duplicata della funzione addAction.
 - Risolto il blocco sulla schermata iniziale.
 - Nessuna modifica al database o alla grafica.
+
+
+DVS GESTIONALE v4.1 FINAL
+- System ID scritto per esteso.
+- Sale e Sintesi divise in:
+  Ufficio 1 • Chinotto
+  Ufficio 2 • Chinotto
+  Ufficio 3 • Carso
+- Sintesi con quattro mini-card colorate:
+  Computer, Hardware, Avid e Plugin.
+- Stampa A4 verticale: esattamente 5 Sale per pagina,
+  una pagina per ciascun Ufficio.
+- Aggiunto sql/reset_test_data.sql per eliminare i dati di prova
+  e il Registro modifiche prima dell'importazione ufficiale.
+- Il reset non elimina utenti, login, database o le 15 Sale.
