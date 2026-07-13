@@ -116,3 +116,15 @@ DVS GESTIONALE v4.1 FINAL
 - Aggiunto sql/reset_test_data.sql per eliminare i dati di prova
   e il Registro modifiche prima dell'importazione ufficiale.
 - Il reset non elimina utenti, login, database o le 15 Sale.
+
+
+DVS GESTIONALE v4.2 — PUSH SETUP
+- Settings → Notifiche.
+- Registrazione separata di Mac, iPhone e iPad.
+- Test locale della notifica.
+- Service Worker abilitato alla ricezione Web Push.
+- Migrazione push_subscriptions e notification_deliveries.
+- Edge Function per scadenze a 10, 5, 3, 1 e 0 giorni.
+- Avviso giornaliero per licenze già scadute.
+- Programmazione automatica tramite Supabase Cron.
+- Consultare docs/CONFIGURAZIONE_NOTIFICHE_PUSH.md.

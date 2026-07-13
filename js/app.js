@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, addAudit } from './api.js';
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
+import { VAPID_PUBLIC_KEY } from './config.js';
 
 const splash=document.getElementById('splash'),login=document.getElementById('login'),shell=document.getElementById('shell'),app=document.getElementById('app'),title=document.getElementById('title'),greeting=document.getElementById('greeting'),modal=document.getElementById('modal'),modalBody=document.getElementById('modal-body'),sheet=document.getElementById('sheet'),sheetBody=document.getElementById('sheet-body'),toast=document.getElementById('toast');
 const views=[['dashboard','dashboard','Dashboard'],['rooms','chair','Sale'],['computers','computer','Computer'],['hardware','rec','Hardware'],['licenses','key','Licenze'],['summary','summary','Sintesi'],['settings','settings','Settings']];
@@ -200,6 +201,7 @@ function settings(){
   return `<div class="list">
     <button class="list-card" data-setting="audit"><div><h3>Registro modifiche</h3><p>Storico automatico delle operazioni.</p></div><span>›</span></button>
     <button class="list-card" data-setting="archive"><div><h3>Archivio</h3><p>Elementi archiviati e ripristino.</p></div><span>›</span></button>
+    <button class="list-card" data-setting="notifications"><div><h3>Notifiche</h3><p>Avvisi automatici per le licenze in scadenza.</p></div><span>›</span></button>
     <button class="list-card" data-setting="backup"><div><h3>Backup ed esportazione</h3><p>Disponibile in una versione successiva.</p></div><span>›</span></button>
     <button class="list-card" data-setting="about"><div><h3>Informazioni</h3><p>Versione, società e note della release.</p></div><span>›</span></button>
     <button class="list-card" id="logout"><div><h3>Logout</h3><p>${esc(state.session?.user?.email||'')}</p></div><span>›</span></button>
@@ -483,12 +485,132 @@ function openGlobalSearch(){
   requestAnimationFrame(()=>input.focus());
 }
 
+
+function base64UrlToUint8Array(value){
+  const padding='='.repeat((4-value.length%4)%4);
+  const base64=(value+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(base64);
+  return Uint8Array.from([...raw].map(char=>char.charCodeAt(0)));
+}
+function pushSupported(){
+  return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+}
+function isStandaloneApp(){
+  return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+}
+async function currentPushSubscription(){
+  if(!pushSupported())return null;
+  const registration=await navigator.serviceWorker.ready;
+  return registration.pushManager.getSubscription();
+}
+async function savePushSubscription(subscription){
+  const json=subscription.toJSON();
+  const {error}=await supabase.from('push_subscriptions').upsert({
+    user_id:state.session.user.id,
+    endpoint:subscription.endpoint,
+    p256dh:json.keys?.p256dh||'',
+    auth:json.keys?.auth||'',
+    user_agent:navigator.userAgent,
+    device_label:[navigator.platform||'',isStandaloneApp()?'App installata':'Browser'].filter(Boolean).join(' · '),
+    enabled:true,
+    updated_at:new Date().toISOString()
+  },{onConflict:'endpoint'});
+  if(error)throw error;
+}
+async function enablePushNotifications(){
+  if(!pushSupported())throw new Error('Le notifiche push non sono supportate su questo dispositivo o browser.');
+  const permission=await Notification.requestPermission();
+  if(permission!=='granted')throw new Error('Autorizzazione alle notifiche non concessa.');
+  const registration=await navigator.serviceWorker.ready;
+  let subscription=await registration.pushManager.getSubscription();
+  if(!subscription){
+    subscription=await registration.pushManager.subscribe({
+      userVisibleOnly:true,
+      applicationServerKey:base64UrlToUint8Array(VAPID_PUBLIC_KEY)
+    });
+  }
+  await savePushSubscription(subscription);
+  return subscription;
+}
+async function disablePushNotifications(){
+  const subscription=await currentPushSubscription();
+  if(!subscription)return;
+  const endpoint=subscription.endpoint;
+  await subscription.unsubscribe();
+  await supabase.from('push_subscriptions').delete().eq('endpoint',endpoint);
+}
+async function showLocalPushTest(){
+  if(Notification.permission!=='granted')throw new Error('Prima attiva le notifiche.');
+  const registration=await navigator.serviceWorker.ready;
+  await registration.showNotification('DVS Gestionale',{
+    body:'Notifiche attive su questo dispositivo.',
+    icon:'./assets/logo-dvs.png',
+    badge:'./assets/logo-dvs.png',
+    tag:'dvs-local-test'
+  });
+}
+async function openNotificationsSetting(){
+  const supported=pushSupported();
+  const subscription=supported?await currentPushSubscription():null;
+  const installed=isStandaloneApp();
+  const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+
+  openModal(`<div class="modal-head"><h2>Notifiche</h2><button class="close" data-close>×</button></div>
+    <section class="notification-settings">
+      <div class="notification-state ${subscription?'enabled':'disabled'}">
+        <strong>${subscription?'Notifiche attive':'Notifiche non attive'}</strong>
+        <span>${supported?'Questo dispositivo può ricevere gli avvisi delle scadenze.':'Questo browser non supporta le notifiche push.'}</span>
+      </div>
+
+      ${isiOS&&!installed?`<div class="notification-notice"><strong>Su iPhone e iPad</strong><span>Apri il gestionale da Safari, scegli Condividi → Aggiungi alla schermata Home, poi riaprilo dall’icona.</span></div>`:''}
+
+      <div class="notification-schedule">
+        <h3>Avvisi previsti</h3>
+        <div><span>10 giorni prima</span><strong>✓</strong></div>
+        <div><span>5 giorni prima</span><strong>✓</strong></div>
+        <div><span>3 giorni prima</span><strong>✓</strong></div>
+        <div><span>1 giorno prima</span><strong>✓</strong></div>
+        <div><span>Giorno della scadenza</span><strong>✓</strong></div>
+        <div><span>Dopo la scadenza</span><strong>Una volta al giorno</strong></div>
+      </div>
+
+      <div class="actions">
+        ${subscription
+          ? '<button class="secondary" id="test-notifications">Prova notifica</button><button class="danger" id="disable-notifications">Disattiva</button>'
+          : '<button class="primary" id="enable-notifications" '+(!supported?'disabled':'')+'>Attiva notifiche</button>'}
+      </div>
+    </section>`);
+
+  document.getElementById('enable-notifications')?.addEventListener('click',async()=>{
+    try{
+      await enablePushNotifications();
+      showToast('Notifiche attivate');
+      modal.close();
+      await openNotificationsSetting();
+    }catch(error){alert(error.message)}
+  });
+  document.getElementById('disable-notifications')?.addEventListener('click',async()=>{
+    if(!confirm('Disattivare le notifiche su questo dispositivo?'))return;
+    try{
+      await disablePushNotifications();
+      showToast('Notifiche disattivate');
+      modal.close();
+      await openNotificationsSetting();
+    }catch(error){alert(error.message)}
+  });
+  document.getElementById('test-notifications')?.addEventListener('click',async()=>{
+    try{await showLocalPushTest()}catch(error){alert(error.message)}
+  });
+}
+
 function openSetting(k){
   if(k==='audit'){
     openModal(`<div class="modal-head"><h2>Registro modifiche</h2><button class="close" data-close>×</button></div><div class="list">${state.data.audit_log.length?state.data.audit_log.slice(0,100).map(x=>`<div class="card"><strong>${esc(x.action)} · ${esc(x.entity_type)}</strong><p>${new Date(x.created_at).toLocaleString('it-IT')}</p></div>`).join(''):'<div class="empty">Registro vuoto.</div>'}</div>`);
   }else if(k==='archive'){
     const all=[...state.data.computers.map(x=>({...x,_table:'computers'})),...state.data.hardware.map(x=>({...x,_table:'hardware'})),...state.data.licenses.map(x=>({...x,_table:'licenses'}))].filter(x=>x.archived_at);
     openModal(`<div class="modal-head"><h2>Archivio</h2><button class="close" data-close>×</button></div>${all.length?all.map(x=>`<div class="list-card"><div><h3>${esc(x.code)}</h3><p>${esc(x._table)}</p></div></div>`).join(''):'<div class="empty">Nessun elemento archiviato.</div>'}`);
+  }else if(k==='notifications'){
+    openNotificationsSetting();
   }else if(k==='about'){
     openModal(`<div class="modal-head"><h2>Informazioni</h2><button class="close" data-close>×</button></div>
       <section class="about-card">
@@ -496,9 +618,9 @@ function openSetting(k){
         <h3>DVS Gestionale</h3>
         <p>Gestione Sale, Computer, Hardware e Licenze</p>
         <dl>
-          <div><dt>Versione</dt><dd>4.1 Release Candidate</dd></div>
+          <div><dt>Versione</dt><dd>4.2 Push Setup</dd></div>
           <div><dt>Build</dt><dd>2026.07.13</dd></div>
-          <div><dt>Database</dt><dd>Supabase · Schema 4.1</dd></div>
+          <div><dt>Database</dt><dd>Supabase · Schema 4.2</dd></div>
           <div><dt>Sviluppato da</dt><dd>Marco D'Agostino</dd></div>
           <div><dt>Per</dt><dd>Digital Video Service S.r.l.</dd></div>
           <div><dt>Sede</dt><dd>Via Antonio Chinotto, 1 · 00195 Roma</dd></div>
@@ -558,4 +680,4 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.1.final');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.2.push');boot();

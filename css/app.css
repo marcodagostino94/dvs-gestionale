@@ -403,3 +403,24 @@ dialog,.modal-card,.sheet-card,.splash img{animation:none!important;transition:n
   .summary-station{grid-template-columns:1fr}
   .summary-resource{min-height:auto}
 }
+
+
+/* ===== Notifiche Push v4.2 ===== */
+.notification-settings{display:grid;gap:16px}
+.notification-state,.notification-notice,.notification-schedule{
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:15px;
+  background:rgba(255,255,255,.045);
+}
+.notification-state{display:grid;gap:5px}
+.notification-state strong{font-size:16px}
+.notification-state span,.notification-notice span{color:var(--muted);font-size:12px;line-height:1.5}
+.notification-state.enabled{border-color:rgba(53,190,105,.42);background:rgba(53,190,105,.08)}
+.notification-state.disabled{border-color:rgba(255,255,255,.10)}
+.notification-notice{display:grid;gap:6px;border-color:rgba(255,202,58,.35);background:rgba(255,202,58,.07)}
+.notification-schedule h3{margin:0 0 10px;font-size:14px}
+.notification-schedule>div{display:flex;justify-content:space-between;gap:20px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
+.notification-schedule>div:last-child{border-bottom:0}
+.notification-schedule span{color:var(--muted)}
+.notification-schedule strong{font-size:11px}
