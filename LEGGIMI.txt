@@ -50,3 +50,9 @@ VERSIONE 4.0.2
 - Badge TRIAL nelle viste operative
 - Allineata correttamente la spunta Disattivazione richiesta
 - Per database già configurati: eseguire sql/migrate_v4_0_2.sql una sola volta
+
+
+HOTFIX 4.0.2.1
+- Rimossa la doppia dichiarazione della funzione todayISO
+- Corretto il blocco sulla schermata iniziale
+- Nessuna modifica richiesta al database

@@ -43,13 +43,6 @@ function field(id,label,value='',type='text'){return `<label class="field">${lab
 function select(id,label,options,value=''){return `<label class="field">${label}<select id="${id}">${options.map(v=>`<option value="${esc(v[0])}" ${v[0]===value?'selected':''}>${esc(v[1])}</option>`).join('')}</select></label>`}
 
 
-function todayISO(){
-  const d=new Date();
-  const y=d.getFullYear();
-  const m=String(d.getMonth()+1).padStart(2,'0');
-  const day=String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
 function calculateExpiry(start,cycle){
   if(!start)return '';
   const [y,m,d]=start.split('-').map(Number);
@@ -191,4 +184,4 @@ document.getElementById('login-form').onsubmit=async e=>{
     password:document.getElementById('password').value
   });
   if(error)document.getElementById('login-error').textContent='Email o password non corrette.';
-};document.getElementById('add-btn').onclick=addAction;document.getElementById('search-btn').onclick=()=>showToast('Ricerca globale prevista nella v4.2');modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.0.2');boot();
+};document.getElementById('add-btn').onclick=addAction;document.getElementById('search-btn').onclick=()=>showToast('Ricerca globale prevista nella v4.2');modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.0.2.1');boot();
