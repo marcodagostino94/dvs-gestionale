@@ -135,3 +135,9 @@ dialog{border:0;background:transparent;padding:0;width:min(94vw,540px);max-heigh
 .plugin-kind-badge{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:900;background:rgba(48,185,107,.15);color:#9aefbb;border:1px solid rgba(62,200,119,.25)}
 .station-editor-card{border:1px solid var(--line);background:rgba(255,255,255,.045);border-radius:20px;padding:14px;margin:12px 0}.station-editor-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.full-button{width:100%;border:0;border-radius:15px;padding:13px;color:#fff;font-weight:800}
 .summary-room-card .summary-columns + .summary-columns{margin-top:9px;padding-top:9px;border-top:1px solid rgba(255,255,255,.08)}
+
+.detail-grid{display:grid;gap:0}
+.detail-row{display:grid;grid-template-columns:minmax(115px,.8fr) minmax(0,1.4fr);gap:14px;padding:9px 0;border-top:1px solid rgba(255,255,255,.075);align-items:start}
+.detail-row:first-child{border-top:0}
+.detail-row span{font-size:11px;color:var(--muted)}
+.detail-row strong{font-size:12px;overflow-wrap:anywhere;text-align:right}

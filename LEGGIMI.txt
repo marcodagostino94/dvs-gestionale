@@ -69,3 +69,10 @@ VERSIONE 3 MAC/IPAD
 - Più postazioni per ogni Sala
 - Nessuna scritta Postazione nella Sintesi
 - Assegnati prima, Magazzino dopo
+
+
+CORREZIONE VERSIONE 3.1
+- Ripristinata apertura dettagli di Sale, Computer, Hardware e Licenze
+- Ripristinata funzione di impaginazione delle informazioni
+- Modifica dei Plugin collegata al relativo modulo Plugin
+- Cache aggiornata per evitare il caricamento del JavaScript precedente

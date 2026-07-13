@@ -208,6 +208,20 @@ function inventoryCard(type,item) {
   return `<button class="list-card glass license-card ${status.level}" data-item="${escapeHtml(item.id)}"><div><h3>${escapeHtml(item.id)} ${mainBadge} <span class="cycle-badge ${cycleClass}">${cycleLabel}</span></h3><p>Scadenza: ${displayDate(item.expiry)}</p><span class="status-pill ${status.level==="expired"?"bad":status.level==="warning"?"warn":"ok"}">${escapeHtml(status.label)} · ${escapeHtml(location)}</span></div><span class="chevron">›</span></button>`;
 }
 
+
+function detailBlock(title,rows) {
+  return `<section class="detail-block">
+    <h4>${escapeHtml(title)}</h4>
+    <div class="detail-grid">
+      ${rows.map(([label,content]) => `
+        <div class="detail-row">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(content ?? "—")}</strong>
+        </div>`).join("")}
+    </div>
+  </section>`;
+}
+
 function openRoom(id) {
   const room=state.data.rooms.find(item=>item.id===id);
   modalContent.innerHTML=`<div class="modal-title-row"><h2>Sala ${id}</h2><button class="text-button" id="edit-room">Modifica</button></div>
@@ -271,7 +285,10 @@ function openItemView(type,id) {
     ${detailBlock(type === "computers" ? "Computer" : type === "hardware" ? "Hardware" : "Licenza Avid",rows)}
     <div class="modal-actions"><button class="secondary-button" id="close-modal">Chiudi</button></div>`;
 
-  document.getElementById("edit-item").onclick = () => openItemEdit(type,id);
+  document.getElementById("edit-item").onclick = () => {
+    if (type === "licenses" && item.category === "plugin") openLicenseEdit("plugin",id);
+    else openItemEdit(type,id);
+  };
   document.getElementById("close-modal").onclick = closeModal;
   openModal();
 }
