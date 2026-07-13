@@ -68,3 +68,14 @@ VERSIONE 4.0.3 SAFE
 - “Non assegnato” in rosso
 - Icone definitive e Settings
 - Hardware con ● REC
+
+
+VERSIONE 4.0.4 POLISH
+- Singolo celeste e Ultimate rosa
+- Mensile arancione, Annuale verde, Trial giallo
+- Colore differenziato per ogni versione di macOS
+- Nelle Sale, Avid mostra tipo + durata + Trial
+- Menu di selezione con ingresso/uscita animati
+- Sottomenu del + con ingresso laterale da destra
+- Splash screen con logo che si riduce verso l’angolo
+- Micro-animazioni su pulsanti e card

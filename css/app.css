@@ -99,3 +99,172 @@
   .summary-cell{background:#fff!important;color:#111!important;border:1px solid #ddd!important}
   .summary-cell span,.summary-cell small{color:#333!important}
 }
+
+
+/* ===== Badge palette ===== */
+.badge.singolo{
+  background:rgba(76,174,255,.16);
+  border-color:rgba(76,174,255,.42);
+  color:#8fd0ff;
+}
+.badge.ultimate{
+  background:rgba(241,100,180,.17);
+  border-color:rgba(241,100,180,.42);
+  color:#ff9fd2;
+}
+.badge.monthly{
+  background:rgba(255,151,62,.17);
+  border-color:rgba(255,151,62,.42);
+  color:#ffb26f;
+}
+.badge.annual{
+  background:rgba(57,196,111,.17);
+  border-color:rgba(57,196,111,.42);
+  color:#85e5aa;
+}
+.badge.trial{
+  background:rgba(255,205,76,.17);
+  border-color:rgba(255,205,76,.44);
+  color:#ffe08a;
+}
+
+/* ===== macOS palette ===== */
+.badge.os-mojave{
+  background:rgba(191,128,83,.18);
+  border-color:rgba(191,128,83,.42);
+  color:#d9aa86;
+}
+.badge.os-monterey{
+  background:rgba(61,132,255,.18);
+  border-color:rgba(61,132,255,.42);
+  color:#8bb8ff;
+}
+.badge.os-ventura{
+  background:rgba(139,86,255,.18);
+  border-color:rgba(139,86,255,.42);
+  color:#bc9bff;
+}
+.badge.os-sonoma{
+  background:rgba(29,191,184,.18);
+  border-color:rgba(29,191,184,.42);
+  color:#7fe0dc;
+}
+.badge.os-sequoia{
+  background:rgba(84,177,89,.18);
+  border-color:rgba(84,177,89,.42);
+  color:#9bdc9f;
+}
+.badge.os-tahoe{
+  background:rgba(134,147,170,.18);
+  border-color:rgba(134,147,170,.42);
+  color:#c0cadb;
+}
+
+/* ===== Menu / modal motion ===== */
+dialog{
+  opacity:0;
+  transition:opacity .18s ease;
+}
+dialog[open]{opacity:1}
+dialog::backdrop{
+  opacity:0;
+  transition:opacity .18s ease;
+}
+dialog[open]::backdrop{opacity:1}
+
+#modal .modal-panel,
+#modal .modal-content,
+#modal > div{
+  transform:translateY(24px) scale(.985);
+  opacity:0;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),opacity .18s ease;
+}
+#modal.opening .modal-panel,
+#modal.opening .modal-content,
+#modal.opening > div{
+  transform:translateY(0) scale(1);
+  opacity:1;
+}
+#modal.closing .modal-panel,
+#modal.closing .modal-content,
+#modal.closing > div{
+  transform:translateY(24px) scale(.985);
+  opacity:0;
+}
+
+#sheet .sheet-panel,
+#sheet .bottom-sheet,
+#sheet > div{
+  opacity:0;
+  transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .18s ease;
+}
+@media(max-width:899px){
+  #sheet .sheet-panel,
+  #sheet .bottom-sheet,
+  #sheet > div{transform:translateY(100%)}
+  #sheet.opening .sheet-panel,
+  #sheet.opening .bottom-sheet,
+  #sheet.opening > div{transform:translateY(0);opacity:1}
+  #sheet.closing .sheet-panel,
+  #sheet.closing .bottom-sheet,
+  #sheet.closing > div{transform:translateY(100%);opacity:0}
+}
+@media(min-width:900px){
+  #sheet .sheet-panel,
+  #sheet .bottom-sheet,
+  #sheet > div{transform:translateX(100%)}
+  #sheet.opening .sheet-panel,
+  #sheet.opening .bottom-sheet,
+  #sheet.opening > div{transform:translateX(0);opacity:1}
+  #sheet.closing .sheet-panel,
+  #sheet.closing .bottom-sheet,
+  #sheet.closing > div{transform:translateX(100%);opacity:0}
+}
+
+/* ===== Plus submenu from right ===== */
+#modal .add-menu{
+  transform:translateX(24px);
+  opacity:0;
+  transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .18s ease;
+}
+#modal.opening .add-menu{
+  transform:translateX(0);
+  opacity:1;
+}
+
+/* ===== Splash logo shrink to top-left ===== */
+#splash{
+  transition:opacity .25s ease,visibility .25s ease;
+}
+#splash img,
+#splash .splash-logo{
+  transform-origin:center center;
+  transition:
+    transform .72s cubic-bezier(.22,.9,.25,1),
+    opacity .28s ease;
+}
+#splash.shrink img,
+#splash.shrink .splash-logo{
+  transform:translate(calc(-50vw + 150px),calc(-50vh + 70px)) scale(.24);
+}
+#splash.shrink{
+  background:rgba(10,12,16,.2);
+}
+#splash.hidden{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+}
+
+/* subtle polish */
+button,.list-card,.room-card,.choice{
+  transition:transform .16s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+button:active,.list-card:active,.room-card:active,.choice:active{
+  transform:scale(.985);
+}
+@media(hover:hover){
+  .list-card:hover,.room-card:hover,.choice:hover{
+    transform:translateY(-2px);
+  }
+}
