@@ -29,3 +29,14 @@ NON ANCORA PRESENTI
 - Importazione File Master (v4.1)
 - Face ID / Touch ID e ricerca globale (v4.2)
 - Allegati e backup completi (versioni successive)
+
+
+VERSIONE 4.0.1
+- Aggiunta opzione Rimani connesso
+- Sessione persistente solo quando richiesta
+- Ripristinati i pulsanti per macOS
+- Ripristinati i pulsanti Ultimate / Singolo
+- Ripristinati i pulsanti Mensile / Annuale
+- Ripristinati i pulsanti Avid / Plugin e Continuum / Sapphire
+- Assegnazione: “Non assegnato” al posto di “Magazzino”
+- Sale e postazioni ordinate numericamente nel selettore
