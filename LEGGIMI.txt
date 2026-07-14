@@ -206,3 +206,9 @@ DVS GESTIONALE v4.4 EXPERIMENTAL BUILD 4
 - Nessuna modifica a Edge Function, cron o secret.
 - Il backup esporta e importa un unico file JSON completo.
 - “Salva come PDF” apre la finestra di stampa del sistema: scegliere la destinazione PDF.
+
+
+HOTFIX v4.4 Experimental Build 4.1
+- Corretto l'accesso al Centro Stampa.
+- Rimossa la vecchia voce Stampa dalla Sintesi.
+- Nessuna SQL richiesta.

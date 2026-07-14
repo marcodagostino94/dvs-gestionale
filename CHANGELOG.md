@@ -47,3 +47,8 @@
 - Ultimo backup con nome file, data e ora.
 - Header dinamico e compatto durante lo scroll.
 - Pulse più evidente sulle criticità.
+
+
+### Hotfix Build 4.1
+- Corretto il componente delle opzioni nel Centro Stampa.
+- Rimosso definitivamente il pulsante Stampa dalla Sintesi.

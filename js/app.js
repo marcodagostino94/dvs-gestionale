@@ -300,7 +300,7 @@ function summary(){
         <h2>Sintesi interattiva</h2>
         <p>Clicca sui riquadri per modificare le assegnazioni oppure sull’intestazione della Sala per produzione e postazioni.</p>
       </div>
-      <button type="button" class="secondary" id="print-summary">Stampa</button>
+
     </div>
 
     <div class="summary-final summary-interactive">
@@ -435,7 +435,7 @@ async function collectBackupData(){
   }
   return {
     app:'DVS Gestionale',
-    version:'4.4 Experimental Build 4',
+    version:'4.4 Experimental Build 4.1',
     exported_at:new Date().toISOString(),
     tables
   };
@@ -514,7 +514,7 @@ function printHeader(title){
     <div>
       <strong>Digital Video Service</strong>
       <h1>${esc(title)}</h1>
-      <p>DVS Gestionale · Versione 4.4 Experimental Build 4 · ${esc(now)}</p>
+      <p>DVS Gestionale · Versione 4.4 Experimental Build 4.1 · ${esc(now)}</p>
     </div>
   </header>`;
 }
@@ -611,6 +611,13 @@ function runSystemPrint(){
   window.print();
 }
 
+function printOptionCheck(id,label,isChecked=false){
+  return `<label class="option-check">
+    <input id="${id}" type="checkbox" ${isChecked?'checked':''}>
+    <span>${label}</span>
+  </label>`;
+}
+
 function openPrintCenter(){
   openModal(`<div class="modal-head"><h2>Stampa ed esportazione</h2><button class="close" data-close>×</button></div>
     <div class="print-center">
@@ -625,8 +632,8 @@ function openPrintCenter(){
       </label>
 
       <div id="print-options">
-        ${check('print-complete','Scheda completa',false)}
-        ${check('print-unassigned','Includi Non assegnati',true)}
+        ${printOptionCheck('print-complete','Scheda completa',false)}
+        ${printOptionCheck('print-unassigned','Includi Non assegnati',true)}
         <label>Contenuto
           <select id="print-scope">
             <option value="all">Tutto</option>
@@ -752,7 +759,6 @@ function bindContent(){
   document.querySelectorAll('[data-summary-assign]').forEach(b=>b.onclick=()=>assignmentSheet(b.dataset.summaryAssign,b.dataset.station));
   document.querySelectorAll('[data-summary-room]').forEach(b=>b.onclick=()=>openSummaryRoomActions(b.dataset.summaryRoom));
   document.getElementById('logout')?.addEventListener('click',async()=>supabase.auth.signOut());
-  document.getElementById('print-summary')?.addEventListener('click',()=>window.print());
 }
 
 
@@ -1425,7 +1431,7 @@ function openSetting(k){
     const activeAvid=state.data.licenses.filter(x=>!x.archived_at&&x.category==='avid').length;
     const activePlugins=state.data.licenses.filter(x=>!x.archived_at&&x.category==='plugin').length;
     const systemInfo=`DVS Gestionale
-Versione: 4.4 Experimental Build 4
+Versione: 4.4 Experimental Build 4.1
 Database: Schema 4.3.1
 Sale: ${state.data.rooms.length}
 Computer: ${activeComputers}
@@ -1440,8 +1446,8 @@ Plugin: ${activePlugins}`;
         <p>Gestione Sale, Computer, Hardware e Licenze</p>
 
         <dl>
-          <div><dt>Versione</dt><dd>4.4 Experimental Build 4</dd></div>
-          <div><dt>Build</dt><dd>2026.07.14-B4</dd></div>
+          <div><dt>Versione</dt><dd>4.4 Experimental Build 4.1</dd></div>
+          <div><dt>Build</dt><dd>2026.07.14-B4.1</dd></div>
           <div><dt>Database</dt><dd>Supabase · Schema 4.3.1</dd></div>
         </dl>
 
@@ -1540,7 +1546,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.4.exp.b4');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.4.exp.b4.1');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();
