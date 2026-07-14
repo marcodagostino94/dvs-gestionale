@@ -169,16 +169,14 @@ DVS GESTIONALE v4.3 — SINTESI INTERATTIVA EXPERIMENTAL
 
 
 DVS GESTIONALE v4.3.1 — TRIAL MANAGEMENT
-- La Trial Avid non è più una licenza inventariata.
-- Nel selettore Avid compaiono:
-  • Trial da attivare (giallo chiaro)
-  • Trial attiva (giallo intenso)
+- La Trial non è più una licenza inventariata.
+- Nel selettore Avid sono disponibili:
+  Trial da attivare e Trial attiva.
+- Entrambe sono evidenziate in giallo con tonalità differenti.
 - Trial attiva richiede una data di scadenza.
-- La scadenza viene mostrata nello stesso punto delle licenze Avid normali.
-- Assegnando una licenza Avid reale, lo stato Trial viene azzerato.
-- Selezionando Non assegnato, vengono azzerate licenza e Trial.
-- Rimossa la spunta TRIAL dalla creazione/modifica Licenze.
-- Le notifiche push includono anche le Trial attive.
-- Eseguire sql/migrate_v4_3_1_trial.sql una sola volta.
-- Dopo la migrazione, ridistribuire la Edge Function send-expiry-notifications
-  usando il nuovo index.ts incluso in questa versione.
+- La scadenza compare nella stessa posizione delle Avid reali.
+- Assegnando una licenza vera, la Trial viene rimossa automaticamente.
+- Scegliendo Nessuna Avid vengono azzerati licenza e stato Trial.
+- Rimossa la spunta Trial dalla creazione Licenze.
+- Incluse notifiche push per le Trial attive.
+- Eseguire sql/migrate_v4_3_1_trial_management.sql una sola volta.
