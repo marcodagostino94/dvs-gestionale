@@ -51,6 +51,8 @@ create table if not exists public.stations (
   computer_id uuid unique references public.computers(id) on delete set null,
   hardware_id uuid unique references public.hardware(id) on delete set null,
   avid_license_id uuid unique references public.licenses(id) on delete set null,
+  avid_trial_status text not null default 'none' check (avid_trial_status in ('none','pending','active')),
+  avid_trial_expiry date,
   notes text not null default '', created_at timestamptz not null default now(),
   unique(room_id,position)
 );
