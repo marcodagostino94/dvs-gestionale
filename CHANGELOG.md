@@ -1,6 +1,6 @@
 # DVS Gestionale — Changelog
 
-## 4.4 Experimental Build 2 — 14 luglio 2026
+## 4.4 Experimental Build 3 — 14 luglio 2026
 
 - Scadenze Avid spostate nel relativo riquadro.
 - Scadenze Plugin visibili nel relativo riquadro.
@@ -26,3 +26,12 @@
 - Produzione eliminabile.
 - Postazione aggiuntiva eliminabile.
 - Testata Sala interamente cliccabile e neutra.
+
+
+### Correzioni Build 3
+- Ripristinata la posizione precedente della scadenza Avid.
+- Pulse applicato all'intero riquadro, con giallo o rosso coerente.
+- Pallino Hardware riallineato nel menu laterale.
+- Produzione nuovamente gestita con pulsanti RAI / PRIVATO / ALTRO.
+- Aggiunto pulsante Elimina produzione.
+- Aggiunta migrazione SQL per consentire una Sala senza produzione.

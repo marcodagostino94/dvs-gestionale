@@ -728,3 +728,124 @@ dialog,.modal-card,.sheet-card,.splash img{animation:none!important;transition:n
 .pulse-critical{filter:none!important}
 .danger-choice{border-color:rgba(255,71,82,.35)!important;background:rgba(255,71,82,.07)!important}
 @media(prefers-reduced-motion:reduce){.pulse-critical.warning,.pulse-critical.expired{animation:none!important}}
+
+
+/* ===== v4.4 Experimental Build 3 ===== */
+
+/* Ripristino posizione precedente della scadenza Avid */
+.resource-title-row{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  gap:12px!important;
+}
+.resource-title-row .resource-expiry{
+  margin:0!important;
+  max-width:none!important;
+  text-align:left!important;
+  justify-self:auto!important;
+}
+
+/* Pulse visibile sull'intero tab */
+@keyframes dvsTabPulseWarning{
+  0%,100%{
+    background:linear-gradient(145deg,rgba(255,202,58,.13),rgba(103,75,0,.08));
+    border-color:rgba(255,202,58,.62);
+    box-shadow:inset 0 0 0 0 rgba(255,221,102,0),0 8px 20px rgba(0,0,0,.14);
+  }
+  50%{
+    background:linear-gradient(145deg,rgba(255,218,91,.30),rgba(130,92,0,.18));
+    border-color:rgba(255,231,145,1);
+    box-shadow:inset 0 0 24px rgba(255,218,91,.14),0 0 18px rgba(255,202,58,.24);
+  }
+}
+@keyframes dvsTabPulseExpired{
+  0%,100%{
+    background:linear-gradient(145deg,rgba(255,71,82,.15),rgba(93,20,26,.09));
+    border-color:rgba(255,71,82,.68);
+    box-shadow:inset 0 0 0 0 rgba(255,95,105,0),0 8px 20px rgba(0,0,0,.14);
+  }
+  50%{
+    background:linear-gradient(145deg,rgba(255,91,101,.32),rgba(123,25,33,.20));
+    border-color:rgba(255,141,148,1);
+    box-shadow:inset 0 0 24px rgba(255,91,101,.16),0 0 18px rgba(255,71,82,.26);
+  }
+}
+.pulse-critical.warning{
+  animation:dvsTabPulseWarning 2.3s ease-in-out infinite!important;
+}
+.pulse-critical.expired{
+  animation:dvsTabPulseExpired 2.3s ease-in-out infinite!important;
+}
+
+/* Pallino Hardware allineato agli altri simboli nella sidebar */
+.rec-nav-icon{
+  width:24px!important;
+  min-width:24px!important;
+  height:24px!important;
+  flex:0 0 24px!important;
+  display:grid!important;
+  place-items:center!important;
+  margin:0!important;
+}
+.rec-nav-icon i{
+  width:10px!important;
+  height:10px!important;
+  margin:0!important;
+}
+
+/* Produzione con pulsanti e azione separata di eliminazione */
+.production-actions{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:14px;
+  margin-top:16px;
+}
+.production-actions .actions{
+  margin-top:0;
+}
+.production-remove{
+  background:rgba(255,71,82,.11);
+  border:1px solid rgba(255,71,82,.30);
+  color:#ff747c;
+}
+#modal .segmented{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0;
+  padding:2px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:rgba(255,255,255,.035);
+  overflow:hidden;
+}
+#modal .segmented button{
+  border:0;
+  border-radius:11px;
+  background:transparent;
+  color:var(--muted);
+}
+#modal .segmented button.active{
+  color:#fff;
+  background:linear-gradient(135deg,#c92e39,#861922);
+}
+
+@media(max-width:560px){
+  .production-actions{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .production-actions .actions{
+    width:100%;
+  }
+  .production-actions .actions button{
+    flex:1;
+  }
+  .production-remove{
+    width:100%;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .pulse-critical.warning,.pulse-critical.expired{animation:none!important}
+}

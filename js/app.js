@@ -499,27 +499,69 @@ function openSummaryRoomActions(roomId){
 function openSummaryProductionEditor(room){
   openModal(`<div class="modal-head"><h2>Produzione · ${esc(room.name)}</h2><button class="close" data-close>×</button></div>
     <div class="fields">
-      <label>Tipo
-        <select id="summary-production-type">
-          <option value="">Nessuna produzione</option>
-          <option value="RAI" ${room.client_type==='RAI'?'selected':''}>RAI</option>
-          <option value="PRIVATO" ${room.client_type==='PRIVATO'?'selected':''}>Privato</option>
-          <option value="ALTRO" ${room.client_type==='ALTRO'?'selected':''}>Altro</option>
-        </select>
-      </label>
-      ${field('summary-production-name','Nome produzione',room.production_name||'')}
+      ${segmented('summary-production-type','Tipo produzione',[
+        ['RAI','RAI'],
+        ['PRIVATO','PRIVATO'],
+        ['ALTRO','ALTRO']
+      ],room.client_type||'RAI')}
+      ${field('summary-production-name','Titolo produzione',room.production_name||'')}
     </div>
-    <div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save-summary-production">Salva</button></div>`);
+    <div class="production-actions">
+      <button class="danger production-remove" id="remove-summary-production">Elimina produzione</button>
+      <div class="actions">
+        <button class="secondary" data-close>Annulla</button>
+        <button class="primary" id="save-summary-production">Salva</button>
+      </div>
+    </div>`);
+
+  bindSegments(modalBody);
 
   document.getElementById('save-summary-production').onclick=async()=>{
     const type=val('summary-production-type');
     const name=val('summary-production-name').trim();
-    const clear=!type||!name;
+
+    if(!name){
+      alert('Inserisci il titolo della produzione oppure usa “Elimina produzione”.');
+      return;
+    }
+
     try{
-      await saveRow('rooms',{...room,client_type:clear?null:type,production_name:clear?null:name});
-      await addAudit('update','rooms',room.id,{client_type:clear?null:type,production_name:clear?null:name});
-      modal.close();showToast(clear?'Produzione rimossa':'Produzione salvata');await refresh();
-    }catch(error){alert(error.message)}
+      await saveRow('rooms',{
+        ...room,
+        client_type:type,
+        production_name:name
+      });
+      await addAudit('update','rooms',room.id,{
+        client_type:type,
+        production_name:name
+      });
+      modal.close();
+      showToast('Produzione salvata');
+      await refresh();
+    }catch(error){
+      alert(error.message);
+    }
+  };
+
+  document.getElementById('remove-summary-production').onclick=async()=>{
+    if(!confirm(`Eliminare la produzione da ${room.name}?`))return;
+
+    try{
+      await saveRow('rooms',{
+        ...room,
+        client_type:null,
+        production_name:null
+      });
+      await addAudit('update','rooms',room.id,{
+        client_type:null,
+        production_name:null
+      });
+      modal.close();
+      showToast('Produzione eliminata');
+      await refresh();
+    }catch(error){
+      alert(error.message);
+    }
   };
 }
 
@@ -1031,7 +1073,7 @@ function openSetting(k){
     const activeAvid=state.data.licenses.filter(x=>!x.archived_at&&x.category==='avid').length;
     const activePlugins=state.data.licenses.filter(x=>!x.archived_at&&x.category==='plugin').length;
     const systemInfo=`DVS Gestionale
-Versione: 4.4 Experimental Build 2
+Versione: 4.4 Experimental Build 3
 Database: Schema 4.3.1
 Sale: ${state.data.rooms.length}
 Computer: ${activeComputers}
@@ -1046,8 +1088,8 @@ Plugin: ${activePlugins}`;
         <p>Gestione Sale, Computer, Hardware e Licenze</p>
 
         <dl>
-          <div><dt>Versione</dt><dd>4.4 Experimental Build 2</dd></div>
-          <div><dt>Build</dt><dd>2026.07.14-B2</dd></div>
+          <div><dt>Versione</dt><dd>4.4 Experimental Build 3</dd></div>
+          <div><dt>Build</dt><dd>2026.07.14-B3</dd></div>
           <div><dt>Database</dt><dd>Supabase · Schema 4.3.1</dd></div>
         </dl>
 
@@ -1146,4 +1188,4 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.4.exp.b2');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.4.exp.b3');boot();
