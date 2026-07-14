@@ -176,3 +176,12 @@ DVS GESTIONALE v4.3.1 — TRIAL FIXED
 - Scadenza Trial attiva mostrata nell'intestazione della Sala.
 - Nessuna ulteriore SQL richiesta se la migrazione Trial è già stata eseguita.
 - Edge Function delle notifiche Trial da aggiornare soltanto dopo il collaudo del frontend.
+
+
+HOTFIX v4.3.1.1 — ASSEGNAZIONE AVID
+- Corretta l'assegnazione di Avid da Sintesi e Sale.
+- La Trial viene azzerata prima di assegnare una licenza reale.
+- Corretta anche l'assegnazione dal dettaglio della sezione Licenze.
+- Risolto lo spostamento di una licenza già occupata tra due Sale.
+- Nessuna nuova SQL richiesta.
+- Nessuna modifica a Edge Function, cron o secret.
