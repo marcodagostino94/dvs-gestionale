@@ -10,7 +10,7 @@ const state={view:'dashboard',data:null,filter:'all',session:null};
 const labels={dashboard:'Dashboard',rooms:'Sale',computers:'Computer',hardware:'Hardware',licenses:'Licenze',summary:'Sintesi · Experimental',settings:'Settings'};
 
 function navIcon(name){const icons={dashboard:`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>`,chair:`<svg viewBox="0 0 24 24"><path d="M7 11V7a5 5 0 0 1 10 0v4"/><path d="M5 11h14v5H5z"/><path d="M8 16v5M16 16v5M4 11V8M20 11V8"/></svg>`,computer:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,key:`<svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M15 12v2"/></svg>`,summary:`<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>`,settings:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.12-1.3l2-1.55-2-3.46-2.45 1A7 7 0 0 0 14.2 5.4L13.8 3h-4l-.4 2.4a7 7 0 0 0-2.23 1.29l-2.45-1-2 3.46 2 1.55A7 7 0 0 0 4.6 12c0 .44.04.87.12 1.3l-2 1.55 2 3.46 2.45-1a7 7 0 0 0 2.23 1.29l.4 2.4h4l.4-2.4a7 7 0 0 0 2.23-1.29l2.45 1 2-3.46-2-1.55c.08-.43.12-.86.12-1.3z"/></svg>`};return icons[name]||''}
-function navHTML(){return views.map(([id,icon,label])=>`<button class="nav-btn ${state.view===id?'active':''}" data-view="${id}">${icon==='rec'?`<span class="rec-nav-icon"><i></i><b>REC</b></span>`:`<span class="nav-svg">${navIcon(icon)}</span>`}<small>${label}</small></button>`).join('')}
+function navHTML(){return views.map(([id,icon,label])=>`<button class="nav-btn ${state.view===id?'active':''}" data-view="${id}">${icon==='rec'?`<span class="rec-nav-icon"><i></i></span>`:`<span class="nav-svg">${navIcon(icon)}</span>`}<small>${label}</small></button>`).join('')}
 function bindNav(){document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view))}
 function setView(v){state.view=v;state.filter='all';title.textContent=labels[v];document.getElementById('desktop-nav').innerHTML=navHTML();document.getElementById('mobile-nav').innerHTML=navHTML();bindNav();render()}
 function showToast(t){toast.textContent=t;toast.classList.remove('hidden');setTimeout(()=>toast.classList.add('hidden'),2200)}
@@ -58,7 +58,52 @@ function rooms(){
 }
 function stationCard(s){const c=state.data.computers.find(x=>x.id===s.computer_id),a=state.data.licenses.find(x=>x.id===s.avid_license_id),plugins=state.data.station_plugins.filter(x=>x.station_id===s.id).map(x=>state.data.licenses.find(l=>l.id===x.license_id)).filter(Boolean);return `<div class="station-row"><div class="resource-row"><div><strong>${c?esc(c.code):'Nessun computer'}</strong>${c?`<small>${esc([c.model,c.variant].filter(Boolean).join(' · '))}</small>`:''}</div>${c?.os_name?`<span class="badge os os-${esc(c.os_name.toLowerCase())}">${esc(c.os_name.toUpperCase())}</span>`:''}</div><div class="resource-row"><strong>${a?esc(a.code):'Nessuna Avid'}</strong>${a?`<div class="badges"><span class="badge ${a.avid_type==='Ultimate'?'ultimate':'singolo'}">${esc(a.avid_type.toUpperCase())}</span><span class="badge ${a.billing_cycle}">${cycleLabel(a.billing_cycle)}</span>${a.is_trial?'<span class="badge trial">TRIAL</span>':''}</div>`:''}</div>${plugins.map(p=>`<div class="resource-row"><strong>${esc(p.plugin_type.toUpperCase())}</strong><div class="badges"><span class="badge ${p.billing_cycle}">${cycleLabel(p.billing_cycle)}</span>${p.is_trial?'<span class="badge trial">TRIAL</span>':''}</div></div>`).join('')}${[a,...plugins].filter(Boolean).map(x=>licenseStatus(x)).filter(x=>x.level!=='ok').map(x=>`<div class="status ${x.level}">${esc(x.text)}</div>`).join('')}</div>`}
 
-function inventory(type){const source=state.data[type].filter(x=>!x.archived_at);const mapped=source.map(x=>({x,loc:type==='computers'?stationOf('computer',x.id):type==='hardware'?stationOf('hardware',x.id):x.category==='plugin'?pluginStation(x.id):stationOf('license',x.id)})).sort((a,b)=>{const au=a.loc?0:1,bu=b.loc?0:1;if(au!==bu)return au-bu;if(type==='licenses'&&au===0){const ac=a.x.category==='avid'?0:1,bc=b.x.category==='avid'?0:1;if(ac!==bc)return ac-bc}return numSort(a.x,b.x)});const filtered=mapped.filter(({x,loc})=>state.filter==='all'||state.filter==='assigned'&&loc||state.filter==='warehouse'&&!loc||type==='licenses'&&state.filter===x.category);return `${filters(type)}<div class="list">${filtered.length?filtered.map(({x})=>inventoryCard(type,x)).join(''):`<div class="empty">Nessun elemento.</div>`}</div>`}
+function inventory(type){
+  const source=state.data[type].filter(x=>!x.archived_at);
+  const mapped=source.map(x=>({
+    x,
+    loc:type==='computers'
+      ?stationOf('computer',x.id)
+      :type==='hardware'
+        ?stationOf('hardware',x.id)
+        :x.category==='plugin'
+          ?pluginStation(x.id)
+          :stationOf('license',x.id)
+  }));
+
+  const filtered=mapped.filter(({x,loc})=>
+    state.filter==='all'
+    ||state.filter==='assigned'&&loc
+    ||state.filter==='warehouse'&&!loc
+    ||type==='licenses'&&state.filter===x.category
+  );
+
+  if(type!=='licenses'){
+    const ordered=filtered.sort((a,b)=>{
+      const au=a.loc?0:1,bu=b.loc?0:1;
+      if(au!==bu)return au-bu;
+      return numSort(a.x,b.x);
+    });
+    return `${filters(type)}<div class="list">${ordered.length?ordered.map(({x})=>inventoryCard(type,x)).join(''):'<div class="empty">Nessun elemento.</div>'}</div>`;
+  }
+
+  const orderGroup=rows=>rows.sort((a,b)=>{
+    const ac=a.x.category==='avid'?0:1;
+    const bc=b.x.category==='avid'?0:1;
+    if(ac!==bc)return ac-bc;
+    return numSort(a.x,b.x);
+  });
+
+  const assigned=orderGroup(filtered.filter(row=>row.loc));
+  const unassigned=orderGroup(filtered.filter(row=>!row.loc));
+
+  const group=(label,rows)=>`<section class="license-inventory-group">
+    <div class="office-label license-group-label"><span>${label}</span></div>
+    <div class="list">${rows.length?rows.map(({x})=>inventoryCard(type,x)).join(''):'<div class="empty">Nessun elemento.</div>'}</div>
+  </section>`;
+
+  return `${filters(type)}<div class="license-inventory-groups">${group('Assegnati',assigned)}${group('Non assegnati',unassigned)}</div>`;
+}
 function filters(type){const fs=type==='licenses'?[['all','Tutte'],['avid','Avid'],['plugin','Plugin'],['assigned','Assegnate'],['warehouse','Magazzino']]:[['all','Tutti'],['assigned','Assegnati'],['warehouse','Magazzino']];return `<div class="filters">${fs.map(([id,l])=>`<button class="filter ${state.filter===id?'active':''}" data-filter="${id}">${l}</button>`).join('')}</div>`}
 function locationMarkup(text){return text==='Non assegnato'?'<span class="unassigned-text">Non assegnato</span>':esc(text)}
 function inventoryCard(type,x){
@@ -183,57 +228,77 @@ function openTrialExpiryEditor(stationId){
   };
 }
 
-function summaryLevel(room){
+
+function worstLevel(levels){
+  return levels.includes('expired')?'expired':levels.includes('warning')?'warning':'ok';
+}
+function stationAvidStatus(station){
+  const avid=state.data.licenses.find(x=>x.id===station.avid_license_id);
+  if(avid)return {kind:'license',item:avid,status:licenseStatus(avid)};
+  const trial=trialInfo(station);
+  if(trial.status==='active')return {kind:'trial',item:null,status:trial};
+  if(trial.status==='pending')return {kind:'trial-pending',item:null,status:trial};
+  return {kind:'none',item:null,status:{level:'ok',text:''}};
+}
+function stationPluginItems(stationId){
+  return state.data.station_plugins
+    .filter(x=>x.station_id===stationId)
+    .map(x=>state.data.licenses.find(l=>l.id===x.license_id))
+    .filter(Boolean);
+}
+function roomStatusDetails(room){
   const stations=state.data.stations.filter(s=>s.room_id===room.id);
   const levels=[];
+  stations.forEach(station=>{
+    const avidState=stationAvidStatus(station);
+    if(avidState.status?.level)levels.push(avidState.status.level);
+    stationPluginItems(station.id).forEach(plugin=>levels.push(licenseStatus(plugin).level));
+  });
+  return worstLevel(levels);
+}
 
-  for(const station of stations){
-    const avid=state.data.licenses.find(l=>l.id===station.avid_license_id);
-    if(avid){
-      levels.push(licenseStatus(avid).level);
-    }else if(station.avid_trial_status==='active'){
-      levels.push(trialInfo(station).level);
-    }
-  }
-
-  return levels.includes('expired')?'expired':levels.includes('warning')?'warning':'ok';
+function summaryLevel(room){
+  return roomStatusDetails(room);
 }
 
 function summary(){
   const allRooms=[...state.data.rooms].sort((a,b)=>a.position-b.position);
   const counts=allRooms.reduce((acc,room)=>{acc[summaryLevel(room)]++;return acc},{ok:0,warning:0,expired:0});
 
-  const unassignedComputers=state.data.computers
-    .filter(x=>!x.archived_at&&!stationOf('computer',x.id))
-    .sort(numSort);
-  const unassignedHardware=state.data.hardware
-    .filter(x=>!x.archived_at&&!stationOf('hardware',x.id))
-    .sort(numSort);
-  const unassignedAvid=state.data.licenses
-    .filter(x=>!x.archived_at&&x.category==='avid'&&!stationOf('license',x.id))
-    .sort(numSort);
-  const unassignedPlugins=state.data.licenses
-    .filter(x=>!x.archived_at&&x.category==='plugin'&&!pluginStation(x.id))
-    .sort(numSort);
+  const unassignedComputers=state.data.computers.filter(x=>!x.archived_at&&!stationOf('computer',x.id)).sort(numSort);
+  const unassignedHardware=state.data.hardware.filter(x=>!x.archived_at&&!stationOf('hardware',x.id)).sort(numSort);
+  const unassignedAvid=state.data.licenses.filter(x=>!x.archived_at&&x.category==='avid'&&!stationOf('license',x.id)).sort(numSort);
+  const unassignedPlugins=state.data.licenses.filter(x=>!x.archived_at&&x.category==='plugin'&&!pluginStation(x.id)).sort(numSort);
 
   const freeCard=(type,item)=>{
-    const subtitle=type==='computers'
-      ? [item.model,item.variant].filter(Boolean).join(' · ')
-      : type==='hardware'
-        ? item.model
-        : type==='licenses'
-          ? (item.category==='avid'?item.avid_type:item.plugin_type)
-          : '';
-    return `<button type="button" class="unassigned-asset-card" data-item="${type}:${item.id}">
-      <strong>${esc(item.code)}</strong>
-      <span>${esc(subtitle||'Disponibile')}</span>
+    if(type==='computers'){
+      return `<button type="button" class="unassigned-asset-card" data-item="computers:${item.id}">
+        <strong>${esc(item.code)}</strong>
+        <span>${esc([item.model,item.variant].filter(Boolean).join(' · ')||'Disponibile')}</span>
+      </button>`;
+    }
+    if(type==='hardware'){
+      return `<button type="button" class="unassigned-asset-card" data-item="hardware:${item.id}">
+        <strong>${esc(item.code)}</strong>
+        <span>${esc(item.model||'Disponibile')}</span>
+      </button>`;
+    }
+
+    const status=licenseStatus(item);
+    const detail=item.category==='avid'
+      ? `System ID ${esc(item.system_id||'—')}`
+      : `Seriale ${esc(item.plugin_serial||'—')}`;
+    return `<button type="button" class="unassigned-asset-card license-free-card ${status.level} ${status.level!=='ok'?'pulse-critical':''}" data-item="licenses:${item.id}">
+      <div class="free-card-head"><strong>${esc(item.code)}</strong><span class="free-expiry">${esc(expiryLabel(item))}</span></div>
+      <span>${esc(item.category==='avid'?item.avid_type:item.plugin_type)} · ${cycleLabel(item.billing_cycle)}</span>
+      <small>${detail}</small>
     </button>`;
   };
 
   return `<div class="summary-toolbar">
       <div>
         <h2>Sintesi interattiva</h2>
-        <p>Clicca direttamente su Computer, Hardware, Avid o Plugin per modificare l’assegnazione.</p>
+        <p>Clicca sui riquadri per modificare le assegnazioni oppure sull’intestazione della Sala per produzione e postazioni.</p>
       </div>
       <button type="button" class="secondary" id="print-summary">Stampa</button>
     </div>
@@ -246,31 +311,24 @@ function summary(){
           <div class="summary-office-rooms">
             ${grouped.map(room=>{
               const stations=state.data.stations.filter(s=>s.room_id===room.id).sort((a,b)=>a.position-b.position);
-              const primaryStation=stations[0]||null;
-              const primaryAvid=stations.map(s=>state.data.licenses.find(x=>x.id===s.avid_license_id)).find(Boolean);
-              const primaryTrial=primaryStation&&!primaryAvid?trialInfo(primaryStation):null;
               const level=summaryLevel(room);
               const production=productionLabel(room);
 
               return `<article class="summary-production-card ${level}">
-                <header class="summary-production-head">
-                  <div>
-                    <h3>${esc(room.name)}</h3>
-                    ${production?`<p>${esc(production)}</p>`:'<p class="summary-no-production">Produzione non indicata</p>'}
-                  </div>
-                  <span class="summary-avid-expiry ${primaryAvid?licenseStatus(primaryAvid).level:primaryTrial?.level||'ok'}">${primaryAvid?esc(expiryLabel(primaryAvid)):primaryTrial?.status==='active'?esc(primaryTrial.text):''}</span>
-                </header>
+                <button type="button" class="summary-production-head summary-room-action" data-summary-room="${room.id}">
+                  <div><h3>${esc(room.name)}</h3></div>
+                  <span class="summary-production-name">${production?esc(production):'Produzione non indicata'}</span>
+                </button>
 
                 <div class="summary-stations">
                   ${stations.map((station,index)=>{
                     const computer=state.data.computers.find(x=>x.id===station.computer_id);
                     const hardware=state.data.hardware.find(x=>x.id===station.hardware_id);
-                    const avid=state.data.licenses.find(x=>x.id===station.avid_license_id);
-                    const trial=avid?null:trialInfo(station);
-                    const plugins=state.data.station_plugins
-                      .filter(x=>x.station_id===station.id)
-                      .map(x=>state.data.licenses.find(l=>l.id===x.license_id))
-                      .filter(Boolean);
+                    const avidState=stationAvidStatus(station);
+                    const avid=avidState.item;
+                    const plugins=stationPluginItems(station.id);
+                    const avidLevel=avidState.status?.level||'ok';
+                    const pluginLevel=worstLevel(plugins.map(plugin=>licenseStatus(plugin).level));
 
                     return `<div class="summary-station">
                       ${stations.length>1?`<div class="summary-station-label">POSTAZIONE ${index+1}</div>`:''}
@@ -290,29 +348,29 @@ function summary(){
                         <i class="summary-edit-hint">Modifica</i>
                       </button>
 
-                      <button type="button" class="summary-resource summary-avid summary-assignable" data-summary-assign="license" data-station="${station.id}">
-                        <small>AVID</small>
-                        <strong>${avid?esc(avid.code):trial?.status!=='none'?'TRIAL':'—'}</strong>
-                        ${avid
-                          ? `<div class="badges"><span class="badge ${avid.avid_type==='Ultimate'?'ultimate':'singolo'}">${esc(avid.avid_type.toUpperCase())}</span><span class="badge ${avid.billing_cycle}">${cycleLabel(avid.billing_cycle)}</span></div>`
-                          : trial?.status==='pending'
+                      <button type="button" class="summary-resource summary-avid summary-assignable ${avidLevel} ${avidLevel!=='ok'?'pulse-critical':''}" data-summary-assign="license" data-station="${station.id}">
+                        <div class="resource-title-row"><small>AVID</small><span class="resource-expiry ${avidLevel}">${avidState.kind==='license'?esc(expiryLabel(avid)):avidState.kind==='trial'?esc(avidState.status.text):''}</span></div>
+                        <strong>${avidState.kind==='license'?esc(avid.code):avidState.kind.startsWith('trial')?'TRIAL':'—'}</strong>
+                        ${avidState.kind==='license'
+                          ? `<div class="badges"><span class="badge ${avid.avid_type==='Ultimate'?'ultimate':'singolo'}">${esc(avid.avid_type.toUpperCase())}</span><span class="badge ${avid.billing_cycle}">${cycleLabel(avid.billing_cycle)}</span></div><span class="resource-id">System ID ${esc(avid.system_id||'—')}</span>`
+                          : avidState.kind==='trial-pending'
                             ? '<div class="badges"><span class="badge trial-pending">TRIAL DA ATTIVARE</span></div>'
-                            : trial?.status==='active'
+                            : avidState.kind==='trial'
                               ? '<div class="badges"><span class="badge trial-active">TRIAL ATTIVA</span></div>'
                               : '<span>Non assegnata</span>'}
                         <i class="summary-edit-hint">Modifica</i>
                       </button>
 
-                      <button type="button" class="summary-resource summary-plugins summary-assignable" data-summary-assign="plugin" data-station="${station.id}">
-                        <small>PLUGIN</small>
+                      <button type="button" class="summary-resource summary-plugins summary-assignable ${pluginLevel} ${pluginLevel!=='ok'?'pulse-critical':''}" data-summary-assign="plugin" data-station="${station.id}">
+                        <div class="resource-title-row"><small>PLUGIN</small><span></span></div>
                         ${plugins.length?plugins.map(plugin=>{
                           const status=licenseStatus(plugin);
-                          return `<div class="summary-plugin">
-                            <strong>${esc(plugin.plugin_type)}</strong>
-                            <div class="badges"><span class="badge ${plugin.billing_cycle}">${cycleLabel(plugin.billing_cycle)}</span>${plugin.is_trial?'<span class="badge trial">TRIAL</span>':''}</div>
-                            <span class="plugin-expiry ${status.level}">${esc(expiryLabel(plugin))}</span>
+                          return `<div class="summary-plugin ${status.level}">
+                            <div class="plugin-head"><strong>${esc(plugin.plugin_type)}</strong><span class="resource-expiry ${status.level}">${esc(expiryLabel(plugin))}</span></div>
+                            <div class="badges"><span class="badge ${plugin.billing_cycle}">${cycleLabel(plugin.billing_cycle)}</span></div>
+                            <span class="resource-id">Seriale ${esc(plugin.plugin_serial||'—')}</span>
                           </div>`;
-                        }).join(''):'<span>Nessun plugin</span>'}
+                        }).join(''):'<span>Non assegnato</span>'}
                         <i class="summary-edit-hint">Modifica</i>
                       </button>
                     </div>`;
@@ -370,7 +428,7 @@ function settings(){
 function render(){
   if(!state.data)return;
   const add=document.getElementById('add-btn');
-  if(add)add.hidden=state.view==='dashboard'||state.view==='summary';
+  if(add)add.hidden=state.view==='dashboard'||state.view==='summary'||state.view==='settings';
   app.innerHTML=state.view==='dashboard'
     ?dashboard()
     :state.view==='rooms'
@@ -393,8 +451,35 @@ function bindContent(){
   document.querySelectorAll('[data-open-license]').forEach(b=>b.onclick=()=>openDetail('licenses',b.dataset.openLicense));
   document.querySelectorAll('[data-setting]').forEach(b=>b.onclick=()=>openSetting(b.dataset.setting));
   document.querySelectorAll('[data-summary-assign]').forEach(b=>b.onclick=()=>assignmentSheet(b.dataset.summaryAssign,b.dataset.station));
+  document.querySelectorAll('[data-summary-room]').forEach(b=>b.onclick=()=>openSummaryRoomActions(b.dataset.summaryRoom));
   document.getElementById('logout')?.addEventListener('click',async()=>supabase.auth.signOut());
   document.getElementById('print-summary')?.addEventListener('click',()=>window.print());
+}
+
+
+function openSummaryRoomActions(roomId){
+  const room=state.data.rooms.find(r=>r.id===roomId);
+  const stations=state.data.stations.filter(s=>s.room_id===roomId).sort((a,b)=>a.position-b.position);
+
+  openSheet(`<div class="modal-head"><h2>${esc(room.name)}</h2><button class="close" data-close-sheet>×</button></div>
+    <button class="choice" id="summary-production-action"><strong>Produzione</strong><br><small>${esc(productionLabel(room)||'Non indicata')}</small></button>
+    <button class="choice" id="summary-add-station"><strong>Aggiungi postazione</strong><br><small>Crea quattro riquadri vuoti nella Sala</small></button>
+    <button class="choice" data-close-sheet><strong>Chiudi</strong></button>`);
+
+  document.getElementById('summary-production-action').onclick=()=>{
+    sheet.close();
+    openProductionEditor(room);
+  };
+
+  document.getElementById('summary-add-station').onclick=async()=>{
+    try{
+      await saveRow('stations',{id:uuid(),room_id:room.id,position:stations.length+1});
+      await addAudit('create','stations',room.id,{room:room.name});
+      sheet.close();
+      showToast('Postazione aggiunta');
+      await refresh();
+    }catch(error){alert(error.message)}
+  };
 }
 
 function openDetail(type,id){const x=state.data[type].find(v=>v.id===id);const rows=type==='computers'?[['ID',x.code],['Modello',x.model],['Anno',x.variant],['Processore',x.cpu],['RAM',x.ram],['GPU',x.gpu],['Seriale',x.serial],['macOS',`${x.os_name||''} ${x.os_version||''}`],['Formattazione',fmtDate(x.formatted_at)],['Assegnazione',currentLocation('computer',x.id)],['Allegati',String(x.attachments_count||0)]]:type==='hardware'?[['ID',x.code],['Modello',x.model],['Seriale',x.serial],['Driver',x.driver_version],['Assegnazione',currentLocation('hardware',x.id)],['Allegati',String(x.attachments_count||0)]]:[['ID',x.code],['Categoria',x.category==='avid'?'Avid':'Plugin'],['Tipo',x.category==='avid'?x.avid_type:x.plugin_type],['System ID',x.system_id],['Codice / Seriale',x.activation_code||x.plugin_serial],['Versione',x.version],['Durata',cycleLabel(x.billing_cycle)],['Scadenza',fmtDate(x.expiry_date)],['Sospensione richiesta',x.deactivation_requested?'Sì':'No'],['Assegnazione',currentLocation(x.category==='plugin'?'plugin':'license',x.id)],['Allegati',String(x.attachments_count||0)]];openModal(`<div class="modal-head"><h2>${esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${rows.map(([a,b])=>`<div class="resource-row"><span class="subtle">${esc(a)}</span><strong>${esc(b||'—')}</strong></div>`).join('')}</div><div class="actions"><button class="secondary" id="archive-item">Archivia</button><button class="primary" id="edit-item">Modifica</button></div>`);document.getElementById('edit-item').onclick=()=>editItem(type,x);document.getElementById('archive-item').onclick=async()=>{if(confirm(`Archiviare ${x.code}?`)){await archiveRow(type,x.id);await addAudit('archive',type,x.id,{code:x.code});modal.close();await refresh()}}}
@@ -578,7 +663,7 @@ function assignmentSheet(kind,stationId){
     : [kind==='computer'?station.computer_id:kind==='hardware'?station.hardware_id:station.avid_license_id].filter(Boolean);
 
   openSheet(`<div class="modal-head"><h2>Seleziona ${kind==='computer'?'Computer':kind==='hardware'?'Hardware':kind==='plugin'?'Plugin':'Avid'}</h2><button class="close" data-close-sheet>×</button></div>
-    ${kind!=='plugin'?`<button class="choice" data-choice="">Non assegnato</button>`:''}
+    <button class="choice" data-choice="">Non assegnato</button>
     ${kind==='license'?'<div class="choice-section-label">LICENZE AVID</div>':''}
     ${items.sort(numSort).map(x=>{
       const used=kind==='plugin'?pluginStation(x.id):stationOf(kind==='license'?'license':kind,x.id);
@@ -590,12 +675,10 @@ function assignmentSheet(kind,stationId){
     ${kind==='license'?`
       <div class="choice-section-label">TRIAL</div>
       <button class="choice trial-choice trial-choice-pending ${station.avid_trial_status==='pending'?'selected':''}" data-trial="pending">
-        <strong>Trial da attivare</strong><br>
-        <small>Disponibile, ma non ancora avviata</small>
+        <strong>Trial da attivare</strong><br><small>Disponibile, ma non ancora avviata</small>
       </button>
       <button class="choice trial-choice trial-choice-active ${station.avid_trial_status==='active'?'selected':''}" data-trial="active">
-        <strong>Trial attiva</strong><br>
-        <small>${station.avid_trial_expiry?`Scadenza ${fmtDate(station.avid_trial_expiry)}`:'Inserisci la data di scadenza'}</small>
+        <strong>Trial attiva</strong><br><small>${station.avid_trial_expiry?`Scadenza ${fmtDate(station.avid_trial_expiry)}`:'Inserisci la data di scadenza'}</small>
       </button>`:''}`);
 
   sheetBody.querySelectorAll('[data-choice]').forEach(button=>{
@@ -603,32 +686,29 @@ function assignmentSheet(kind,stationId){
       const id=button.dataset.choice||null;
       try{
         if(kind==='plugin'){
-          const selected=current.includes(id);
-          const item=state.data.licenses.find(x=>x.id===id);
-          if(!selected&&!(await confirmAssignment('plugin',item,stationId)))return;
-          await assignPlugin(id,selected?null:stationId);
+          if(!id){
+            for(const pluginId of current)await assignPlugin(pluginId,null);
+          }else{
+            const selected=current.includes(id);
+            const item=state.data.licenses.find(x=>x.id===id);
+            if(!selected&&!(await confirmAssignment('plugin',item,stationId)))return;
+            await assignPlugin(id,selected?null:stationId);
+          }
         }else{
           if(id){
             const list=kind==='computer'?state.data.computers:kind==='hardware'?state.data.hardware:state.data.licenses;
             const item=list.find(x=>x.id===id);
             if(!(await confirmAssignment(kind==='license'?'license':kind,item,stationId)))return;
           }
-
-          if(kind==='license'){
-            await clearStationTrial(stationId);
-          }
-
+          if(kind==='license')await clearStationTrial(stationId);
           await assignResource(kind,id,stationId);
         }
 
         sheet.close();
         if(modal.open)modal.close();
         await refresh();
-
         if(state.view==='rooms')openRoom(station.room_id);
-      }catch(error){
-        alert(error.message);
-      }
+      }catch(error){alert(error.message)}
     };
   });
 
@@ -637,7 +717,6 @@ function assignmentSheet(kind,stationId){
       const status=button.dataset.trial;
       try{
         sheet.close();
-
         if(status==='pending'){
           await applyStationTrial(stationId,'pending',null);
           showToast('Trial da attivare impostata');
@@ -645,9 +724,7 @@ function assignmentSheet(kind,stationId){
         }else{
           openTrialExpiryEditor(stationId);
         }
-      }catch(error){
-        alert(error.message);
-      }
+      }catch(error){alert(error.message)}
     };
   });
 }
@@ -908,22 +985,74 @@ function openSetting(k){
   }else if(k==='notifications'){
     openNotificationsSetting();
   }else if(k==='about'){
+    const activeComputers=state.data.computers.filter(x=>!x.archived_at).length;
+    const activeHardware=state.data.hardware.filter(x=>!x.archived_at).length;
+    const activeAvid=state.data.licenses.filter(x=>!x.archived_at&&x.category==='avid').length;
+    const activePlugins=state.data.licenses.filter(x=>!x.archived_at&&x.category==='plugin').length;
+    const systemInfo=`DVS Gestionale
+Versione: 4.4 Experimental Build 1
+Database: Schema 4.3.1
+Sale: ${state.data.rooms.length}
+Computer: ${activeComputers}
+Hardware: ${activeHardware}
+Licenze Avid: ${activeAvid}
+Plugin: ${activePlugins}`;
+
     openModal(`<div class="modal-head"><h2>Informazioni</h2><button class="close" data-close>×</button></div>
-      <section class="about-card">
+      <section class="about-card about-v44">
         <img src="./assets/logo-dvs.png" alt="Digital Video Service">
         <h3>DVS Gestionale</h3>
         <p>Gestione Sale, Computer, Hardware e Licenze</p>
+
         <dl>
-          <div><dt>Versione</dt><dd>4.3.1.1 Avid Assign Fix</dd></div>
-          <div><dt>Build</dt><dd>2026.07.13</dd></div>
-          <div><dt>Database</dt><dd>Supabase · Schema 4.2</dd></div>
-          <div><dt>Sviluppato da</dt><dd>Marco D'Agostino</dd></div>
-          <div><dt>Per</dt><dd>Digital Video Service S.r.l.</dd></div>
-          <div><dt>Sede</dt><dd>Via Antonio Chinotto, 1 · 00195 Roma</dd></div>
-          <div><dt>P. IVA</dt><dd>04964701009</dd></div>
+          <div><dt>Versione</dt><dd>4.4 Experimental Build 1</dd></div>
+          <div><dt>Build</dt><dd>2026.07.14</dd></div>
+          <div><dt>Database</dt><dd>Supabase · Schema 4.3.1</dd></div>
         </dl>
+
+        <div class="about-section">
+          <h4>Novità di questa versione</h4>
+          <ul class="changelog-list">
+            <li>Scadenze spostate nei riquadri Avid e Plugin</li>
+            <li>Criticità evidenziate con colore e pulsazione lenta</li>
+            <li>System ID e seriali visibili nella Sintesi</li>
+            <li>Non assegnati con scadenze e identificativi</li>
+            <li>Licenze ordinate per assegnazione e categoria</li>
+            <li>Produzione e nuova postazione dalla Sintesi</li>
+            <li>Rimozione diretta dei Plugin dalla postazione</li>
+          </ul>
+        </div>
+
+        <div class="about-section">
+          <h4>Statistiche</h4>
+          <div class="about-stats">
+            <div><strong>${state.data.rooms.length}</strong><span>Sale</span></div>
+            <div><strong>${activeComputers}</strong><span>Computer</span></div>
+            <div><strong>${activeHardware}</strong><span>Hardware</span></div>
+            <div><strong>${activeAvid}</strong><span>Avid</span></div>
+            <div><strong>${activePlugins}</strong><span>Plugin</span></div>
+          </div>
+        </div>
+
+        <div class="developer-credit">
+          <span>Sviluppato da</span>
+          <strong>Marco D'Agostino</strong>
+          <small>Progettazione, sviluppo e gestione del sistema</small>
+          <small>Responsabile Tecnico · Digital Video Service</small>
+        </div>
+
+        <button type="button" class="secondary copy-system-info" id="copy-system-info">Copia informazioni sistema</button>
         <p class="copyright">© 2026 Marco D'Agostino per Digital Video Service S.r.l.</p>
       </section>`);
+
+    document.getElementById('copy-system-info').onclick=async()=>{
+      try{
+        await navigator.clipboard.writeText(systemInfo);
+        showToast('Informazioni copiate');
+      }catch{
+        alert(systemInfo);
+      }
+    };
   }else{
     showToast('Funzione prevista in una versione successiva');
   }
@@ -976,4 +1105,4 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.3.1.1.assignfix');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.4.exp.b1');boot();
