@@ -79,7 +79,7 @@ export default {
     }
 
     const { data: stations } = await supabase.from("stations")
-      .select("id,avid_license_id,room_id,avid_trial_status,avid_trial_expiry,rooms(name)");
+      .select("id,avid_license_id,room_id,rooms(name)");
     const { data: stationPlugins } = await supabase.from("station_plugins")
       .select("license_id,station_id");
 
@@ -92,48 +92,27 @@ export default {
       }
     }
 
-
-    const trialLicenses = (stations || [])
-      .filter((station) => station.avid_trial_status === "active" && station.avid_trial_expiry)
-      .map((station) => ({
-        id: `trial-${station.id}`,
-        code: "TRIAL AVID",
-        category: "avid" as const,
-        avid_type: "Trial",
-        plugin_type: null,
-        billing_cycle: "monthly" as const,
-        expiry_date: station.avid_trial_expiry,
-        archived_at: null,
-        room_name: (station.rooms as { name?: string } | null)?.name || "",
-      }));
-
-    const allExpiries = [...((licenses || []) as License[]), ...trialLicenses];
-
     let sent = 0;
     let removed = 0;
     const errors: string[] = [];
 
-    for (const license of allExpiries) {
+    for (const license of (licenses || []) as License[]) {
       if (!license.expiry_date) continue;
       const days = daysUntil(license.expiry_date);
       const key = eventKey(days);
       if (!key) continue;
 
       for (const subscription of subscriptions || []) {
-        const isTrial=String(license.id).startsWith('trial-');
-        const deliveryTable=isTrial?"trial_notification_deliveries":"notification_deliveries";
-        let existingQuery=supabase.from(deliveryTable)
+        const { data: existing } = await supabase.from("notification_deliveries")
           .select("id")
-          .eq("subscription_id",subscription.id)
-          .eq("event_key",key);
-        existingQuery=isTrial
-          ? existingQuery.eq("station_id",String(license.id).replace('trial-',''))
-          : existingQuery.eq("license_id",license.id);
-        const {data:existing}=await existingQuery.maybeSingle();
+          .eq("subscription_id", subscription.id)
+          .eq("license_id", license.id)
+          .eq("event_key", key)
+          .maybeSingle();
 
         if (existing) continue;
 
-        const room = 'room_name' in license ? license.room_name : roomByLicense.get(license.id);
+        const room = roomByLicense.get(license.id);
         const type = license.category === "avid" ? license.avid_type : license.plugin_type;
         const details = [room, type, license.billing_cycle === "monthly" ? "Mensile" : "Annuale"]
           .filter(Boolean)
@@ -156,19 +135,11 @@ export default {
             },
           }, payload);
 
-          if(String(license.id).startsWith('trial-')){
-            await supabase.from("trial_notification_deliveries").insert({
-              subscription_id: subscription.id,
-              station_id: String(license.id).replace('trial-',''),
-              event_key: key,
-            });
-          }else{
-            await supabase.from("notification_deliveries").insert({
-              subscription_id: subscription.id,
-              license_id: license.id,
-              event_key: key,
-            });
-          }
+          await supabase.from("notification_deliveries").insert({
+            subscription_id: subscription.id,
+            license_id: license.id,
+            event_key: key,
+          });
           sent++;
         } catch (error) {
           const statusCode = (error as { statusCode?: number }).statusCode;

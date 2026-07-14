@@ -104,69 +104,99 @@ function expiryLabel(license){
 function productionLabel(room){
   return [room.client_type,room.production_name].filter(Boolean).join(' • ');
 }
-function summaryLevel(room){
-  const stations=state.data.stations.filter(s=>s.room_id===room.id);
-  const levels=[];
-  for(const station of stations){
-    const avid=state.data.licenses.find(l=>l.id===station.avid_license_id);
-    if(avid)levels.push(licenseStatus(avid).level);
-    else if(station.avid_trial_status==='active')levels.push(trialStatus(station).level);
-  }
-  return levels.includes('expired')?'expired':levels.includes('warning')?'warning':'ok';
-}
 
-
-function trialStatus(station){
+function trialInfo(station){
   const status=station?.avid_trial_status||'none';
   const expiry=station?.avid_trial_expiry||null;
-  if(status!=='active')return {status,level:'ok',text:''};
-  if(!expiry)return {status,level:'warning',text:'Scadenza non indicata'};
+
+  if(status==='pending'){
+    return {status,level:'ok',text:'',badge:'TRIAL DA ATTIVARE'};
+  }
+  if(status!=='active'){
+    return {status:'none',level:'ok',text:'',badge:''};
+  }
+  if(!expiry){
+    return {status,level:'warning',text:'Scadenza non indicata',badge:'TRIAL ATTIVA'};
+  }
+
   const today=new Date();today.setHours(0,0,0,0);
   const exp=new Date(expiry+'T00:00:00');
   const days=Math.ceil((exp-today)/86400000);
-  if(days<0)return {status,level:'expired',text:`Scaduta da ${Math.abs(days)} ${Math.abs(days)===1?'giorno':'giorni'}`};
-  if(days===0)return {status,level:'expired',text:'Scade oggi'};
-  return {status,level:days<=10?'warning':'ok',text:`Scade tra ${days} ${days===1?'giorno':'giorni'}`};
+
+  if(days<0)return {status,level:'expired',text:`Scaduta da ${Math.abs(days)} ${Math.abs(days)===1?'giorno':'giorni'}`,badge:'TRIAL ATTIVA'};
+  if(days===0)return {status,level:'expired',text:'Scade oggi',badge:'TRIAL ATTIVA'};
+  if(days>90)return {status,level:'ok',text:`Scadenza ${fmtDate(expiry)}`,badge:'TRIAL ATTIVA'};
+  return {status,level:days<=10?'warning':'ok',text:`Scade tra ${days} ${days===1?'giorno':'giorni'}`,badge:'TRIAL ATTIVA'};
 }
-function avidDisplayForStation(station){
-  const avidState=avidDisplayForStation(station);
-                    const avid=avidState.avid||null;
-  if(avid)return {kind:'license',avid};
-  if(station.avid_trial_status==='pending')return {kind:'trial-pending'};
-  if(station.avid_trial_status==='active')return {kind:'trial-active',trial:trialStatus(station)};
-  return {kind:'none'};
+
+async function clearStationTrial(stationId){
+  const station=state.data.stations.find(s=>s.id===stationId);
+  if(!station)return;
+  await saveRow('stations',{
+    ...station,
+    avid_trial_status:'none',
+    avid_trial_expiry:null
+  });
 }
-async function setStationTrial(stationId,status,expiry=null){
+
+async function applyStationTrial(stationId,status,expiry=null){
   const station=state.data.stations.find(s=>s.id===stationId);
   if(!station)throw new Error('Postazione non trovata');
+
+  await assignResource('license',null,stationId);
   await saveRow('stations',{
     ...station,
     avid_license_id:null,
     avid_trial_status:status,
     avid_trial_expiry:status==='active'?expiry:null
   });
-  await addAudit('update','stations',stationId,{avid_trial_status:status,avid_trial_expiry:expiry});
+  await addAudit('update','stations',stationId,{
+    avid_trial_status:status,
+    avid_trial_expiry:status==='active'?expiry:null
+  });
 }
+
 function openTrialExpiryEditor(stationId){
-  const station=state.data.stations.find(s=>s.id===stationId);
   openModal(`<div class="modal-head"><h2>Trial attiva</h2><button class="close" data-close>×</button></div>
     <div class="fields">
-      ${field('trial-expiry','Data scadenza Trial',station?.avid_trial_expiry||todayISO(),'date')}
+      ${field('trial-expiry','Data scadenza Trial','','date')}
     </div>
     <div class="actions">
       <button class="secondary" data-close>Annulla</button>
-      <button class="primary" id="save-trial-expiry">Salva</button>
+      <button class="primary" id="save-trial">Salva</button>
     </div>`);
-  document.getElementById('save-trial-expiry').onclick=async()=>{
+
+  document.getElementById('save-trial').onclick=async()=>{
     const expiry=val('trial-expiry');
-    if(!expiry){alert('Inserisci la data di scadenza.');return}
+    if(!expiry){
+      alert('Inserisci la data di scadenza della Trial.');
+      return;
+    }
     try{
-      await setStationTrial(stationId,'active',expiry);
+      await applyStationTrial(stationId,'active',expiry);
       modal.close();
       showToast('Trial attiva salvata');
       await refresh();
-    }catch(error){alert(error.message)}
+    }catch(error){
+      alert(error.message);
+    }
   };
+}
+
+function summaryLevel(room){
+  const stations=state.data.stations.filter(s=>s.room_id===room.id);
+  const levels=[];
+
+  for(const station of stations){
+    const avid=state.data.licenses.find(l=>l.id===station.avid_license_id);
+    if(avid){
+      levels.push(licenseStatus(avid).level);
+    }else if(station.avid_trial_status==='active'){
+      levels.push(trialInfo(station).level);
+    }
+  }
+
+  return levels.includes('expired')?'expired':levels.includes('warning')?'warning':'ok';
 }
 
 function summary(){
@@ -216,9 +246,9 @@ function summary(){
           <div class="summary-office-rooms">
             ${grouped.map(room=>{
               const stations=state.data.stations.filter(s=>s.room_id===room.id).sort((a,b)=>a.position-b.position);
-              const primaryStation=stations.find(Boolean);
+              const primaryStation=stations[0]||null;
               const primaryAvid=stations.map(s=>state.data.licenses.find(x=>x.id===s.avid_license_id)).find(Boolean);
-              const primaryTrial=primaryStation&&!primaryAvid?trialStatus(primaryStation):null;
+              const primaryTrial=primaryStation&&!primaryAvid?trialInfo(primaryStation):null;
               const level=summaryLevel(room);
               const production=productionLabel(room);
 
@@ -228,15 +258,15 @@ function summary(){
                     <h3>${esc(room.name)}</h3>
                     ${production?`<p>${esc(production)}</p>`:'<p class="summary-no-production">Produzione non indicata</p>'}
                   </div>
-                  <span class="summary-avid-expiry ${primaryAvid?licenseStatus(primaryAvid).level:'ok'}">${primaryAvid?esc(expiryLabel(primaryAvid)):primaryTrial?.status==='active'?esc(primaryTrial.text):''}</span>
+                  <span class="summary-avid-expiry ${primaryAvid?licenseStatus(primaryAvid).level:primaryTrial?.level||'ok'}">${primaryAvid?esc(expiryLabel(primaryAvid)):primaryTrial?.status==='active'?esc(primaryTrial.text):''}</span>
                 </header>
 
                 <div class="summary-stations">
                   ${stations.map((station,index)=>{
                     const computer=state.data.computers.find(x=>x.id===station.computer_id);
                     const hardware=state.data.hardware.find(x=>x.id===station.hardware_id);
-                    const avidState=avidDisplayForStation(station);
-                    const avid=avidState.avid||null;
+                    const avid=state.data.licenses.find(x=>x.id===station.avid_license_id);
+                    const trial=avid?null:trialInfo(station);
                     const plugins=state.data.station_plugins
                       .filter(x=>x.station_id===station.id)
                       .map(x=>state.data.licenses.find(l=>l.id===x.license_id))
@@ -262,12 +292,12 @@ function summary(){
 
                       <button type="button" class="summary-resource summary-avid summary-assignable" data-summary-assign="license" data-station="${station.id}">
                         <small>AVID</small>
-                        <strong>${avidState.kind==='license'?esc(avid.code):avidState.kind==='trial-pending'?'TRIAL':avidState.kind==='trial-active'?'TRIAL':'—'}</strong>
-                        ${avidState.kind==='license'
+                        <strong>${avid?esc(avid.code):trial?.status!=='none'?'TRIAL':'—'}</strong>
+                        ${avid
                           ? `<div class="badges"><span class="badge ${avid.avid_type==='Ultimate'?'ultimate':'singolo'}">${esc(avid.avid_type.toUpperCase())}</span><span class="badge ${avid.billing_cycle}">${cycleLabel(avid.billing_cycle)}</span></div>`
-                          : avidState.kind==='trial-pending'
+                          : trial?.status==='pending'
                             ? '<div class="badges"><span class="badge trial-pending">TRIAL DA ATTIVARE</span></div>'
-                            : avidState.kind==='trial-active'
+                            : trial?.status==='active'
                               ? '<div class="badges"><span class="badge trial-active">TRIAL ATTIVA</span></div>'
                               : '<span>Non assegnata</span>'}
                         <i class="summary-edit-hint">Modifica</i>
@@ -367,7 +397,7 @@ function bindContent(){
   document.getElementById('print-summary')?.addEventListener('click',()=>window.print());
 }
 
-function openDetail(type,id){const x=state.data[type].find(v=>v.id===id);const rows=type==='computers'?[['ID',x.code],['Modello',x.model],['Anno',x.variant],['Processore',x.cpu],['RAM',x.ram],['GPU',x.gpu],['Seriale',x.serial],['macOS',`${x.os_name||''} ${x.os_version||''}`],['Formattazione',fmtDate(x.formatted_at)],['Assegnazione',currentLocation('computer',x.id)],['Allegati',String(x.attachments_count||0)]]:type==='hardware'?[['ID',x.code],['Modello',x.model],['Seriale',x.serial],['Driver',x.driver_version],['Assegnazione',currentLocation('hardware',x.id)],['Allegati',String(x.attachments_count||0)]]:[['ID',x.code],['Categoria',x.category==='avid'?'Avid':'Plugin'],['Tipo',x.category==='avid'?x.avid_type:x.plugin_type],['System ID',x.system_id],['Codice / Seriale',x.activation_code||x.plugin_serial],['Versione',x.version],['Trial',x.is_trial?'Sì':'No'],['Durata',cycleLabel(x.billing_cycle)],['Scadenza',fmtDate(x.expiry_date)],['Sospensione richiesta',x.deactivation_requested?'Sì':'No'],['Assegnazione',currentLocation(x.category==='plugin'?'plugin':'license',x.id)],['Allegati',String(x.attachments_count||0)]];openModal(`<div class="modal-head"><h2>${esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${rows.map(([a,b])=>`<div class="resource-row"><span class="subtle">${esc(a)}</span><strong>${esc(b||'—')}</strong></div>`).join('')}</div><div class="actions"><button class="secondary" id="archive-item">Archivia</button><button class="primary" id="edit-item">Modifica</button></div>`);document.getElementById('edit-item').onclick=()=>editItem(type,x);document.getElementById('archive-item').onclick=async()=>{if(confirm(`Archiviare ${x.code}?`)){await archiveRow(type,x.id);await addAudit('archive',type,x.id,{code:x.code});modal.close();await refresh()}}}
+function openDetail(type,id){const x=state.data[type].find(v=>v.id===id);const rows=type==='computers'?[['ID',x.code],['Modello',x.model],['Anno',x.variant],['Processore',x.cpu],['RAM',x.ram],['GPU',x.gpu],['Seriale',x.serial],['macOS',`${x.os_name||''} ${x.os_version||''}`],['Formattazione',fmtDate(x.formatted_at)],['Assegnazione',currentLocation('computer',x.id)],['Allegati',String(x.attachments_count||0)]]:type==='hardware'?[['ID',x.code],['Modello',x.model],['Seriale',x.serial],['Driver',x.driver_version],['Assegnazione',currentLocation('hardware',x.id)],['Allegati',String(x.attachments_count||0)]]:[['ID',x.code],['Categoria',x.category==='avid'?'Avid':'Plugin'],['Tipo',x.category==='avid'?x.avid_type:x.plugin_type],['System ID',x.system_id],['Codice / Seriale',x.activation_code||x.plugin_serial],['Versione',x.version],['Durata',cycleLabel(x.billing_cycle)],['Scadenza',fmtDate(x.expiry_date)],['Sospensione richiesta',x.deactivation_requested?'Sì':'No'],['Assegnazione',currentLocation(x.category==='plugin'?'plugin':'license',x.id)],['Allegati',String(x.attachments_count||0)]];openModal(`<div class="modal-head"><h2>${esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${rows.map(([a,b])=>`<div class="resource-row"><span class="subtle">${esc(a)}</span><strong>${esc(b||'—')}</strong></div>`).join('')}</div><div class="actions"><button class="secondary" id="archive-item">Archivia</button><button class="primary" id="edit-item">Modifica</button></div>`);document.getElementById('edit-item').onclick=()=>editItem(type,x);document.getElementById('archive-item').onclick=async()=>{if(confirm(`Archiviare ${x.code}?`)){await archiveRow(type,x.id);await addAudit('archive',type,x.id,{code:x.code});modal.close();await refresh()}}}
 
 function field(id,label,value='',type='text'){return `<label class="field">${label}<input id="${id}" type="${type}" value="${esc(value??'')}"></label>`}
 function select(id,label,options,value=''){return `<label class="field">${label}<select id="${id}">${options.map(v=>`<option value="${esc(v[0])}" ${v[0]===value?'selected':''}>${esc(v[1])}</option>`).join('')}</select></label>`}
@@ -426,10 +456,6 @@ function licenseEditor(x,isNew){
     ${field('code','ID',x.code)}
     <div id="license-fields"></div>
 
-    <label class="option-check">
-      <input id="trial" type="checkbox" ${x.is_trial?'checked':''}>
-      <span>TRIAL</span>
-    </label>
 
     ${segmented('cycle','Durata',[['monthly','MENSILE'],['annual','ANNUALE']],cycle)}
     ${field('activation','Data attivazione',activation,'date')}
@@ -483,7 +509,7 @@ async function confirmAssignment(kind,item,newStationId){
   return true;
 }
 
-async function saveEditor(type,x,isNew){try{let row={id:x.id};let assignment=val('assignment');if(type==='computers')Object.assign(row,{code:val('code'),model:val('model'),variant:val('variant'),cpu:val('cpu'),ram:val('ram'),gpu:val('gpu'),storage:val('storage'),serial:val('serial'),os_name:val('os'),os_version:val('osv'),formatted_at:val('formatted')||null,notes:val('notes'),attachments_count:x.attachments_count||0});else if(type==='hardware')Object.assign(row,{code:val('code'),category:val('category'),model:val('model'),serial:val('serial'),driver_version:val('driver'),notes:val('notes'),attachments_count:x.attachments_count||0});else Object.assign(row,{code:val('code'),category:val('category'),avid_type:val('category')==='avid'?val('avid-type'):null,plugin_type:val('category')==='plugin'?val('plugin-type'):null,system_id:val('system')||null,activation_code:val('activation-code')||null,plugin_serial:val('plugin-serial')||null,version:val('version')||null,billing_cycle:val('cycle'),is_trial:checked('trial'),activation_date:val('activation')||null,expiry_date:val('expiry')||null,deactivation_requested:checked('deactivation'),notes:val('notes'),attachments_count:x.attachments_count||0});const kind=type==='computers'?'computer':type==='hardware'?'hardware':row.category==='plugin'?'plugin':'license';if(!(await confirmAssignment(kind,{...x,...row},assignment)))return;const saved=await saveRow(type,row);if(type==='computers')await assignResource('computer',saved.id,assignment||null);if(type==='hardware')await assignResource('hardware',saved.id,assignment||null);if(type==='licenses'){if(saved.category==='plugin')await assignPlugin(saved.id,assignment||null);else await assignResource('license',saved.id,assignment||null)}await addAudit(isNew?'create':'update',type,saved.id,{code:saved.code});modal.close();showToast('Salvato');await refresh()}catch(e){alert(e.message)}}
+async function saveEditor(type,x,isNew){try{let row={id:x.id};let assignment=val('assignment');if(type==='computers')Object.assign(row,{code:val('code'),model:val('model'),variant:val('variant'),cpu:val('cpu'),ram:val('ram'),gpu:val('gpu'),storage:val('storage'),serial:val('serial'),os_name:val('os'),os_version:val('osv'),formatted_at:val('formatted')||null,notes:val('notes'),attachments_count:x.attachments_count||0});else if(type==='hardware')Object.assign(row,{code:val('code'),category:val('category'),model:val('model'),serial:val('serial'),driver_version:val('driver'),notes:val('notes'),attachments_count:x.attachments_count||0});else Object.assign(row,{code:val('code'),category:val('category'),avid_type:val('category')==='avid'?val('avid-type'):null,plugin_type:val('category')==='plugin'?val('plugin-type'):null,system_id:val('system')||null,activation_code:val('activation-code')||null,plugin_serial:val('plugin-serial')||null,version:val('version')||null,billing_cycle:val('cycle'),is_trial:false,activation_date:val('activation')||null,expiry_date:val('expiry')||null,deactivation_requested:checked('deactivation'),notes:val('notes'),attachments_count:x.attachments_count||0});const kind=type==='computers'?'computer':type==='hardware'?'hardware':row.category==='plugin'?'plugin':'license';if(!(await confirmAssignment(kind,{...x,...row},assignment)))return;const saved=await saveRow(type,row);if(type==='computers')await assignResource('computer',saved.id,assignment||null);if(type==='hardware')await assignResource('hardware',saved.id,assignment||null);if(type==='licenses'){if(saved.category==='plugin')await assignPlugin(saved.id,assignment||null);else await assignResource('license',saved.id,assignment||null)}await addAudit(isNew?'create':'update',type,saved.id,{code:saved.code});modal.close();showToast('Salvato');await refresh()}catch(e){alert(e.message)}}
 
 function openRoom(id){
   const room=state.data.rooms.find(r=>r.id===id);
@@ -544,15 +570,6 @@ function assignmentSheet(kind,stationId){
     ? state.data.station_plugins.filter(x=>x.station_id===stationId).map(x=>x.license_id)
     : [kind==='computer'?station.computer_id:kind==='hardware'?station.hardware_id:station.avid_license_id].filter(Boolean);
 
-  const trialChoices=kind==='license'?`
-    <div class="choice-section-label">TRIAL</div>
-    <button class="choice trial-choice trial-choice-pending ${station.avid_trial_status==='pending'?'selected':''}" data-trial-choice="pending">
-      <strong>Trial da attivare</strong><br><small>Disponibile sulla postazione, non ancora attivata</small>
-    </button>
-    <button class="choice trial-choice trial-choice-active ${station.avid_trial_status==='active'?'selected':''}" data-trial-choice="active">
-      <strong>Trial attiva</strong><br><small>${station.avid_trial_expiry?`Scadenza ${fmtDate(station.avid_trial_expiry)}`:'Inserisci la scadenza'}</small>
-    </button>`:'';
-
   openSheet(`<div class="modal-head"><h2>Seleziona ${kind==='computer'?'Computer':kind==='hardware'?'Hardware':kind==='plugin'?'Plugin':'Avid'}</h2><button class="close" data-close-sheet>×</button></div>
     ${kind!=='plugin'?`<button class="choice" data-choice="">Non assegnato</button>`:''}
     ${kind==='license'?'<div class="choice-section-label">LICENZE AVID</div>':''}
@@ -563,7 +580,16 @@ function assignmentSheet(kind,stationId){
         <small>${used?esc(stationLabel(used)):'Disponibile'}</small>
       </button>`;
     }).join('')}
-    ${trialChoices}`);
+    ${kind==='license'?`
+      <div class="choice-section-label">TRIAL</div>
+      <button class="choice trial-choice trial-choice-pending ${station.avid_trial_status==='pending'?'selected':''}" data-trial="pending">
+        <strong>Trial da attivare</strong><br>
+        <small>Disponibile, ma non ancora avviata</small>
+      </button>
+      <button class="choice trial-choice trial-choice-active ${station.avid_trial_status==='active'?'selected':''}" data-trial="active">
+        <strong>Trial attiva</strong><br>
+        <small>${station.avid_trial_expiry?`Scadenza ${fmtDate(station.avid_trial_expiry)}`:'Inserisci la data di scadenza'}</small>
+      </button>`:''}`);
 
   sheetBody.querySelectorAll('[data-choice]').forEach(button=>{
     button.onclick=async()=>{
@@ -580,34 +606,41 @@ function assignmentSheet(kind,stationId){
             const item=list.find(x=>x.id===id);
             if(!(await confirmAssignment(kind==='license'?'license':kind,item,stationId)))return;
           }
-          if(kind==='license'){
-            await setStationTrial(stationId,'none',null);
-          }
+
           await assignResource(kind,id,stationId);
+
+          if(kind==='license'){
+            await clearStationTrial(stationId);
+          }
         }
 
         sheet.close();
         if(modal.open)modal.close();
         await refresh();
+
         if(state.view==='rooms')openRoom(station.room_id);
-      }catch(error){alert(error.message)}
+      }catch(error){
+        alert(error.message);
+      }
     };
   });
 
-  sheetBody.querySelectorAll('[data-trial-choice]').forEach(button=>{
+  sheetBody.querySelectorAll('[data-trial]').forEach(button=>{
     button.onclick=async()=>{
-      const choice=button.dataset.trialChoice;
+      const status=button.dataset.trial;
       try{
-        if(choice==='pending'){
-          await setStationTrial(stationId,'pending',null);
-          sheet.close();
-          await refresh();
+        sheet.close();
+
+        if(status==='pending'){
+          await applyStationTrial(stationId,'pending',null);
           showToast('Trial da attivare impostata');
+          await refresh();
         }else{
-          sheet.close();
           openTrialExpiryEditor(stationId);
         }
-      }catch(error){alert(error.message)}
+      }catch(error){
+        alert(error.message);
+      }
     };
   });
 }
@@ -622,8 +655,7 @@ function buildSearchIndex(){
     stations.forEach(station=>{
       const computer=state.data.computers.find(x=>x.id===station.computer_id);
       const hardware=state.data.hardware.find(x=>x.id===station.hardware_id);
-      const avidState=avidDisplayForStation(station);
-                    const avid=avidState.avid||null;
+      const avid=state.data.licenses.find(x=>x.id===station.avid_license_id);
       const plugins=state.data.station_plugins
         .filter(x=>x.station_id===station.id)
         .map(x=>state.data.licenses.find(l=>l.id===x.license_id))
@@ -667,7 +699,7 @@ function buildSearchIndex(){
       kind:'licenses',id:x.id,
       title:x.code,
       subtitle:[type,cycleLabel(x.billing_cycle),location].filter(Boolean).join(' · '),
-      terms:[x.code,x.category,type,x.system_id,x.activation_code,x.plugin_serial,x.version,x.billing_cycle,x.is_trial?'trial':'',location].filter(Boolean).join(' ').toLowerCase()
+      terms:[x.code,x.category,type,x.system_id,x.activation_code,x.plugin_serial,x.version,x.billing_cycle,location].filter(Boolean).join(' ').toLowerCase()
     });
   });
 
@@ -875,7 +907,7 @@ function openSetting(k){
         <h3>DVS Gestionale</h3>
         <p>Gestione Sale, Computer, Hardware e Licenze</p>
         <dl>
-          <div><dt>Versione</dt><dd>4.3.1 Trial Management</dd></div>
+          <div><dt>Versione</dt><dd>4.3.1 Trial Fixed</dd></div>
           <div><dt>Build</dt><dd>2026.07.13</dd></div>
           <div><dt>Database</dt><dd>Supabase · Schema 4.2</dd></div>
           <div><dt>Sviluppato da</dt><dd>Marco D'Agostino</dd></div>
@@ -937,4 +969,4 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.3.1.trial');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.3.1.fixed');boot();

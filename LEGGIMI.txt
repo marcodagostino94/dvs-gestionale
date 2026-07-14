@@ -168,15 +168,11 @@ DVS GESTIONALE v4.3 — SINTESI INTERATTIVA EXPERIMENTAL
 - Per tornare indietro basta ripubblicare la v4.2.2.
 
 
-DVS GESTIONALE v4.3.1 — TRIAL MANAGEMENT
-- La Trial non è più una licenza inventariata.
-- Nel selettore Avid sono disponibili:
-  Trial da attivare e Trial attiva.
-- Entrambe sono evidenziate in giallo con tonalità differenti.
-- Trial attiva richiede una data di scadenza.
-- La scadenza compare nella stessa posizione delle Avid reali.
-- Assegnando una licenza vera, la Trial viene rimossa automaticamente.
-- Scegliendo Nessuna Avid vengono azzerati licenza e stato Trial.
-- Rimossa la spunta Trial dalla creazione Licenze.
-- Incluse notifiche push per le Trial attive.
-- Eseguire sql/migrate_v4_3_1_trial_management.sql una sola volta.
+DVS GESTIONALE v4.3.1 — TRIAL FIXED
+- Corretta l'apertura della Sintesi.
+- Rimossa realmente la spunta Trial dalla creazione/modifica Licenze.
+- Trial da attivare e Trial attiva disponibili soltanto nel selettore Avid.
+- Badge Trial gialli con due tonalità diverse.
+- Scadenza Trial attiva mostrata nell'intestazione della Sala.
+- Nessuna ulteriore SQL richiesta se la migrazione Trial è già stata eseguita.
+- Edge Function delle notifiche Trial da aggiornare soltanto dopo il collaudo del frontend.

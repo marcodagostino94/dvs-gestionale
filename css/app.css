@@ -554,7 +554,7 @@ dialog,.modal-card,.sheet-card,.splash img{animation:none!important;transition:n
 }
 
 
-/* ===== v4.3.1 — Gestione Trial Avid ===== */
+/* ===== v4.3.1 FIXED — Trial Avid ===== */
 .choice-section-label{
   margin:14px 4px 7px;
   font-size:9px;
@@ -562,27 +562,21 @@ dialog,.modal-card,.sheet-card,.splash img{animation:none!important;transition:n
   letter-spacing:.8px;
   color:var(--muted);
 }
-.trial-choice{
-  border-width:1px;
-}
 .trial-choice-pending{
-  border-color:rgba(255,221,99,.55)!important;
-  background:rgba(255,221,99,.10)!important;
+  border-color:rgba(255,226,126,.58)!important;
+  background:rgba(255,226,126,.10)!important;
 }
 .trial-choice-active{
-  border-color:rgba(255,190,35,.70)!important;
-  background:rgba(255,190,35,.15)!important;
-}
-.trial-choice.selected{
-  box-shadow:0 0 0 2px rgba(255,210,70,.22) inset;
+  border-color:rgba(255,188,34,.72)!important;
+  background:rgba(255,188,34,.16)!important;
 }
 .badge.trial-pending{
-  background:rgba(255,221,99,.17);
-  border-color:rgba(255,221,99,.62);
-  color:#ffe98f;
+  background:rgba(255,226,126,.16);
+  border-color:rgba(255,226,126,.62);
+  color:#ffeb9d;
 }
 .badge.trial-active{
-  background:rgba(255,190,35,.20);
-  border-color:rgba(255,190,35,.75);
-  color:#ffd15a;
+  background:rgba(255,188,34,.20);
+  border-color:rgba(255,188,34,.76);
+  color:#ffd05a;
 }
