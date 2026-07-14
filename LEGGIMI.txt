@@ -199,3 +199,10 @@ v4.4 Experimental Build 2: correzioni UI e flusso Sala. Nessuna SQL richiesta.
 DVS GESTIONALE v4.4 EXPERIMENTAL BUILD 3
 - Eseguire una sola volta: sql/migrate_v4_4_build_3_production_nullable.sql
 - Nessuna modifica a Edge Function, cron o secret.
+
+
+DVS GESTIONALE v4.4 EXPERIMENTAL BUILD 4
+- Nessuna nuova SQL richiesta.
+- Nessuna modifica a Edge Function, cron o secret.
+- Il backup esporta e importa un unico file JSON completo.
+- “Salva come PDF” apre la finestra di stampa del sistema: scegliere la destinazione PDF.

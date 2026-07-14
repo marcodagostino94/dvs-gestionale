@@ -1,6 +1,6 @@
 # DVS Gestionale — Changelog
 
-## 4.4 Experimental Build 3 — 14 luglio 2026
+## 4.4 Experimental Build 4 — 14 luglio 2026
 
 - Scadenze Avid spostate nel relativo riquadro.
 - Scadenze Plugin visibili nel relativo riquadro.
@@ -35,3 +35,15 @@
 - Produzione nuovamente gestita con pulsanti RAI / PRIVATO / ALTRO.
 - Aggiunto pulsante Elimina produzione.
 - Aggiunta migrazione SQL per consentire una Sala senza produzione.
+
+
+### Nuove funzioni Build 4
+- Centro Stampa ed esportazione.
+- Stampa Sale, Computer, Hardware, Licenze e archivio completo.
+- Pulsanti Stampa e Salva come PDF.
+- Header e footer automatici con logo, versione, data, copyright e crediti.
+- Backup completo in un unico file JSON.
+- Importazione backup con avviso preventivo.
+- Ultimo backup con nome file, data e ora.
+- Header dinamico e compatto durante lo scroll.
+- Pulse più evidente sulle criticità.

@@ -414,14 +414,304 @@ function summary(){
     </div>`;
 }
 
+
+const BACKUP_TABLES=[
+  'rooms','stations','computers','hardware','licenses',
+  'station_plugins','audit_log'
+];
+
+function backupFileName(){
+  const now=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  return `DVS_Backup_${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}.json`;
+}
+
+async function collectBackupData(){
+  const tables={};
+  for(const table of BACKUP_TABLES){
+    const {data,error}=await supabase.from(table).select('*');
+    if(error)throw error;
+    tables[table]=data||[];
+  }
+  return {
+    app:'DVS Gestionale',
+    version:'4.4 Experimental Build 4',
+    exported_at:new Date().toISOString(),
+    tables
+  };
+}
+
+function downloadJSON(data,fileName){
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+async function exportFullBackup(){
+  const payload=await collectBackupData();
+  const fileName=backupFileName();
+  downloadJSON(payload,fileName);
+  const stamp={fileName,date:new Date().toISOString()};
+  localStorage.setItem('dvs_last_backup',JSON.stringify(stamp));
+  return stamp;
+}
+
+async function restoreBackupPayload(payload){
+  if(!payload?.tables)throw new Error('File di backup non valido.');
+
+  const order=['audit_log','station_plugins','stations','licenses','hardware','computers','rooms'];
+  for(const table of order){
+    const {error}=await supabase.from(table).delete().neq('id','00000000-0000-0000-0000-000000000000');
+    if(error)throw error;
+  }
+
+  const insertOrder=['rooms','computers','hardware','licenses','stations','station_plugins','audit_log'];
+  for(const table of insertOrder){
+    const rows=payload.tables[table]||[];
+    if(rows.length){
+      const {error}=await supabase.from(table).insert(rows);
+      if(error)throw error;
+    }
+  }
+}
+
+function openBackupImportPicker(){
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='application/json,.json';
+  input.onchange=async()=>{
+    const file=input.files?.[0];
+    if(!file)return;
+    try{
+      const payload=JSON.parse(await file.text());
+      await restoreBackupPayload(payload);
+      showToast('Backup ripristinato');
+      await refresh();
+    }catch(error){
+      alert(`Importazione non riuscita: ${error.message}`);
+    }
+  };
+  input.click();
+}
+
+function lastBackupInfo(){
+  try{
+    return JSON.parse(localStorage.getItem('dvs_last_backup')||'null');
+  }catch{return null}
+}
+
+
+function printHeader(title){
+  const now=new Date().toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'});
+  return `<header class="print-doc-header">
+    <img src="./assets/logo-dvs.png" alt="Digital Video Service">
+    <div>
+      <strong>Digital Video Service</strong>
+      <h1>${esc(title)}</h1>
+      <p>DVS Gestionale · Versione 4.4 Experimental Build 4 · ${esc(now)}</p>
+    </div>
+  </header>`;
+}
+
+function printFooter(){
+  return `<footer class="print-doc-footer">
+    <span>© 2026 Digital Video Service S.r.l.</span>
+    <span>DVS Gestionale · Sviluppato da Marco D'Agostino</span>
+    <span>Progettazione, sviluppo e gestione del sistema</span>
+  </footer>`;
+}
+
+function printSummaryDocument(includeUnassigned=true){
+  const rooms=[...state.data.rooms].sort((a,b)=>a.position-b.position);
+  return `${printHeader('Sale')}
+    <main class="print-document-body">
+      ${rooms.map(room=>{
+        const stations=state.data.stations.filter(s=>s.room_id===room.id).sort((a,b)=>a.position-b.position);
+        return `<section class="print-room">
+          <div class="print-room-head"><h2>${esc(room.name)}</h2><span>${esc(productionLabel(room)||'')}</span></div>
+          ${stations.map((station,index)=>{
+            const computer=state.data.computers.find(x=>x.id===station.computer_id);
+            const hardware=state.data.hardware.find(x=>x.id===station.hardware_id);
+            const avid=state.data.licenses.find(x=>x.id===station.avid_license_id);
+            const plugins=stationPluginItems(station.id);
+            return `<div class="print-station">
+              ${stations.length>1?`<h3>Postazione ${index+1}</h3>`:''}
+              <div><b>Computer</b><span>${computer?esc(`${computer.code} · ${computer.model||''}`):'Non assegnato'}</span></div>
+              <div><b>Hardware</b><span>${hardware?esc(`${hardware.code} · ${hardware.model||''}`):'Non assegnato'}</span></div>
+              <div><b>Avid</b><span>${avid?esc(`${avid.code} · ${avid.avid_type||''} · System ID ${avid.system_id||'—'}`):'Non assegnata'}</span></div>
+              <div><b>Plugin</b><span>${plugins.length?plugins.map(p=>esc(`${p.code} · ${p.plugin_type||''} · ${p.plugin_serial||'—'}`)).join('<br>'):'Non assegnato'}</span></div>
+            </div>`;
+          }).join('')}
+        </section>`;
+      }).join('')}
+      ${includeUnassigned?printUnassignedSection():''}
+    </main>${printFooter()}`;
+}
+
+function printUnassignedSection(){
+  const computers=state.data.computers.filter(x=>!x.archived_at&&!stationOf('computer',x.id)).sort(numSort);
+  const hardware=state.data.hardware.filter(x=>!x.archived_at&&!stationOf('hardware',x.id)).sort(numSort);
+  const avid=state.data.licenses.filter(x=>!x.archived_at&&x.category==='avid'&&!stationOf('license',x.id)).sort(numSort);
+  const plugins=state.data.licenses.filter(x=>!x.archived_at&&x.category==='plugin'&&!pluginStation(x.id)).sort(numSort);
+  const col=(title,items,render)=>`<div><h3>${title}</h3>${items.length?items.map(render).join(''):'<p>Nessun elemento</p>'}</div>`;
+  return `<section class="print-unassigned"><h2>Non assegnati</h2><div class="print-unassigned-grid">
+    ${col('Computer',computers,x=>`<p>${esc(x.code)} · ${esc(x.model||'')}</p>`)}
+    ${col('Hardware',hardware,x=>`<p>${esc(x.code)} · ${esc(x.model||'')}</p>`)}
+    ${col('Avid',avid,x=>`<p>${esc(x.code)} · ${esc(x.avid_type||'')} · ${esc(expiryLabel(x))}</p>`)}
+    ${col('Plugin',plugins,x=>`<p>${esc(x.code)} · ${esc(x.plugin_type||'')} · ${esc(expiryLabel(x))}</p>`)}
+  </div></section>`;
+}
+
+function printInventoryDocument(type,complete=false,scope='all'){
+  let items=state.data[type].filter(x=>!x.archived_at);
+  const isAssigned=x=>type==='computers'?!!stationOf('computer',x.id):type==='hardware'?!!stationOf('hardware',x.id):x.category==='plugin'?!!pluginStation(x.id):!!stationOf('license',x.id);
+  if(scope==='assigned')items=items.filter(isAssigned);
+  if(scope==='unassigned')items=items.filter(x=>!isAssigned(x));
+  items.sort(type==='licenses'?(a,b)=>(a.category===b.category?numSort(a,b):(a.category==='avid'?-1:1)):numSort);
+
+  const title=type==='computers'?'Computer':type==='hardware'?'Hardware':'Licenze';
+  const rows=items.map(x=>{
+    const location=type==='computers'?stationOf('computer',x.id):type==='hardware'?stationOf('hardware',x.id):x.category==='plugin'?pluginStation(x.id):stationOf('license',x.id);
+    if(type==='computers'){
+      return `<tr><td>${esc(x.code)}</td><td>${esc(x.model||'')}</td><td>${esc(x.os_name||'')}</td><td>${complete?esc(x.serial||'—'):''}</td><td>${location?esc(stationLabel(location)):'Non assegnato'}</td></tr>`;
+    }
+    if(type==='hardware'){
+      return `<tr><td>${esc(x.code)}</td><td>${esc(x.model||'')}</td><td>${complete?esc(x.serial||'—'):''}</td><td>${location?esc(stationLabel(location)):'Non assegnato'}</td></tr>`;
+    }
+    return `<tr><td>${esc(x.code)}</td><td>${esc(x.category==='avid'?x.avid_type:x.plugin_type)}</td><td>${esc(x.category==='avid'?x.system_id||'—':x.plugin_serial||'—')}</td><td>${esc(expiryLabel(x))}</td><td>${location?esc(stationLabel(location)):'Non assegnato'}</td></tr>`;
+  }).join('');
+
+  return `${printHeader(title)}<main class="print-document-body"><table class="print-table">
+    <thead><tr>${type==='computers'?'<th>Codice</th><th>Modello</th><th>OS</th><th>Seriale</th><th>Posizione</th>':type==='hardware'?'<th>Codice</th><th>Modello</th><th>Seriale</th><th>Posizione</th>':'<th>Codice</th><th>Tipo</th><th>ID / Seriale</th><th>Scadenza</th><th>Posizione</th>'}</tr></thead>
+    <tbody>${rows}</tbody></table></main>${printFooter()}`;
+}
+
+function openPrintPreview(html){
+  const existing=document.getElementById('print-root');
+  if(existing)existing.remove();
+  const root=document.createElement('div');
+  root.id='print-root';
+  root.innerHTML=html;
+  document.body.appendChild(root);
+  document.body.classList.add('print-preview-open');
+}
+
+function closePrintPreview(){
+  document.getElementById('print-root')?.remove();
+  document.body.classList.remove('print-preview-open');
+}
+
+function runSystemPrint(){
+  window.print();
+}
+
+function openPrintCenter(){
+  openModal(`<div class="modal-head"><h2>Stampa ed esportazione</h2><button class="close" data-close>×</button></div>
+    <div class="print-center">
+      <label>Documento
+        <select id="print-document">
+          <option value="summary">Sale</option>
+          <option value="computers">Computer</option>
+          <option value="hardware">Hardware</option>
+          <option value="licenses">Licenze</option>
+          <option value="archive">Archivio completo</option>
+        </select>
+      </label>
+
+      <div id="print-options">
+        ${check('print-complete','Scheda completa',false)}
+        ${check('print-unassigned','Includi Non assegnati',true)}
+        <label>Contenuto
+          <select id="print-scope">
+            <option value="all">Tutto</option>
+            <option value="assigned">Solo assegnati</option>
+            <option value="unassigned">Solo non assegnati</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="actions print-actions">
+        <button class="secondary" id="print-preview">Anteprima</button>
+        <button class="secondary" id="print-save-pdf">Salva come PDF</button>
+        <button class="primary" id="print-now">Stampa</button>
+      </div>
+    </div>`);
+
+  const build=()=>{
+    const doc=val('print-document');
+    const complete=checked('print-complete');
+    const includeUnassigned=checked('print-unassigned');
+    const scope=val('print-scope');
+    if(doc==='summary')return printSummaryDocument(includeUnassigned);
+    if(doc==='archive')return printSummaryDocument(true)+printInventoryDocument('computers',true,'all')+printInventoryDocument('hardware',true,'all')+printInventoryDocument('licenses',true,'all');
+    return printInventoryDocument(doc,complete,scope);
+  };
+
+  document.getElementById('print-preview').onclick=()=>{
+    openPrintPreview(build());
+    modal.close();
+  };
+  document.getElementById('print-now').onclick=()=>{
+    openPrintPreview(build());
+    modal.close();
+    setTimeout(runSystemPrint,100);
+  };
+  document.getElementById('print-save-pdf').onclick=()=>{
+    openPrintPreview(build());
+    modal.close();
+    showToast('Nella finestra di stampa scegli “Salva come PDF”');
+    setTimeout(runSystemPrint,100);
+  };
+}
+
 function settings(){
-  return `<div class="list">
-    <button class="list-card" data-setting="audit"><div><h3>Registro modifiche</h3><p>Storico automatico delle operazioni.</p></div><span>›</span></button>
-    <button class="list-card" data-setting="archive"><div><h3>Archivio</h3><p>Elementi archiviati e ripristino.</p></div><span>›</span></button>
-    <button class="list-card" data-setting="notifications"><div><h3>Notifiche</h3><p>Avvisi automatici per le licenze in scadenza.</p></div><span>›</span></button>
-    <button class="list-card" data-setting="backup"><div><h3>Backup ed esportazione</h3><p>Disponibile in una versione successiva.</p></div><span>›</span></button>
-    <button class="list-card" data-setting="about"><div><h3>Informazioni</h3><p>Versione, società e note della release.</p></div><span>›</span></button>
-    <button class="list-card" id="logout"><div><h3>Logout</h3><p>${esc(state.session?.user?.email||'')}</p></div><span>›</span></button>
+  const last=lastBackupInfo();
+  const lastText=last
+    ? `${last.fileName}<br><small>${new Date(last.date).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}</small>`
+    : 'Mai eseguito';
+
+  return `<div class="settings-grid">
+    <button class="setting-card" data-setting="print">
+      <span class="setting-icon">${navIcon('summary')}</span>
+      <strong>Stampa ed esportazione</strong>
+      <small>Sale, Computer, Hardware, Licenze e archivio completo</small>
+    </button>
+
+    <button class="setting-card" data-setting="backup">
+      <span class="setting-icon">${navIcon('computer')}</span>
+      <strong>Backup</strong>
+      <small>Ultimo backup: ${lastText}</small>
+    </button>
+
+    <button class="setting-card" data-setting="notifications">
+      <span class="setting-icon">${navIcon('bell')}</span>
+      <strong>Notifiche</strong>
+      <small>Gestisci gli avvisi delle scadenze.</small>
+    </button>
+
+    <button class="setting-card" data-setting="audit">
+      <span class="setting-icon">${navIcon('audit')}</span>
+      <strong>Registro modifiche</strong>
+      <small>Consulta le operazioni effettuate.</small>
+    </button>
+
+    <button class="setting-card" data-setting="about">
+      <span class="setting-icon">${navIcon('settings')}</span>
+      <strong>Informazioni</strong>
+      <small>Versione, changelog, statistiche e crediti.</small>
+    </button>
+
+    <button class="setting-card danger-setting" id="logout">
+      <span class="setting-icon">${navIcon('logout')}</span>
+      <strong>Esci</strong>
+      <small>Termina la sessione corrente.</small>
+    </button>
   </div>`;
 }
 
@@ -444,7 +734,16 @@ function render(){
               :settings();
   bindContent();
 }
+
+function bindCompactHeader(){
+  const update=()=>document.body.classList.toggle('header-compact',window.scrollY>36);
+  window.removeEventListener('scroll',update);
+  window.addEventListener('scroll',update,{passive:true});
+  update();
+}
+
 function bindContent(){
+  bindCompactHeader();
   document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter;render()});
   document.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>{const [t,id]=b.dataset.item.split(':');openDetail(t,id)});
   document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>openRoom(b.dataset.room));
@@ -1060,6 +1359,59 @@ async function openNotificationsSetting(){
 }
 
 function openSetting(k){
+  if(k==='print'){
+    openPrintCenter();
+    return;
+  }
+  if(k==='backup'){
+    const last=lastBackupInfo();
+    openModal(`<div class="modal-head"><h2>Backup</h2><button class="close" data-close>×</button></div>
+      <section class="backup-card">
+        <div class="backup-last">
+          <span>Ultimo backup</span>
+          <strong>${last?esc(last.fileName):'Mai eseguito'}</strong>
+          ${last?`<small>${new Date(last.date).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'})}</small>`:''}
+        </div>
+        <button class="primary" id="export-backup">Esporta backup</button>
+        <button class="secondary" id="import-backup">Importa backup</button>
+      </section>`);
+
+    document.getElementById('export-backup').onclick=async()=>{
+      try{
+        await exportFullBackup();
+        modal.close();
+        showToast('Backup esportato');
+        render();
+      }catch(error){alert(error.message)}
+    };
+
+    document.getElementById('import-backup').onclick=()=>{
+      openModal(`<div class="modal-head"><h2>Importa backup</h2><button class="close" data-close>×</button></div>
+        <div class="warning-box">
+          <strong>Attenzione</strong>
+          <p>L’importazione sostituirà tutti i dati presenti nel gestionale.</p>
+          <p>Prima di continuare è consigliato esportare un backup dell’attuale situazione.</p>
+        </div>
+        <div class="actions import-actions">
+          <button class="secondary" id="backup-before-import">Esporta backup</button>
+          <button class="secondary" data-close>Annulla</button>
+          <button class="danger" id="continue-import">Continua</button>
+        </div>`);
+
+      document.getElementById('backup-before-import').onclick=async()=>{
+        try{
+          await exportFullBackup();
+          showToast('Backup esportato');
+        }catch(error){alert(error.message)}
+      };
+      document.getElementById('continue-import').onclick=()=>{
+        modal.close();
+        openBackupImportPicker();
+      };
+    };
+    return;
+  }
+
   if(k==='audit'){
     openModal(`<div class="modal-head"><h2>Registro modifiche</h2><button class="close" data-close>×</button></div><div class="list">${state.data.audit_log.length?state.data.audit_log.slice(0,100).map(x=>`<div class="card"><strong>${esc(x.action)} · ${esc(x.entity_type)}</strong><p>${new Date(x.created_at).toLocaleString('it-IT')}</p></div>`).join(''):'<div class="empty">Registro vuoto.</div>'}</div>`);
   }else if(k==='archive'){
@@ -1073,7 +1425,7 @@ function openSetting(k){
     const activeAvid=state.data.licenses.filter(x=>!x.archived_at&&x.category==='avid').length;
     const activePlugins=state.data.licenses.filter(x=>!x.archived_at&&x.category==='plugin').length;
     const systemInfo=`DVS Gestionale
-Versione: 4.4 Experimental Build 3
+Versione: 4.4 Experimental Build 4
 Database: Schema 4.3.1
 Sale: ${state.data.rooms.length}
 Computer: ${activeComputers}
@@ -1088,8 +1440,8 @@ Plugin: ${activePlugins}`;
         <p>Gestione Sale, Computer, Hardware e Licenze</p>
 
         <dl>
-          <div><dt>Versione</dt><dd>4.4 Experimental Build 3</dd></div>
-          <div><dt>Build</dt><dd>2026.07.14-B3</dd></div>
+          <div><dt>Versione</dt><dd>4.4 Experimental Build 4</dd></div>
+          <div><dt>Build</dt><dd>2026.07.14-B4</dd></div>
           <div><dt>Database</dt><dd>Supabase · Schema 4.3.1</dd></div>
         </dl>
 
@@ -1188,4 +1540,11 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.4.exp.b3');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.4.exp.b4');boot();
+
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();
+});
+document.addEventListener('click',event=>{
+  if(event.target?.id==='print-root')closePrintPreview();
+});
