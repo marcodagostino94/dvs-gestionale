@@ -708,3 +708,23 @@ dialog,.modal-card,.sheet-card,.splash img{animation:none!important;transition:n
   .pulse-critical{animation:none!important}
   .summary-room-action{cursor:default!important}
 }
+
+/* v4.4 Experimental Build 2 */
+.summary-production-head.summary-room-action{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:18px 20px!important}
+.summary-production-head.summary-room-action:hover{background:rgba(255,255,255,.018)!important}
+.summary-production-head.summary-room-action:focus-visible{outline:2px solid rgba(255,255,255,.22);outline-offset:-2px}
+.resource-title-row{display:grid!important;grid-template-columns:auto 1fr!important;align-items:start!important}
+.resource-title-row .resource-expiry{justify-self:end!important;text-align:right!important;margin-left:auto!important;max-width:58%}
+.resource-id{display:grid!important;gap:3px!important}
+.resource-id small,.free-id small{font-size:7px!important;font-weight:900!important;letter-spacing:.75px!important;color:rgba(255,255,255,.40)!important}
+.resource-id strong,.free-id strong{font-size:10px!important;font-weight:700!important;color:rgba(255,255,255,.62)!important;overflow-wrap:anywhere}
+.free-id{display:grid;gap:3px;margin-top:4px}
+.rec-nav-icon{width:22px!important;min-width:22px!important;height:22px!important;display:grid!important;place-items:center!important;margin:0 auto!important;transform:none!important}
+.rec-nav-icon i{display:block!important;margin:0!important}
+@keyframes dvsPulseWarning{0%,100%{border-color:rgba(255,202,58,.55);box-shadow:0 0 0 0 rgba(255,202,58,0)}50%{border-color:rgba(255,224,118,1);box-shadow:0 0 0 3px rgba(255,202,58,.18)}}
+@keyframes dvsPulseExpired{0%,100%{border-color:rgba(255,71,82,.58);box-shadow:0 0 0 0 rgba(255,71,82,0)}50%{border-color:rgba(255,116,123,1);box-shadow:0 0 0 3px rgba(255,71,82,.20)}}
+.pulse-critical.warning{animation:dvsPulseWarning 2.2s ease-in-out infinite!important}
+.pulse-critical.expired{animation:dvsPulseExpired 2.2s ease-in-out infinite!important}
+.pulse-critical{filter:none!important}
+.danger-choice{border-color:rgba(255,71,82,.35)!important;background:rgba(255,71,82,.07)!important}
+@media(prefers-reduced-motion:reduce){.pulse-critical.warning,.pulse-critical.expired{animation:none!important}}

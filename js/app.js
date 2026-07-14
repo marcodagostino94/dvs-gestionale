@@ -286,12 +286,12 @@ function summary(){
 
     const status=licenseStatus(item);
     const detail=item.category==='avid'
-      ? `System ID ${esc(item.system_id||'—')}`
-      : `Seriale ${esc(item.plugin_serial||'—')}`;
+      ? `<small>SYSTEM ID</small><strong>${esc(item.system_id||'—')}</strong>`
+      : `<small>SERIALE</small><strong>${esc(item.plugin_serial||'—')}</strong>`;
     return `<button type="button" class="unassigned-asset-card license-free-card ${status.level} ${status.level!=='ok'?'pulse-critical':''}" data-item="licenses:${item.id}">
       <div class="free-card-head"><strong>${esc(item.code)}</strong><span class="free-expiry">${esc(expiryLabel(item))}</span></div>
       <span>${esc(item.category==='avid'?item.avid_type:item.plugin_type)} · ${cycleLabel(item.billing_cycle)}</span>
-      <small>${detail}</small>
+      <div class="free-id">${detail}</div>
     </button>`;
   };
 
@@ -352,7 +352,7 @@ function summary(){
                         <div class="resource-title-row"><small>AVID</small><span class="resource-expiry ${avidLevel}">${avidState.kind==='license'?esc(expiryLabel(avid)):avidState.kind==='trial'?esc(avidState.status.text):''}</span></div>
                         <strong>${avidState.kind==='license'?esc(avid.code):avidState.kind.startsWith('trial')?'TRIAL':'—'}</strong>
                         ${avidState.kind==='license'
-                          ? `<div class="badges"><span class="badge ${avid.avid_type==='Ultimate'?'ultimate':'singolo'}">${esc(avid.avid_type.toUpperCase())}</span><span class="badge ${avid.billing_cycle}">${cycleLabel(avid.billing_cycle)}</span></div><span class="resource-id">System ID ${esc(avid.system_id||'—')}</span>`
+                          ? `<div class="badges"><span class="badge ${avid.avid_type==='Ultimate'?'ultimate':'singolo'}">${esc(avid.avid_type.toUpperCase())}</span><span class="badge ${avid.billing_cycle}">${cycleLabel(avid.billing_cycle)}</span></div><span class="resource-id"><small>SYSTEM ID</small><strong>${esc(avid.system_id||'—')}</strong></span>`
                           : avidState.kind==='trial-pending'
                             ? '<div class="badges"><span class="badge trial-pending">TRIAL DA ATTIVARE</span></div>'
                             : avidState.kind==='trial'
@@ -368,7 +368,7 @@ function summary(){
                           return `<div class="summary-plugin ${status.level}">
                             <div class="plugin-head"><strong>${esc(plugin.plugin_type)}</strong><span class="resource-expiry ${status.level}">${esc(expiryLabel(plugin))}</span></div>
                             <div class="badges"><span class="badge ${plugin.billing_cycle}">${cycleLabel(plugin.billing_cycle)}</span></div>
-                            <span class="resource-id">Seriale ${esc(plugin.plugin_serial||'—')}</span>
+                            <span class="resource-id"><small>SERIALE</small><strong>${esc(plugin.plugin_serial||'—')}</strong></span>
                           </div>`;
                         }).join(''):'<span>Non assegnato</span>'}
                         <i class="summary-edit-hint">Modifica</i>
@@ -464,20 +464,61 @@ function openSummaryRoomActions(roomId){
   openSheet(`<div class="modal-head"><h2>${esc(room.name)}</h2><button class="close" data-close-sheet>×</button></div>
     <button class="choice" id="summary-production-action"><strong>Produzione</strong><br><small>${esc(productionLabel(room)||'Non indicata')}</small></button>
     <button class="choice" id="summary-add-station"><strong>Aggiungi postazione</strong><br><small>Crea quattro riquadri vuoti nella Sala</small></button>
+    ${stations.length>1?'<button class="choice danger-choice" id="summary-delete-station"><strong>Elimina postazione</strong><br><small>Rimuove l’ultima postazione aggiunta</small></button>':''}
     <button class="choice" data-close-sheet><strong>Chiudi</strong></button>`);
 
   document.getElementById('summary-production-action').onclick=()=>{
     sheet.close();
-    openProductionEditor(room);
+    openSummaryProductionEditor(room);
   };
 
   document.getElementById('summary-add-station').onclick=async()=>{
     try{
       await saveRow('stations',{id:uuid(),room_id:room.id,position:stations.length+1});
       await addAudit('create','stations',room.id,{room:room.name});
-      sheet.close();
-      showToast('Postazione aggiunta');
-      await refresh();
+      sheet.close();showToast('Postazione aggiunta');await refresh();
+    }catch(error){alert(error.message)}
+  };
+
+  document.getElementById('summary-delete-station')?.addEventListener('click',async()=>{
+    const station=stations[stations.length-1];
+    if(!station||!confirm(`Eliminare la Postazione ${station.position} da ${room.name}?`))return;
+    try{
+      for(const link of state.data.station_plugins.filter(x=>x.station_id===station.id))await assignPlugin(link.license_id,null);
+      if(station.computer_id)await assignResource('computer',null,station.id);
+      if(station.hardware_id)await assignResource('hardware',null,station.id);
+      if(station.avid_license_id)await assignResource('license',null,station.id);
+      const {error}=await supabase.from('stations').delete().eq('id',station.id);
+      if(error)throw error;
+      await addAudit('delete','stations',station.id,{room:room.name,position:station.position});
+      sheet.close();showToast('Postazione eliminata');await refresh();
+    }catch(error){alert(error.message)}
+  });
+}
+
+function openSummaryProductionEditor(room){
+  openModal(`<div class="modal-head"><h2>Produzione · ${esc(room.name)}</h2><button class="close" data-close>×</button></div>
+    <div class="fields">
+      <label>Tipo
+        <select id="summary-production-type">
+          <option value="">Nessuna produzione</option>
+          <option value="RAI" ${room.client_type==='RAI'?'selected':''}>RAI</option>
+          <option value="PRIVATO" ${room.client_type==='PRIVATO'?'selected':''}>Privato</option>
+          <option value="ALTRO" ${room.client_type==='ALTRO'?'selected':''}>Altro</option>
+        </select>
+      </label>
+      ${field('summary-production-name','Nome produzione',room.production_name||'')}
+    </div>
+    <div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save-summary-production">Salva</button></div>`);
+
+  document.getElementById('save-summary-production').onclick=async()=>{
+    const type=val('summary-production-type');
+    const name=val('summary-production-name').trim();
+    const clear=!type||!name;
+    try{
+      await saveRow('rooms',{...room,client_type:clear?null:type,production_name:clear?null:name});
+      await addAudit('update','rooms',room.id,{client_type:clear?null:type,production_name:clear?null:name});
+      modal.close();showToast(clear?'Produzione rimossa':'Produzione salvata');await refresh();
     }catch(error){alert(error.message)}
   };
 }
@@ -990,7 +1031,7 @@ function openSetting(k){
     const activeAvid=state.data.licenses.filter(x=>!x.archived_at&&x.category==='avid').length;
     const activePlugins=state.data.licenses.filter(x=>!x.archived_at&&x.category==='plugin').length;
     const systemInfo=`DVS Gestionale
-Versione: 4.4 Experimental Build 1
+Versione: 4.4 Experimental Build 2
 Database: Schema 4.3.1
 Sale: ${state.data.rooms.length}
 Computer: ${activeComputers}
@@ -1005,8 +1046,8 @@ Plugin: ${activePlugins}`;
         <p>Gestione Sale, Computer, Hardware e Licenze</p>
 
         <dl>
-          <div><dt>Versione</dt><dd>4.4 Experimental Build 1</dd></div>
-          <div><dt>Build</dt><dd>2026.07.14</dd></div>
+          <div><dt>Versione</dt><dd>4.4 Experimental Build 2</dd></div>
+          <div><dt>Build</dt><dd>2026.07.14-B2</dd></div>
           <div><dt>Database</dt><dd>Supabase · Schema 4.3.1</dd></div>
         </dl>
 
@@ -1105,4 +1146,4 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.4.exp.b1');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.4.exp.b2');boot();

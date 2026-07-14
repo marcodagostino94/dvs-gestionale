@@ -191,3 +191,6 @@ DVS GESTIONALE v4.4 EXPERIMENTAL BUILD 1
 - Nessuna nuova migrazione SQL richiesta.
 - Nessuna modifica a Edge Function, cron o secret.
 - Consultare CHANGELOG.md per l'elenco completo.
+
+
+v4.4 Experimental Build 2: correzioni UI e flusso Sala. Nessuna SQL richiesta.

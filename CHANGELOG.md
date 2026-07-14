@@ -1,6 +1,6 @@
 # DVS Gestionale — Changelog
 
-## 4.4 Experimental Build 1 — 14 luglio 2026
+## 4.4 Experimental Build 2 — 14 luglio 2026
 
 - Scadenze Avid spostate nel relativo riquadro.
 - Scadenze Plugin visibili nel relativo riquadro.
@@ -16,3 +16,13 @@
 - Produzione spostata in alto a destra della Sala.
 - Aggiunta voce Non assegnato nel selettore Plugin.
 - Nuova pagina Informazioni con versione, statistiche, changelog e crediti.
+
+### Correzioni Build 2
+- Scadenza Avid allineata a destra.
+- Pulse sul bordo con colore coerente.
+- System ID e seriali su due righe.
+- REC centrato.
+- Produzione salva e chiude.
+- Produzione eliminabile.
+- Postazione aggiuntiva eliminabile.
+- Testata Sala interamente cliccabile e neutra.
