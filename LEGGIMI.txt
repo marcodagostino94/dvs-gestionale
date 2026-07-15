@@ -218,3 +218,8 @@ DVS GESTIONALE — BUILD 5
 - Eseguire una sola volta: sql/migrate_build_5_server_config.sql
 - Nessuna modifica a Edge Function, cron o secret.
 - Build focalizzata sulla rifinitura della Sintesi.
+
+
+DVS GESTIONALE — BUILD 6
+- Eseguire una sola volta: sql/migrate_build_6_asset_history_numbering.sql
+- Nessuna modifica a Edge Function, cron o secret.

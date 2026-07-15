@@ -62,3 +62,14 @@
 - Produzioni evidenziate: RAI blu, Privato rosa, Altro grigio.
 - Scadenze della Sintesi sempre espresse in giorni residui.
 - Pulse giallo e rosso reso più evidente.
+
+
+## Build 6 — Gestione Asset
+- Filtro Storico per Computer, Hardware e Licenze.
+- Dismissione definitiva con motivo, data e nota.
+- Asset storici di sola consultazione e mai assegnabili.
+- Numerazione automatica Computer e Hardware.
+- MAC 17 escluso permanentemente.
+- Numerazione Avid: Ultimate 01–19, Singolo 20–39.
+- Riutilizzo del primo numero libero appartenente allo Storico.
+- Duplicati bloccati tra elementi operativi.

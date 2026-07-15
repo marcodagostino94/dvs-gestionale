@@ -1089,3 +1089,11 @@ body.print-preview-open #print-root>.print-doc-footer{max-width:1000px;margin-le
 @media(prefers-reduced-motion:reduce){
   .pulse-critical.warning,.pulse-critical.expired{animation:none!important}
 }
+
+/* ===== BUILD 6 — Gestione Asset ===== */
+.badge.history{background:rgba(145,150,161,.14);border-color:rgba(145,150,161,.34);color:#c8cbd2}
+.historic-item{border-color:rgba(145,150,161,.20)!important;background:rgba(255,255,255,.025)!important}
+.history-meta{display:flex;align-items:center;gap:7px;margin-top:8px}
+.history-meta strong{font-size:9px;color:#d3d5da}
+.history-list .list-card p{color:var(--muted)}
+input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,255,.70)!important;cursor:not-allowed}

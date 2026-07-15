@@ -58,8 +58,107 @@ function rooms(){
 }
 function stationCard(s){const c=state.data.computers.find(x=>x.id===s.computer_id),a=state.data.licenses.find(x=>x.id===s.avid_license_id),plugins=state.data.station_plugins.filter(x=>x.station_id===s.id).map(x=>state.data.licenses.find(l=>l.id===x.license_id)).filter(Boolean);return `<div class="station-row"><div class="resource-row"><div><strong>${c?esc(c.code):'Nessun computer'}</strong>${c?`<small>${esc([c.model,c.variant].filter(Boolean).join(' · '))}</small>`:''}</div>${c?.os_name?`<span class="badge os os-${esc(c.os_name.toLowerCase())}">${esc(c.os_name.toUpperCase())}</span>`:''}</div><div class="resource-row"><strong>${a?esc(a.code):'Nessuna Avid'}</strong>${a?`<div class="badges"><span class="badge ${a.avid_type==='Ultimate'?'ultimate':'singolo'}">${esc(a.avid_type.toUpperCase())}</span><span class="badge ${a.billing_cycle}">${cycleLabel(a.billing_cycle)}</span>${a.is_trial?'<span class="badge trial">TRIAL</span>':''}</div>`:''}</div>${plugins.map(p=>`<div class="resource-row"><strong>${esc(p.plugin_type.toUpperCase())}</strong><div class="badges"><span class="badge ${p.billing_cycle}">${cycleLabel(p.billing_cycle)}</span>${p.is_trial?'<span class="badge trial">TRIAL</span>':''}</div></div>`).join('')}${[a,...plugins].filter(Boolean).map(x=>licenseStatus(x)).filter(x=>x.level!=='ok').map(x=>`<div class="status ${x.level}">${esc(x.text)}</div>`).join('')}</div>`}
 
+
+function parseAssetNumber(code){
+  const match=String(code||'').match(/(\d+)\s*$/);
+  return match?Number(match[1]):null;
+}
+function formatAssetCode(prefix,number){
+  return `${prefix} ${String(number).padStart(2,'0')}`;
+}
+function nextFreeNumber(type,{start=1,end=999,skip=[]}={}){
+  const used=new Set(
+    state.data[type]
+      .filter(item=>!item.archived_at)
+      .map(item=>parseAssetNumber(item.code))
+      .filter(Number.isInteger)
+  );
+  for(let n=start;n<=end;n++){
+    if(skip.includes(n))continue;
+    if(!used.has(n))return n;
+  }
+  return null;
+}
+function nextComputerCode(){
+  const n=nextFreeNumber('computers',{skip:[17]});
+  return n?formatAssetCode('MAC',n):'';
+}
+function nextHardwareCode(){
+  const n=nextFreeNumber('hardware');
+  return n?formatAssetCode('HW',n):'';
+}
+function nextAvidCode(avidType='Ultimate'){
+  const ultimate=avidType==='Ultimate';
+  const n=nextFreeNumber('licenses',{start:ultimate?1:20,end:ultimate?19:39});
+  return n?formatAssetCode('AVID',n):'';
+}
+function validateAssetCode(type,code,currentId=null,licenseData={}){
+  const normalized=String(code||'').trim().toUpperCase();
+  if(!normalized)throw new Error('Il codice è obbligatorio.');
+  if(type==='computers'&&parseAssetNumber(normalized)===17){
+    throw new Error('Il codice MAC 17 non può essere utilizzato.');
+  }
+  if(type==='licenses'&&licenseData.category==='avid'){
+    const number=parseAssetNumber(normalized);
+    const ultimate=licenseData.avid_type==='Ultimate';
+    if(!Number.isInteger(number))throw new Error('Il codice Avid deve terminare con un numero.');
+    if(ultimate&&(number<1||number>19))throw new Error('Le Avid Ultimate devono usare numeri da 01 a 19.');
+    if(!ultimate&&(number<20||number>39))throw new Error('Le Avid Singolo devono usare numeri da 20 a 39.');
+  }
+  const duplicate=state.data[type].some(item=>
+    !item.archived_at&&item.id!==currentId&&String(item.code||'').trim().toUpperCase()===normalized
+  );
+  if(duplicate)throw new Error(`Il codice ${normalized} è già utilizzato da un elemento operativo.`);
+  return normalized;
+}
+function dismissalReasons(type){
+  return type==='licenses'
+    ? ['Non rinnovata','Scaduta definitivamente','Ceduta','Sostituita','Altro']
+    : ['Venduto','Rottamato','Guasto irreparabile','Restituito','Sostituito','Altro'];
+}
+async function detachAsset(type,item){
+  if(type==='computers'){
+    const station=stationOf('computer',item.id);
+    if(station)await assignResource('computer',null,station.id);
+  }else if(type==='hardware'){
+    const station=stationOf('hardware',item.id);
+    if(station)await assignResource('hardware',null,station.id);
+  }else if(item.category==='plugin'){
+    if(pluginStation(item.id))await assignPlugin(item.id,null);
+  }else{
+    const station=stationOf('license',item.id);
+    if(station)await assignResource('license',null,station.id);
+  }
+}
+function openDismissEditor(type,item){
+  openModal(`<div class="modal-head"><h2>Dismetti ${esc(item.code)}</h2><button class="close" data-close>×</button></div>
+    <div class="warning-box"><strong>Operazione definitiva</strong><p>L’elemento passerà nello Storico e non potrà essere riattivato o assegnato.</p></div>
+    <div class="fields">
+      <label>Motivo<select id="dismiss-reason">${dismissalReasons(type).map(reason=>`<option value="${esc(reason)}">${esc(reason)}</option>`).join('')}</select></label>
+      ${field('dismiss-note','Nota','')}
+    </div>
+    <div class="actions"><button class="secondary" data-close>Annulla</button><button class="danger" id="confirm-dismiss">Dismetti definitivamente</button></div>`);
+  document.getElementById('confirm-dismiss').onclick=async()=>{
+    if(!confirm(`Confermi la dismissione definitiva di ${item.code}?`))return;
+    try{
+      await detachAsset(type,item);
+      const now=new Date().toISOString();
+      await saveRow(type,{
+        ...item,
+        archived_at:now,
+        dismissed_at:now,
+        dismissal_reason:val('dismiss-reason'),
+        dismissal_note:val('dismiss-note')||null
+      });
+      await addAudit('dismiss',type,item.id,{code:item.code,reason:val('dismiss-reason')});
+      modal.close();showToast(`${item.code} spostato nello Storico`);await refresh();
+    }catch(error){alert(error.message)}
+  };
+}
+
 function inventory(type){
-  const source=state.data[type].filter(x=>!x.archived_at);
+  const historic=state.filter==='history';
+  const source=state.data[type].filter(x=>historic?!!x.archived_at:!x.archived_at);
   const mapped=source.map(x=>({
     x,
     loc:type==='computers'
@@ -70,14 +169,13 @@ function inventory(type){
           ?pluginStation(x.id)
           :stationOf('license',x.id)
   }));
-
   const filtered=mapped.filter(({x,loc})=>
-    state.filter==='all'
-    ||state.filter==='assigned'&&loc
-    ||state.filter==='warehouse'&&!loc
-    ||type==='licenses'&&state.filter===x.category
+    historic||state.filter==='all'||state.filter==='assigned'&&loc||state.filter==='warehouse'&&!loc||type==='licenses'&&state.filter===x.category
   );
-
+  if(historic){
+    const rows=filtered.sort((a,b)=>new Date(b.x.dismissed_at||b.x.archived_at)-new Date(a.x.dismissed_at||a.x.archived_at));
+    return `${filters(type)}<div class="list history-list">${rows.length?rows.map(({x})=>inventoryCard(type,x)).join(''):'<div class="empty">Nessun elemento nello Storico.</div>'}</div>`;
+  }
   if(type!=='licenses'){
     const ordered=filtered.sort((a,b)=>{
       const au=a.loc?0:1,bu=b.loc?0:1;
@@ -86,52 +184,41 @@ function inventory(type){
     });
     return `${filters(type)}<div class="list">${ordered.length?ordered.map(({x})=>inventoryCard(type,x)).join(''):'<div class="empty">Nessun elemento.</div>'}</div>`;
   }
-
   const orderGroup=rows=>rows.sort((a,b)=>{
-    const ac=a.x.category==='avid'?0:1;
-    const bc=b.x.category==='avid'?0:1;
-    if(ac!==bc)return ac-bc;
-    return numSort(a.x,b.x);
+    const ac=a.x.category==='avid'?0:1,bc=b.x.category==='avid'?0:1;
+    return ac!==bc?ac-bc:numSort(a.x,b.x);
   });
-
   const assigned=orderGroup(filtered.filter(row=>row.loc));
   const unassigned=orderGroup(filtered.filter(row=>!row.loc));
-
-  const group=(label,rows)=>`<section class="license-inventory-group">
-    <div class="office-label license-group-label"><span>${label}</span></div>
-    <div class="list">${rows.length?rows.map(({x})=>inventoryCard(type,x)).join(''):'<div class="empty">Nessun elemento.</div>'}</div>
-  </section>`;
-
+  const group=(label,rows)=>`<section class="license-inventory-group"><div class="office-label license-group-label"><span>${label}</span></div><div class="list">${rows.length?rows.map(({x})=>inventoryCard(type,x)).join(''):'<div class="empty">Nessun elemento.</div>'}</div></section>`;
   return `${filters(type)}<div class="license-inventory-groups">${group('Assegnati',assigned)}${group('Non assegnati',unassigned)}</div>`;
 }
-function filters(type){const fs=type==='licenses'?[['all','Tutte'],['avid','Avid'],['plugin','Plugin'],['assigned','Assegnate'],['warehouse','Magazzino']]:[['all','Tutti'],['assigned','Assegnati'],['warehouse','Magazzino']];return `<div class="filters">${fs.map(([id,l])=>`<button class="filter ${state.filter===id?'active':''}" data-filter="${id}">${l}</button>`).join('')}</div>`}
+function filters(type){
+  const fs=type==='licenses'
+    ? [['all','Tutte'],['avid','Avid'],['plugin','Plugin'],['assigned','Assegnate'],['warehouse','Magazzino'],['history','Storico']]
+    : [['all','Tutti'],['assigned','Assegnati'],['warehouse','Magazzino'],['history','Storico']];
+  return `<div class="filters">${fs.map(([id,label])=>`<button class="filter ${state.filter===id?'active':''}" data-filter="${id}">${label}</button>`).join('')}</div>`;
+}
 function locationMarkup(text){return text==='Non assegnato'?'<span class="unassigned-text">Non assegnato</span>':esc(text)}
 function inventoryCard(type,x){
+  if(x.archived_at){
+    return `<button class="list-card historic-item" data-item="${type}:${x.id}">
+      <div>
+        <h3>${esc(x.code)}</h3>
+        <div class="history-meta"><span class="badge history">STORICO</span><strong>${esc(x.dismissal_reason||'Dismesso')}</strong></div>
+        <p>${fmtDate((x.dismissed_at||x.archived_at).slice(0,10))}${x.dismissal_note?` · ${esc(x.dismissal_note)}`:''}</p>
+      </div><span>›</span>
+    </button>`;
+  }
   if(type==='computers')return `<button class="list-card" data-item="computers:${x.id}"><div><h3>${esc(x.code)} · ${esc([x.model,x.variant].filter(Boolean).join(' · '))}</h3><div class="badges">${x.os_name?`<span class="badge os os-${esc(x.os_name.toLowerCase())}">${esc(x.os_name.toUpperCase())}</span>`:''}</div><p>${locationMarkup(currentLocation('computer',x.id))} · Formattazione ${fmtDate(x.formatted_at)}</p></div><span>›</span></button>`;
   if(type==='hardware')return `<button class="list-card" data-item="hardware:${x.id}"><div><h3>${esc(x.code)} · ${esc(x.model||'')}</h3><p>${locationMarkup(currentLocation('hardware',x.id))}</p></div><span>›</span></button>`;
-
-  const st=licenseStatus(x);
-  const kind=x.category==='avid'?x.avid_type:x.plugin_type;
+  const st=licenseStatus(x),kind=x.category==='avid'?x.avid_type:x.plugin_type;
   const loc=currentLocation(x.category==='plugin'?'plugin':'license',x.id);
   const sid=x.category==='avid'&&x.system_id?`System ID ${esc(x.system_id)}`:'';
-
   return `<button class="list-card license-card ${st.level==='warning'?'license-warning':st.level==='expired'?'license-expired':''}" data-item="licenses:${x.id}">
-    <div class="license-card-content">
-      <div class="license-card-top">
-        <h3>${esc(x.code)}</h3>
-        <span class="license-sid">${sid}</span>
-      </div>
-      <div class="badges">
-        <span class="badge ${x.category==='avid'?(x.avid_type==='Ultimate'?'ultimate':'singolo'):'plugin'}">${esc((kind||'').toUpperCase())}</span>
-        <span class="badge ${x.billing_cycle}">${cycleLabel(x.billing_cycle)}</span>
-        ${x.is_trial?'<span class="badge trial">TRIAL</span>':''}
-      </div>
-      <div class="license-card-bottom">
-        <span class="license-time">${esc(st.text)}</span>
-        <span class="license-location">${locationMarkup(loc)}</span>
-      </div>
-    </div>
-    <span class="card-chevron">›</span>
+    <div class="license-card-content"><div class="license-card-top"><h3>${esc(x.code)}</h3><span class="license-sid">${sid}</span></div>
+    <div class="badges"><span class="badge ${x.category==='avid'?(x.avid_type==='Ultimate'?'ultimate':'singolo'):'plugin'}">${esc((kind||'').toUpperCase())}</span><span class="badge ${x.billing_cycle}">${cycleLabel(x.billing_cycle)}</span></div>
+    <div class="license-card-bottom"><span class="license-time">${esc(st.text)}</span><span class="license-location">${locationMarkup(loc)}</span></div></div><span class="card-chevron">›</span>
   </button>`;
 }
 
@@ -446,7 +533,7 @@ async function collectBackupData(){
   }
   return {
     app:'DVS Gestionale',
-    version:'Build 5',
+    version:'Build 6',
     exported_at:new Date().toISOString(),
     tables
   };
@@ -525,7 +612,7 @@ function printHeader(title){
     <div>
       <strong>Digital Video Service</strong>
       <h1>${esc(title)}</h1>
-      <p>DVS Gestionale · Versione Build 5 · ${esc(now)}</p>
+      <p>DVS Gestionale · Versione Build 6 · ${esc(now)}</p>
     </div>
   </header>`;
 }
@@ -945,7 +1032,22 @@ function openSummaryProductionEditor(room){
   };
 }
 
-function openDetail(type,id){const x=state.data[type].find(v=>v.id===id);const rows=type==='computers'?[['ID',x.code],['Modello',x.model],['Anno',x.variant],['Processore',x.cpu],['RAM',x.ram],['GPU',x.gpu],['Seriale',x.serial],['macOS',`${x.os_name||''} ${x.os_version||''}`],['Formattazione',fmtDate(x.formatted_at)],['Assegnazione',currentLocation('computer',x.id)],['Allegati',String(x.attachments_count||0)]]:type==='hardware'?[['ID',x.code],['Modello',x.model],['Seriale',x.serial],['Driver',x.driver_version],['Assegnazione',currentLocation('hardware',x.id)],['Allegati',String(x.attachments_count||0)]]:[['ID',x.code],['Categoria',x.category==='avid'?'Avid':'Plugin'],['Tipo',x.category==='avid'?x.avid_type:x.plugin_type],['System ID',x.system_id],['Codice / Seriale',x.activation_code||x.plugin_serial],['Versione',x.version],['Durata',cycleLabel(x.billing_cycle)],['Scadenza',fmtDate(x.expiry_date)],['Sospensione richiesta',x.deactivation_requested?'Sì':'No'],['Assegnazione',currentLocation(x.category==='plugin'?'plugin':'license',x.id)],['Allegati',String(x.attachments_count||0)]];openModal(`<div class="modal-head"><h2>${esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${rows.map(([a,b])=>`<div class="resource-row"><span class="subtle">${esc(a)}</span><strong>${esc(b||'—')}</strong></div>`).join('')}</div><div class="actions"><button class="secondary" id="archive-item">Archivia</button><button class="primary" id="edit-item">Modifica</button></div>`);document.getElementById('edit-item').onclick=()=>editItem(type,x);document.getElementById('archive-item').onclick=async()=>{if(confirm(`Archiviare ${x.code}?`)){await archiveRow(type,x.id);await addAudit('archive',type,x.id,{code:x.code});modal.close();await refresh()}}}
+function openDetail(type,id){
+  const x=state.data[type].find(v=>v.id===id);
+  const historic=!!x.archived_at;
+  const rows=type==='computers'
+    ? [['ID',x.code],['Modello',x.model],['Anno',x.variant],['Processore',x.cpu],['RAM',x.ram],['GPU',x.gpu],['Seriale',x.serial],['macOS',`${x.os_name||''} ${x.os_version||''}`],['Formattazione',fmtDate(x.formatted_at)],['Assegnazione',historic?'Storico':currentLocation('computer',x.id)],['Motivo dismissione',x.dismissal_reason],['Data dismissione',fmtDate((x.dismissed_at||'').slice(0,10))],['Nota dismissione',x.dismissal_note]]
+    : type==='hardware'
+      ? [['ID',x.code],['Modello',x.model],['Seriale',x.serial],['Driver',x.driver_version],['Assegnazione',historic?'Storico':currentLocation('hardware',x.id)],['Motivo dismissione',x.dismissal_reason],['Data dismissione',fmtDate((x.dismissed_at||'').slice(0,10))],['Nota dismissione',x.dismissal_note]]
+      : [['ID',x.code],['Categoria',x.category==='avid'?'Avid':'Plugin'],['Tipo',x.category==='avid'?x.avid_type:x.plugin_type],['System ID',x.system_id],['Codice / Seriale',x.activation_code||x.plugin_serial],['Versione',x.version],['Durata',cycleLabel(x.billing_cycle)],['Scadenza',fmtDate(x.expiry_date)],['Assegnazione',historic?'Storico':currentLocation(x.category==='plugin'?'plugin':'license',x.id)],['Motivo dismissione',x.dismissal_reason],['Data dismissione',fmtDate((x.dismissed_at||'').slice(0,10))],['Nota dismissione',x.dismissal_note]];
+  openModal(`<div class="modal-head"><h2>${esc(x.code)}</h2><button class="close" data-close>×</button></div>
+    <div class="fields">${rows.filter(([,value])=>value).map(([label,value])=>`<div class="resource-row"><span class="subtle">${esc(label)}</span><strong>${esc(value||'—')}</strong></div>`).join('')}</div>
+    <div class="actions">${historic?'<button class="primary" data-close>Chiudi</button>':'<button class="secondary" id="dismiss-item">Dismetti</button><button class="primary" id="edit-item">Modifica</button>'}</div>`);
+  if(!historic){
+    document.getElementById('edit-item').onclick=()=>editItem(type,x);
+    document.getElementById('dismiss-item').onclick=()=>openDismissEditor(type,x);
+  }
+}
 
 function field(id,label,value='',type='text'){return `<label class="field">${label}<input id="${id}" type="${type}" value="${esc(value??'')}"></label>`}
 function select(id,label,options,value=''){return `<label class="field">${label}<select id="${id}">${options.map(v=>`<option value="${esc(v[0])}" ${v[0]===value?'selected':''}>${esc(v[1])}</option>`).join('')}</select></label>`}
@@ -984,7 +1086,18 @@ function bindSegments(root=document){
 }
 function val(id){return document.getElementById(id)?.value?.trim()||''}
 function checked(id){return document.getElementById(id)?.checked||false}
-function editItem(type,x={_new:true,id:uuid()}){const isNew=x._new;if(type==='computers')openModal(`<div class="modal-head"><h2>${isNew?'Nuovo computer':esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${field('code','ID',x.code)}${field('model','Modello',x.model)}${field('variant','Anno / Variante',x.variant)}${field('cpu','Processore / Chip',x.cpu)}${field('ram','RAM',x.ram)}${field('gpu','Scheda grafica',x.gpu)}${field('storage','Archiviazione',x.storage)}${field('serial','Numero seriale',x.serial)}${segmented('os','Sistema operativo',[['Mojave','MOJAVE'],['Monterey','MONTEREY'],['Ventura','VENTURA'],['Sonoma','SONOMA'],['Sequoia','SEQUOIA'],['Tahoe','TAHOE']],x.os_name||'Monterey')}${field('osv','Versione macOS',x.os_version)}${field('formatted','Data formattazione',x.formatted_at,'date')}${stationSelectHTML('assignment','Assegnazione',stationOf('computer',x.id)?.id||'')}${field('notes','Note',x.notes)}</div><div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);else if(type==='hardware')openModal(`<div class="modal-head"><h2>${isNew?'Nuovo hardware':esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${field('code','ID',x.code)}${field('category','Categoria / Tipo',x.category)}${field('model','Modello',x.model)}${field('serial','Numero seriale',x.serial)}${field('driver','Driver / Firmware',x.driver_version)}${stationSelectHTML('assignment','Assegnazione',stationOf('hardware',x.id)?.id||'')}${field('notes','Note',x.notes)}</div><div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);else licenseEditor(x,isNew);bindSegments(modalBody);document.getElementById('save')?.addEventListener('click',()=>saveEditor(type,x,isNew))}
+function editItem(type,x={_new:true,id:uuid()}){
+  const isNew=x._new;
+  if(isNew&&type==='computers')x.code=nextComputerCode();
+  if(isNew&&type==='hardware')x.code=nextHardwareCode();
+  if(isNew&&type==='licenses'&&!x.category){x.category='avid';x.avid_type='Ultimate';x.code=nextAvidCode('Ultimate');}
+  if(type==='computers')openModal(`<div class="modal-head"><h2>${isNew?'Nuovo computer':esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${field('code','ID',x.code)}${field('model','Modello',x.model)}${field('variant','Anno / Variante',x.variant)}${field('cpu','Processore / Chip',x.cpu)}${field('ram','RAM',x.ram)}${field('gpu','Scheda grafica',x.gpu)}${field('storage','Archiviazione',x.storage)}${field('serial','Numero seriale',x.serial)}${segmented('os','Sistema operativo',[['Mojave','MOJAVE'],['Monterey','MONTEREY'],['Ventura','VENTURA'],['Sonoma','SONOMA'],['Sequoia','SEQUOIA'],['Tahoe','TAHOE']],x.os_name||'Monterey')}${field('osv','Versione macOS',x.os_version)}${field('formatted','Data formattazione',x.formatted_at,'date')}${stationSelectHTML('assignment','Assegnazione',stationOf('computer',x.id)?.id||'')}${field('notes','Note',x.notes)}</div><div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);
+  else if(type==='hardware')openModal(`<div class="modal-head"><h2>${isNew?'Nuovo hardware':esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${field('code','ID',x.code)}${field('category','Categoria / Tipo',x.category)}${field('model','Modello',x.model)}${field('serial','Numero seriale',x.serial)}${field('driver','Driver / Firmware',x.driver_version)}${stationSelectHTML('assignment','Assegnazione',stationOf('hardware',x.id)?.id||'')}${field('notes','Note',x.notes)}</div><div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);
+  else licenseEditor(x,isNew);
+  bindSegments(modalBody);
+  if(isNew&&type!=='licenses'){const code=document.getElementById('code');if(code)code.readOnly=true;}
+  document.getElementById('save')?.addEventListener('click',()=>saveEditor(type,x,isNew));
+}){const isNew=x._new;if(type==='computers')openModal(`<div class="modal-head"><h2>${isNew?'Nuovo computer':esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${field('code','ID',x.code)}${field('model','Modello',x.model)}${field('variant','Anno / Variante',x.variant)}${field('cpu','Processore / Chip',x.cpu)}${field('ram','RAM',x.ram)}${field('gpu','Scheda grafica',x.gpu)}${field('storage','Archiviazione',x.storage)}${field('serial','Numero seriale',x.serial)}${segmented('os','Sistema operativo',[['Mojave','MOJAVE'],['Monterey','MONTEREY'],['Ventura','VENTURA'],['Sonoma','SONOMA'],['Sequoia','SEQUOIA'],['Tahoe','TAHOE']],x.os_name||'Monterey')}${field('osv','Versione macOS',x.os_version)}${field('formatted','Data formattazione',x.formatted_at,'date')}${stationSelectHTML('assignment','Assegnazione',stationOf('computer',x.id)?.id||'')}${field('notes','Note',x.notes)}</div><div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);else if(type==='hardware')openModal(`<div class="modal-head"><h2>${isNew?'Nuovo hardware':esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${field('code','ID',x.code)}${field('category','Categoria / Tipo',x.category)}${field('model','Modello',x.model)}${field('serial','Numero seriale',x.serial)}${field('driver','Driver / Firmware',x.driver_version)}${stationSelectHTML('assignment','Assegnazione',stationOf('hardware',x.id)?.id||'')}${field('notes','Note',x.notes)}</div><div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);else licenseEditor(x,isNew);bindSegments(modalBody);document.getElementById('save')?.addEventListener('click',()=>saveEditor(type,x,isNew))}
 function stationSelectHTML(id,label,value){
   const stations=[...state.data.stations].sort((a,b)=>{
     const roomA=state.data.rooms.find(r=>r.id===a.room_id);
@@ -997,48 +1110,37 @@ function licenseEditor(x,isNew){
   const activation=x.activation_date||todayISO();
   const cycle=x.billing_cycle||'annual';
   const expiry=x.expiry_date||calculateExpiry(activation,cycle);
-
   openModal(`<div class="modal-head"><h2>${isNew?'Nuova licenza':esc(x.code)}</h2><button class="close" data-close>×</button></div>
   <div class="fields">
     ${segmented('category','Categoria',[['avid','AVID'],['plugin','PLUGIN']],x.category||'avid')}
     ${field('code','ID',x.code)}
     <div id="license-fields"></div>
-
-
     ${segmented('cycle','Durata',[['monthly','MENSILE'],['annual','ANNUALE']],cycle)}
     ${field('activation','Data attivazione',activation,'date')}
     ${field('expiry','Scadenza',expiry,'date')}
-
-    <label class="option-check">
-      <input id="deactivation" type="checkbox" ${x.deactivation_requested?'checked':''}>
-      <span>Disattivazione richiesta</span>
-    </label>
-
+    <label class="option-check"><input id="deactivation" type="checkbox" ${x.deactivation_requested?'checked':''}><span>Disattivazione richiesta</span></label>
     ${stationSelectHTML('assignment','Assegnazione',(x.category==='plugin'?pluginStation(x.id):stationOf('license',x.id))?.id||'')}
     ${field('notes','Note',x.notes)}
-  </div>
-  <div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);
-
+  </div><div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);
   const draw=()=>{
     const cat=val('category');
     document.getElementById('license-fields').innerHTML=cat==='avid'
-      ? `${segmented('avid-type','Tipo Avid',[['Singolo','SINGOLO'],['Ultimate','ULTIMATE']],x.avid_type||'Ultimate')}
-         ${field('system','System ID',x.system_id)}
-         ${field('activation-code','Codice attivazione',x.activation_code)}
-         ${field('version','Versione',x.version)}`
-      : `${segmented('plugin-type','Tipo Plugin',[['Continuum','CONTINUUM'],['Sapphire','SAPPHIRE']],x.plugin_type||'Continuum')}
-         ${field('plugin-serial','Seriale Plugin',x.plugin_serial)}`;
+      ? `${segmented('avid-type','Tipo Avid',[['Singolo','SINGOLO'],['Ultimate','ULTIMATE']],x.avid_type||'Ultimate')}${field('system','System ID',x.system_id)}${field('activation-code','Codice attivazione',x.activation_code)}${field('version','Versione',x.version)}`
+      : `${segmented('plugin-type','Tipo Plugin',[['Continuum','CONTINUUM'],['Sapphire','SAPPHIRE']],x.plugin_type||'Continuum')}${field('plugin-serial','Seriale Plugin',x.plugin_serial)}`;
     bindSegments(document.getElementById('license-fields'));
+    if(isNew&&cat==='avid'){
+      const updateCode=()=>{document.getElementById('code').value=nextAvidCode(val('avid-type')||'Ultimate')};
+      document.getElementById('avid-type').onchange=updateCode;
+      document.querySelectorAll('[data-segment="avid-type"] button').forEach(button=>button.addEventListener('click',()=>setTimeout(updateCode,0)));
+      updateCode();document.getElementById('code').readOnly=true;
+    }else if(isNew){
+      document.getElementById('code').readOnly=false;
+    }
   };
-
-  const refreshExpiry=()=>{
-    const expiryInput=document.getElementById('expiry');
-    if(expiryInput)expiryInput.value=calculateExpiry(val('activation'),val('cycle'));
-  };
-
-  bindSegments(modalBody);
-  draw();
-  document.getElementById('category').onchange=draw;
+  const refreshExpiry=()=>{const el=document.getElementById('expiry');if(el)el.value=calculateExpiry(val('activation'),val('cycle'))};
+  bindSegments(modalBody);draw();
+  document.getElementById('category').onchange=()=>{draw()};
+  document.querySelectorAll('[data-segment="category"] button').forEach(button=>button.addEventListener('click',()=>setTimeout(draw,0)));
   document.getElementById('cycle').onchange=refreshExpiry;
   document.getElementById('activation').onchange=refreshExpiry;
 }
@@ -1057,14 +1159,30 @@ async function confirmAssignment(kind,item,newStationId){
   return true;
 }
 
-async function saveEditor(type,x,isNew){try{let row={id:x.id};let assignment=val('assignment');if(type==='computers')Object.assign(row,{code:val('code'),model:val('model'),variant:val('variant'),cpu:val('cpu'),ram:val('ram'),gpu:val('gpu'),storage:val('storage'),serial:val('serial'),os_name:val('os'),os_version:val('osv'),formatted_at:val('formatted')||null,notes:val('notes'),attachments_count:x.attachments_count||0});else if(type==='hardware')Object.assign(row,{code:val('code'),category:val('category'),model:val('model'),serial:val('serial'),driver_version:val('driver'),notes:val('notes'),attachments_count:x.attachments_count||0});else Object.assign(row,{code:val('code'),category:val('category'),avid_type:val('category')==='avid'?val('avid-type'):null,plugin_type:val('category')==='plugin'?val('plugin-type'):null,system_id:val('system')||null,activation_code:val('activation-code')||null,plugin_serial:val('plugin-serial')||null,version:val('version')||null,billing_cycle:val('cycle'),is_trial:false,activation_date:val('activation')||null,expiry_date:val('expiry')||null,deactivation_requested:checked('deactivation'),notes:val('notes'),attachments_count:x.attachments_count||0});const kind=type==='computers'?'computer':type==='hardware'?'hardware':row.category==='plugin'?'plugin':'license';if(!(await confirmAssignment(kind,{...x,...row},assignment)))return;const saved=await saveRow(type,row);if(type==='computers')await assignResource('computer',saved.id,assignment||null);if(type==='hardware')await assignResource('hardware',saved.id,assignment||null);if(type==='licenses'){
-  if(saved.category==='plugin'){
-    await assignPlugin(saved.id,assignment||null);
-  }else{
-    if(assignment)await clearStationTrial(assignment);
-    await assignResource('license',saved.id,assignment||null);
-  }
-}await addAudit(isNew?'create':'update',type,saved.id,{code:saved.code});modal.close();showToast('Salvato');await refresh()}catch(e){alert(e.message)}}
+async async function saveEditor(type,x,isNew){
+  try{
+    let row={id:x.id};let assignment=val('assignment');
+    if(type==='computers'){
+      Object.assign(row,{code:validateAssetCode(type,val('code'),x.id),model:val('model'),variant:val('variant'),cpu:val('cpu'),ram:val('ram'),gpu:val('gpu'),storage:val('storage'),serial:val('serial'),os_name:val('os'),os_version:val('osv'),formatted_at:val('formatted')||null,notes:val('notes'),attachments_count:x.attachments_count||0});
+    }else if(type==='hardware'){
+      Object.assign(row,{code:validateAssetCode(type,val('code'),x.id),category:val('category'),model:val('model'),serial:val('serial'),driver_version:val('driver'),notes:val('notes'),attachments_count:x.attachments_count||0});
+    }else{
+      const category=val('category'),avidType=category==='avid'?val('avid-type'):null;
+      Object.assign(row,{code:validateAssetCode(type,val('code'),x.id,{category,avid_type:avidType}),category,avid_type:avidType,plugin_type:category==='plugin'?val('plugin-type'):null,system_id:val('system')||null,activation_code:val('activation-code')||null,plugin_serial:val('plugin-serial')||null,version:val('version')||null,billing_cycle:val('cycle'),is_trial:false,activation_date:val('activation')||null,expiry_date:val('expiry')||null,deactivation_requested:checked('deactivation'),notes:val('notes'),attachments_count:x.attachments_count||0});
+    }
+    const kind=type==='computers'?'computer':type==='hardware'?'hardware':row.category==='plugin'?'plugin':'license';
+    if(!(await confirmAssignment(kind,{...x,...row},assignment)))return;
+    const saved=await saveRow(type,row);
+    if(type==='computers')await assignResource('computer',saved.id,assignment||null);
+    if(type==='hardware')await assignResource('hardware',saved.id,assignment||null);
+    if(type==='licenses'){
+      if(saved.category==='plugin')await assignPlugin(saved.id,assignment||null);
+      else{if(assignment)await clearStationTrial(assignment);await assignResource('license',saved.id,assignment||null);}
+    }
+    await addAudit(isNew?'create':'update',type,saved.id,{code:saved.code});
+    modal.close();showToast('Salvato');await refresh();
+  }catch(error){alert(error.message)}
+}
 
 function openRoom(id){
   const room=state.data.rooms.find(r=>r.id===id);
@@ -1506,7 +1624,7 @@ function openSetting(k){
     const activeAvid=state.data.licenses.filter(x=>!x.archived_at&&x.category==='avid').length;
     const activePlugins=state.data.licenses.filter(x=>!x.archived_at&&x.category==='plugin').length;
     const systemInfo=`DVS Gestionale
-Versione: Build 5
+Versione: Build 6
 Database: Schema 4.3.1
 Sale: ${state.data.rooms.length}
 Computer: ${activeComputers}
@@ -1521,8 +1639,8 @@ Plugin: ${activePlugins}`;
         <p>Gestione Sale, Computer, Hardware e Licenze</p>
 
         <dl>
-          <div><dt>Versione</dt><dd>Build 5</dd></div>
-          <div><dt>Build</dt><dd>2026.07.15-B5</dd></div>
+          <div><dt>Versione</dt><dd>Build 6</dd></div>
+          <div><dt>Build</dt><dd>2026.07.15-B6</dd></div>
           <div><dt>Database</dt><dd>Supabase · Schema 4.3.1</dd></div>
         </dl>
 
@@ -1621,7 +1739,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=5.build5');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=6.asset');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();
