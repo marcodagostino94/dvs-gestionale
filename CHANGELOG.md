@@ -107,3 +107,11 @@
 - Pulse giallo/rosso sulle criticità.
 - Navigazione diretta dalla criticità alla Sala.
 - Corretto il salvataggio persistente dei Promemoria.
+
+
+### Build 7.1 — Interazioni Dashboard
+- Swipe Promemoria riscritto e reso più stabile.
+- Eliminazione con X su Mac.
+- Navigazione operativa con click/tap.
+- Dettaglio con pressione lunga su touch e doppio click su Mac.
+- Disattivata la selezione testo sulle criticità.

@@ -256,3 +256,13 @@ HOTFIX BUILD 7.0.1
 - Clic sulle scadenze assegnate porta direttamente alla relativa Sala nella Sintesi.
 - Corretto il salvataggio dei Promemoria.
 - La SQL della Build 7 già eseguita NON deve essere ripetuta.
+
+
+BUILD 7.1 — Interazioni Dashboard
+- Swipe Promemoria riscritto con soglia, inerzia leggera e ritorno automatico.
+- Una sola riga può rimanere aperta.
+- Tap fuori chiude la riga.
+- Su Mac compare una X al passaggio del mouse.
+- Click sulle criticità porta a Sala o Non assegnati.
+- Pressione lunga su iPhone/iPad e doppio click su Mac aprono i dettagli.
+- Nessuna SQL richiesta.

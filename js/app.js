@@ -160,12 +160,149 @@ function newReminderDraft(){
   input.focus();
 }
 
+
+function dashboardActionTarget(action){
+  const [kind,id]=String(action||'').split(':');
+  if(kind==='license'&&id){
+    const license=state.data.licenses.find(x=>x.id===id);
+    const station=license?.category==='plugin'?pluginStation(id):stationOf('license',id);
+    return {kind,id,license,station};
+  }
+  if(kind==='room'&&id){
+    return {kind,id,room:state.data.rooms.find(x=>x.id===id)};
+  }
+  return {kind,id};
+}
+
+function navigateDashboardAction(action){
+  const target=dashboardActionTarget(action);
+
+  if(target.kind==='room'&&target.id){
+    state.view='summary';
+    state.filter='all';
+    title.textContent=labels.summary;
+    render();
+    setTimeout(()=>{
+      const room=document.querySelector(`[data-summary-room="${target.id}"]`);
+      room?.scrollIntoView({behavior:'smooth',block:'center'});
+      room?.closest('.summary-production-card')?.classList.add('dashboard-focus');
+      setTimeout(()=>room?.closest('.summary-production-card')?.classList.remove('dashboard-focus'),1800);
+    },80);
+    return;
+  }
+
+  if(target.kind==='license'&&target.license){
+    state.view='summary';
+    state.filter='all';
+    title.textContent=labels.summary;
+    render();
+    setTimeout(()=>{
+      if(target.station){
+        const room=document.querySelector(`[data-summary-room="${target.station.room_id}"]`);
+        room?.scrollIntoView({behavior:'smooth',block:'center'});
+        room?.closest('.summary-production-card')?.classList.add('dashboard-focus');
+        setTimeout(()=>room?.closest('.summary-production-card')?.classList.remove('dashboard-focus'),1800);
+      }else{
+        const card=document.querySelector(`[data-free-item="licenses:${target.id}"],[data-item="licenses:${target.id}"]`);
+        card?.scrollIntoView({behavior:'smooth',block:'center'});
+        card?.classList.add('dashboard-focus');
+        setTimeout(()=>card?.classList.remove('dashboard-focus'),1800);
+      }
+    },80);
+  }
+}
+
+function openDashboardActionDetail(action){
+  const target=dashboardActionTarget(action);
+  if(target.kind==='license'&&target.id)openDetail('licenses',target.id);
+  else if(target.kind==='room'&&target.id)openSummaryRoomActions(target.id);
+}
+
+function bindDashboardAttentionInteractions(){
+  document.querySelectorAll('[data-dashboard-action]').forEach(button=>{
+    const action=button.dataset.dashboardAction;
+    let timer=null;
+    let longPressed=false;
+    let startX=0,startY=0;
+
+    button.addEventListener('contextmenu',event=>event.preventDefault());
+
+    button.addEventListener('dblclick',event=>{
+      event.preventDefault();
+      openDashboardActionDetail(action);
+    });
+
+    button.addEventListener('pointerdown',event=>{
+      if(event.pointerType==='mouse')return;
+      longPressed=false;
+      startX=event.clientX;
+      startY=event.clientY;
+      timer=setTimeout(()=>{
+        longPressed=true;
+        openDashboardActionDetail(action);
+      },560);
+    });
+
+    button.addEventListener('pointermove',event=>{
+      if(!timer)return;
+      if(Math.hypot(event.clientX-startX,event.clientY-startY)>10){
+        clearTimeout(timer);
+        timer=null;
+      }
+    });
+
+    const cancel=()=>{
+      if(timer){
+        clearTimeout(timer);
+        timer=null;
+      }
+    };
+
+    button.addEventListener('pointerup',event=>{
+      const wasLong=longPressed;
+      cancel();
+      if(event.pointerType!=='mouse'&&!wasLong){
+        event.preventDefault();
+        navigateDashboardAction(action);
+      }
+    });
+    button.addEventListener('pointercancel',cancel);
+
+    button.onclick=event=>{
+      if(event.detail>1)return;
+      if(event.pointerType==='touch')return;
+      navigateDashboardAction(action);
+    };
+  });
+}
+
 function bindReminderInteractions(){
   const box=document.getElementById('reminders-box');
+  let openRow=null;
+
+  const closeOpenRow=()=>{
+    if(!openRow)return;
+    const content=openRow.querySelector('.reminder-content');
+    if(content){
+      content.style.transition='transform .22s cubic-bezier(.2,.8,.2,1)';
+      content.style.transform='translateX(0)';
+    }
+    openRow.classList.remove('swipe-open');
+    openRow=null;
+  };
+
   box?.addEventListener('click',event=>{
-    if(event.target.closest('button,input'))return;
+    if(event.target.closest('[data-reminder-delete],input,button'))return;
+    if(openRow){
+      closeOpenRow();
+      return;
+    }
     newReminderDraft();
   });
+
+  document.addEventListener('pointerdown',event=>{
+    if(openRow&&!event.target.closest('[data-reminder-row]'))closeOpenRow();
+  },{once:true});
 
   document.querySelectorAll('[data-reminder-input]').forEach(input=>{
     const reminder=state.data.reminders.find(x=>x.id===input.dataset.reminderInput);
@@ -176,7 +313,6 @@ function bindReminderInteractions(){
       if(saving)return;
       const next=input.value.trim();
       if(next===original)return;
-
       saving=true;
       try{
         await saveReminder(reminder,next,reminder.completed);
@@ -223,33 +359,80 @@ function bindReminderInteractions(){
 
   document.querySelectorAll('.reminder-swipe:not(.reminder-draft-row)').forEach(row=>{
     const content=row.querySelector('.reminder-content');
-    let startX=0,startY=0,deltaX=0,dragging=false;
+    let pointerId=null;
+    let startX=0,startY=0,lastX=0,lastTime=0;
+    let horizontal=false;
+    let active=false;
+    let offset=row.classList.contains('swipe-open')?-86:0;
+
+    const setOffset=(value,animate=false)=>{
+      offset=Math.max(-96,Math.min(0,value));
+      content.style.transition=animate?'transform .22s cubic-bezier(.2,.8,.2,1)':'none';
+      content.style.transform=`translate3d(${offset}px,0,0)`;
+    };
 
     row.addEventListener('pointerdown',event=>{
+      if(event.pointerType==='mouse')return;
       if(event.target.closest('input,button'))return;
+
+      if(openRow&&openRow!==row)closeOpenRow();
+
+      pointerId=event.pointerId;
       startX=event.clientX;
       startY=event.clientY;
-      deltaX=0;
-      dragging=true;
-      row.setPointerCapture?.(event.pointerId);
+      lastX=event.clientX;
+      lastTime=performance.now();
+      horizontal=false;
+      active=true;
+      row.setPointerCapture?.(pointerId);
       content.classList.add('dragging');
+      setOffset(row.classList.contains('swipe-open')?-86:0,false);
     });
 
     row.addEventListener('pointermove',event=>{
-      if(!dragging)return;
+      if(!active||event.pointerId!==pointerId)return;
       const dx=event.clientX-startX;
       const dy=event.clientY-startY;
-      if(Math.abs(dy)>Math.abs(dx)+8)return;
-      deltaX=Math.max(-92,Math.min(0,dx));
-      content.style.transform=`translateX(${deltaX}px)`;
-    });
+
+      if(!horizontal){
+        if(Math.abs(dx)<7&&Math.abs(dy)<7)return;
+        if(Math.abs(dy)>Math.abs(dx)){
+          active=false;
+          content.classList.remove('dragging');
+          return;
+        }
+        horizontal=true;
+      }
+
+      event.preventDefault();
+      const base=row.classList.contains('swipe-open')?-86:0;
+      setOffset(base+dx,false);
+      lastX=event.clientX;
+      lastTime=performance.now();
+    },{passive:false});
 
     const finish=event=>{
-      if(!dragging)return;
-      dragging=false;
+      if(!active||event.pointerId!==pointerId)return;
+      active=false;
       content.classList.remove('dragging');
-      content.style.transform=deltaX<-42?'translateX(-86px)':'translateX(0)';
-      if(event?.pointerId)row.releasePointerCapture?.(event.pointerId);
+
+      const elapsed=Math.max(1,performance.now()-lastTime);
+      const velocity=(event.clientX-lastX)/elapsed;
+      const shouldOpen=horizontal&&(offset<-42||velocity<-.45);
+      const shouldClose=!horizontal||offset>-55||velocity>.45;
+
+      if(shouldOpen&&!shouldClose){
+        row.classList.add('swipe-open');
+        setOffset(-86,true);
+        openRow=row;
+      }else{
+        row.classList.remove('swipe-open');
+        setOffset(0,true);
+        if(openRow===row)openRow=null;
+      }
+
+      row.releasePointerCapture?.(pointerId);
+      pointerId=null;
     };
 
     row.addEventListener('pointerup',finish);
@@ -852,7 +1035,7 @@ async function collectBackupData(){
   }
   return {
     app:'DVS Gestionale',
-    version:'Build 7.0.1',
+    version:'Build 7.1',
     exported_at:new Date().toISOString(),
     tables
   };
@@ -1173,11 +1356,7 @@ function bindContent(){
   document.querySelectorAll('[data-dashboard-nav]').forEach(button=>button.onclick=()=>{
     dashboardNavigate(button.dataset.dashboardNav,button.dataset.dashboardFilter||'all');
   });
-  document.querySelectorAll('[data-dashboard-action]').forEach(button=>button.onclick=()=>{
-    const [kind,id]=button.dataset.dashboardAction.split(':');
-    if(kind==='license'&&id)openDetail('licenses',id);
-    if(kind==='room'&&id){state.view='summary';state.filter='all';title.textContent=labels.summary;render();setTimeout(()=>document.querySelector(`[data-summary-room="${id}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}),50)}
-  });
+  bindDashboardAttentionInteractions();
   document.getElementById('dashboard-backup')?.addEventListener('click',()=>openSetting('backup'));
   document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter;render()});
   document.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>{const [t,id]=b.dataset.item.split(':');openDetail(t,id)});
@@ -2073,7 +2252,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=7.0.1.dashboardfix');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=7.1.interaction');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();

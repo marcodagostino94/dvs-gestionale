@@ -1197,3 +1197,47 @@ input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,2
 .reminder-input:disabled{
   opacity:.65;
 }
+
+
+/* ===== BUILD 7.1 — Swipe & Dashboard Interactions ===== */
+.dashboard-alert{
+  -webkit-user-select:none!important;
+  user-select:none!important;
+  -webkit-touch-callout:none!important;
+}
+.dashboard-focus{
+  animation:dashboardFocusPulse 1.8s ease-out 1!important;
+}
+@keyframes dashboardFocusPulse{
+  0%{outline:0 solid rgba(255,255,255,0)}
+  20%{outline:4px solid rgba(255,255,255,.22);box-shadow:0 0 24px rgba(255,255,255,.16)}
+  100%{outline:0 solid rgba(255,255,255,0)}
+}
+.reminder-swipe{touch-action:pan-y}
+.reminder-content{will-change:transform;transform:translate3d(0,0,0)}
+.reminder-content.dragging{transition:none!important}
+.reminder-delete{display:flex;align-items:center;justify-content:center}
+.reminder-swipe.swipe-open .reminder-content{transform:translate3d(-86px,0,0)}
+
+@media(hover:hover) and (pointer:fine){
+  .reminder-delete{
+    width:32px;
+    height:32px;
+    top:50%;
+    bottom:auto;
+    right:6px;
+    transform:translateY(-50%);
+    border-radius:9px;
+    font-size:0;
+    opacity:0;
+    transition:opacity .18s ease;
+    z-index:4;
+  }
+  .reminder-delete::before{
+    content:'×';
+    font-size:18px;
+    line-height:1;
+  }
+  .reminder-swipe:hover .reminder-delete{opacity:1}
+  .reminder-content{padding-right:36px}
+}
