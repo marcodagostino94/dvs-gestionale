@@ -223,3 +223,9 @@ DVS GESTIONALE — BUILD 5
 DVS GESTIONALE — BUILD 6
 - Eseguire una sola volta: sql/migrate_build_6_asset_history_numbering.sql
 - Nessuna modifica a Edge Function, cron o secret.
+
+
+HOTFIX BUILD 6.0.1
+- Corretto il blocco dell'app sul logo iniziale.
+- La SQL della Build 6 già eseguita NON deve essere ripetuta.
+- Nessuna modifica a database, Edge Function, cron o secret.

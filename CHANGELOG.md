@@ -73,3 +73,8 @@
 - Numerazione Avid: Ultimate 01–19, Singolo 20–39.
 - Riutilizzo del primo numero libero appartenente allo Storico.
 - Duplicati bloccati tra elementi operativi.
+
+
+### Build 6.0.1 — Hotfix avvio
+- Corretta la dichiarazione della funzione saveEditor che impediva l'avvio dell'app.
+- Aggiornata la cache del Service Worker.

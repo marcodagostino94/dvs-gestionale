@@ -533,7 +533,7 @@ async function collectBackupData(){
   }
   return {
     app:'DVS Gestionale',
-    version:'Build 6',
+    version:'Build 6.0.1',
     exported_at:new Date().toISOString(),
     tables
   };
@@ -1159,7 +1159,7 @@ async function confirmAssignment(kind,item,newStationId){
   return true;
 }
 
-async async function saveEditor(type,x,isNew){
+async function saveEditor(type,x,isNew){
   try{
     let row={id:x.id};let assignment=val('assignment');
     if(type==='computers'){
@@ -1739,7 +1739,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=6.asset');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=6.0.1.startfix');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();
