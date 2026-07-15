@@ -78,3 +78,8 @@
 ### Build 6.0.1 — Hotfix avvio
 - Corretta la dichiarazione della funzione saveEditor che impediva l'avvio dell'app.
 - Aggiornata la cache del Service Worker.
+
+
+### Build 6.0.2 — Hotfix avvio reale
+- Eliminato il frammento duplicato della funzione editItem.
+- Verificato il caricamento del modulo con ambiente DOM e Supabase simulati.

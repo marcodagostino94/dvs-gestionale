@@ -229,3 +229,8 @@ HOTFIX BUILD 6.0.1
 - Corretto il blocco dell'app sul logo iniziale.
 - La SQL della Build 6 già eseguita NON deve essere ripetuta.
 - Nessuna modifica a database, Edge Function, cron o secret.
+
+
+HOTFIX BUILD 6.0.2
+- Rimosso un frammento duplicato della vecchia funzione editItem che bloccava il caricamento JavaScript.
+- La SQL Build 6 già eseguita NON deve essere ripetuta.
