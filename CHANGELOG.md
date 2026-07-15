@@ -83,3 +83,9 @@
 ### Build 6.0.2 — Hotfix avvio reale
 - Eliminato il frammento duplicato della funzione editItem.
 - Verificato il caricamento del modulo con ambiente DOM e Supabase simulati.
+
+
+### Build 6.0.3 — ID e controlli segmentati
+- Resi modificabili i codici proposti automaticamente.
+- Mantenuto il ricalcolo automatico Avid cambiando Ultimate/Singolo.
+- Corretta la disposizione grafica dei controlli segmentati a due opzioni.

@@ -533,7 +533,7 @@ async function collectBackupData(){
   }
   return {
     app:'DVS Gestionale',
-    version:'Build 6.0.2',
+    version:'Build 6.0.3',
     exported_at:new Date().toISOString(),
     tables
   };
@@ -1095,7 +1095,10 @@ function editItem(type,x={_new:true,id:uuid()}){
   else if(type==='hardware')openModal(`<div class="modal-head"><h2>${isNew?'Nuovo hardware':esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${field('code','ID',x.code)}${field('category','Categoria / Tipo',x.category)}${field('model','Modello',x.model)}${field('serial','Numero seriale',x.serial)}${field('driver','Driver / Firmware',x.driver_version)}${stationSelectHTML('assignment','Assegnazione',stationOf('hardware',x.id)?.id||'')}${field('notes','Note',x.notes)}</div><div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);
   else licenseEditor(x,isNew);
   bindSegments(modalBody);
-  if(isNew&&type!=='licenses'){const code=document.getElementById('code');if(code)code.readOnly=true;}
+  if(isNew&&type!=='licenses'){
+    const code=document.getElementById('code');
+    if(code)code.readOnly=false;
+  }
   document.getElementById('save')?.addEventListener('click',()=>saveEditor(type,x,isNew));
 }
 function stationSelectHTML(id,label,value){
@@ -1132,7 +1135,8 @@ function licenseEditor(x,isNew){
       const updateCode=()=>{document.getElementById('code').value=nextAvidCode(val('avid-type')||'Ultimate')};
       document.getElementById('avid-type').onchange=updateCode;
       document.querySelectorAll('[data-segment="avid-type"] button').forEach(button=>button.addEventListener('click',()=>setTimeout(updateCode,0)));
-      updateCode();document.getElementById('code').readOnly=true;
+      updateCode();
+      document.getElementById('code').readOnly=false;
     }else if(isNew){
       document.getElementById('code').readOnly=false;
     }
@@ -1739,7 +1743,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=6.0.2.startfix');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=6.0.3.idsegfix');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();

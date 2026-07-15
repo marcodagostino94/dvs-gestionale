@@ -1097,3 +1097,20 @@ body.print-preview-open #print-root>.print-doc-footer{max-width:1000px;margin-le
 .history-meta strong{font-size:9px;color:#d3d5da}
 .history-list .list-card p{color:var(--muted)}
 input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,255,.70)!important;cursor:not-allowed}
+
+
+/* ===== BUILD 6.0.3 — ID modificabile e segmented fix ===== */
+#modal .segmented:has(> button:nth-child(2):last-child){
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+#modal .segmented:has(> button:nth-child(3):last-child){
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+#modal .segmented > button{
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+}
+#modal input#code{
+  cursor:text!important;
+}

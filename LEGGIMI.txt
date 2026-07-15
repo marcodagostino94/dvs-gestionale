@@ -234,3 +234,10 @@ HOTFIX BUILD 6.0.1
 HOTFIX BUILD 6.0.2
 - Rimosso un frammento duplicato della vecchia funzione editItem che bloccava il caricamento JavaScript.
 - La SQL Build 6 già eseguita NON deve essere ripetuta.
+
+
+HOTFIX BUILD 6.0.3
+- I codici automatici di Computer, Hardware e Licenze sono modificabili.
+- Cambiando Ultimate/Singolo il codice Avid viene ancora ricalcolato automaticamente.
+- Corretti gli spazi vuoti nei controlli AVID/PLUGIN, SINGOLO/ULTIMATE e MENSILE/ANNUALE.
+- La SQL della Build 6 già eseguita NON deve essere ripetuta.
