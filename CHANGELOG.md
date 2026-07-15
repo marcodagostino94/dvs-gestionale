@@ -89,3 +89,13 @@
 - Resi modificabili i codici proposti automaticamente.
 - Mantenuto il ricalcolo automatico Avid cambiando Ultimate/Singolo.
 - Corretta la disposizione grafica dei controlli segmentati a due opzioni.
+
+
+## Build 7 — Dashboard operativa
+- Nuova situazione generale con Sale complete e asset disponibili.
+- Sezione Attenzione richiesta generata automaticamente.
+- Promemoria persistenti in stile Apple.
+- Creazione immediata toccando uno spazio libero.
+- Modifica diretta, completamento con quadratino e ordinamento automatico.
+- Swipe verso sinistra per eliminare.
+- Stato e accesso rapido all'ultimo backup.

@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-const tables=['rooms','stations','computers','hardware','licenses','station_plugins','audit_log'];
+const tables=['rooms','stations','computers','hardware','licenses','station_plugins','reminders','audit_log'];
 export async function loadAll(){const out={};for(const t of tables){let q=supabase.from(t).select('*');if(t==='rooms'||t==='stations')q=q.order('position');else if(['computers','hardware','licenses'].includes(t))q=q.order('code');else q=q.order('created_at',{ascending:false});const {data,error}=await q;if(error)throw error;out[t]=data||[]}return out}
 export async function saveRow(table,row){const payload={...row};delete payload._new;const {data,error}=await supabase.from(table).upsert(payload).select().single();if(error)throw error;return data}
 export async function removeRow(table,id){const {error}=await supabase.from(table).delete().eq('id',id);if(error)throw error}

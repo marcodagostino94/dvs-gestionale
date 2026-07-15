@@ -23,7 +23,289 @@ function pluginStation(id){const rel=state.data.station_plugins.find(x=>x.licens
 function currentLocation(kind,id){const s=kind==='plugin'?pluginStation(id):stationOf(kind,id);return s?stationLabel(s):'Non assegnato'}
 async function refresh(){state.data=await loadAll();render()}
 
-function dashboard(){const d=state.data,c=d.computers.filter(x=>!x.archived_at),h=d.hardware.filter(x=>!x.archived_at),l=d.licenses.filter(x=>!x.archived_at);const warnings=l.map(x=>({x,s:licenseStatus(x)})).filter(v=>v.s.level!=='ok');return `<div class="grid dashboard-grid">${metric('Computer',c.length,`${c.filter(x=>stationOf('computer',x.id)).length} in sala · ${c.filter(x=>!stationOf('computer',x.id)).length} magazzino`)}${metric('Hardware',h.length,`${h.filter(x=>!stationOf('hardware',x.id)).length} in magazzino`)}${metric('Licenze Avid',l.filter(x=>x.category==='avid').length,`${l.filter(x=>x.category==='avid'&&!stationOf('license',x.id)).length} in magazzino`)}${metric('Plugin',l.filter(x=>x.category==='plugin').length,`${l.filter(x=>x.category==='plugin'&&!pluginStation(x.id)).length} in magazzino`)}</div><section class="attention"><div class="section-title"><h2>Attenzione</h2></div>${warnings.length?`<div class="list">${warnings.map(v=>`<button class="list-card" data-open-license="${v.x.id}"><div><h3>${esc(v.x.code)}</h3><p>${esc(v.x.category==='avid'?v.x.avid_type:v.x.plugin_type)}</p><span class="status ${v.s.level}">${esc(v.s.text)}</span></div><span>›</span></button>`).join('')}</div>`:`<div class="empty">Nessuna licenza richiede attenzione.</div>`}</section>`}
+
+function dashboardNavigate(view,filter='all'){
+  state.view=view;
+  state.filter=filter;
+  title.textContent=labels[view];
+  document.getElementById('desktop-nav').innerHTML=navHTML();
+  document.getElementById('mobile-nav').innerHTML=navHTML();
+  bindNav();
+  render();
+}
+
+function reminderSort(a,b){
+  if(!!a.completed!==!!b.completed)return a.completed?1:-1;
+  return new Date(a.created_at)-new Date(b.created_at);
+}
+
+async function saveReminder(reminder,text,completed=reminder.completed||false){
+  const clean=String(text||'').trim();
+  if(!clean){
+    if(reminder.id)await removeRow('reminders',reminder.id);
+    return;
+  }
+  await saveRow('reminders',{
+    id:reminder.id||uuid(),
+    text:clean,
+    completed:!!completed,
+    created_at:reminder.created_at||new Date().toISOString(),
+    updated_at:new Date().toISOString()
+  });
+}
+
+function dashboardAttentionItems(){
+  const items=[];
+  const licenses=state.data.licenses.filter(x=>!x.archived_at);
+
+  licenses.forEach(license=>{
+    const status=licenseStatus(license);
+    if(status.level!=='ok'){
+      const station=license.category==='plugin'?pluginStation(license.id):stationOf('license',license.id);
+      items.push({
+        level:status.level,
+        title:license.code,
+        text:`${station?stationLabel(station):'Non assegnata'} · ${status.text}`,
+        action:`license:${license.id}`
+      });
+    }
+  });
+
+  state.data.stations.forEach(station=>{
+    const room=state.data.rooms.find(r=>r.id===station.room_id);
+    const trial=trialInfo(station);
+    if(trial.status==='pending'){
+      items.push({
+        level:'warning',
+        title:room?.name||'Sala',
+        text:'Trial da attivare',
+        action:`room:${room?.id||''}`
+      });
+    }else if(trial.status==='active'&&trial.level!=='ok'){
+      items.push({
+        level:trial.level,
+        title:room?.name||'Sala',
+        text:trial.text,
+        action:`room:${room?.id||''}`
+      });
+    }
+
+    if(!station.computer_id){
+      items.push({
+        level:'neutral',
+        title:room?.name||'Sala',
+        text:'Nessun Computer assegnato',
+        action:`room:${room?.id||''}`
+      });
+    }
+  });
+
+  const rank={expired:0,warning:1,neutral:2};
+  return items.sort((a,b)=>(rank[a.level]??9)-(rank[b.level]??9));
+}
+
+function reminderRow(reminder){
+  return `<div class="reminder-swipe" data-reminder-row="${reminder.id}">
+    <button type="button" class="reminder-delete" data-reminder-delete="${reminder.id}">Elimina</button>
+    <div class="reminder-content ${reminder.completed?'completed':''}">
+      <button type="button" class="reminder-check" data-reminder-check="${reminder.id}" aria-label="${reminder.completed?'Segna come da fare':'Completa promemoria'}">
+        <span>${reminder.completed?'✓':''}</span>
+      </button>
+      <input class="reminder-input" data-reminder-input="${reminder.id}" value="${esc(reminder.text)}" autocomplete="off">
+    </div>
+  </div>`;
+}
+
+function newReminderDraft(){
+  if(document.querySelector('[data-reminder-draft]'))return;
+  const list=document.getElementById('reminders-list');
+  if(!list)return;
+  const row=document.createElement('div');
+  row.className='reminder-swipe reminder-draft-row';
+  row.dataset.reminderDraft='1';
+  row.innerHTML=`<div class="reminder-content">
+    <button type="button" class="reminder-check" tabindex="-1"><span></span></button>
+    <input class="reminder-input" data-reminder-draft-input autocomplete="off" placeholder="">
+  </div>`;
+  list.appendChild(row);
+  const input=row.querySelector('input');
+  input.focus();
+
+  const commit=async()=>{
+    const text=input.value.trim();
+    if(text){
+      try{
+        await saveReminder({},text,false);
+        await refresh();
+      }catch(error){alert(error.message)}
+    }else{
+      row.remove();
+    }
+  };
+
+  input.addEventListener('keydown',event=>{
+    if(event.key==='Enter'){
+      event.preventDefault();
+      commit();
+    }else if(event.key==='Escape'){
+      row.remove();
+    }
+  });
+  input.addEventListener('blur',()=>setTimeout(commit,80),{once:true});
+}
+
+function bindReminderInteractions(){
+  const box=document.getElementById('reminders-box');
+  box?.addEventListener('click',event=>{
+    if(event.target.closest('button,input'))return;
+    newReminderDraft();
+  });
+
+  document.querySelectorAll('[data-reminder-input]').forEach(input=>{
+    const reminder=state.data.reminders.find(x=>x.id===input.dataset.reminderInput);
+    const commit=async()=>{
+      try{
+        await saveReminder(reminder,input.value,reminder.completed);
+        await refresh();
+      }catch(error){alert(error.message)}
+    };
+    input.addEventListener('keydown',event=>{
+      if(event.key==='Enter'){event.preventDefault();input.blur()}
+      if(event.key==='Escape'){input.value=reminder.text;input.blur()}
+    });
+    input.addEventListener('blur',commit,{once:true});
+  });
+
+  document.querySelectorAll('[data-reminder-check]').forEach(button=>{
+    button.onclick=async event=>{
+      event.stopPropagation();
+      const reminder=state.data.reminders.find(x=>x.id===button.dataset.reminderCheck);
+      try{
+        await saveReminder(reminder,reminder.text,!reminder.completed);
+        await refresh();
+      }catch(error){alert(error.message)}
+    };
+  });
+
+  document.querySelectorAll('[data-reminder-delete]').forEach(button=>{
+    button.onclick=async event=>{
+      event.stopPropagation();
+      try{
+        await removeRow('reminders',button.dataset.reminderDelete);
+        await refresh();
+      }catch(error){alert(error.message)}
+    };
+  });
+
+  document.querySelectorAll('.reminder-swipe:not(.reminder-draft-row)').forEach(row=>{
+    const content=row.querySelector('.reminder-content');
+    let startX=0,startY=0,deltaX=0,dragging=false;
+
+    row.addEventListener('pointerdown',event=>{
+      if(event.target.closest('input,button'))return;
+      startX=event.clientX;startY=event.clientY;deltaX=0;dragging=true;
+      row.setPointerCapture?.(event.pointerId);
+      content.classList.add('dragging');
+    });
+
+    row.addEventListener('pointermove',event=>{
+      if(!dragging)return;
+      const dx=event.clientX-startX;
+      const dy=event.clientY-startY;
+      if(Math.abs(dy)>Math.abs(dx)+8)return;
+      deltaX=Math.max(-92,Math.min(0,dx));
+      content.style.transform=`translateX(${deltaX}px)`;
+    });
+
+    const finish=event=>{
+      if(!dragging)return;
+      dragging=false;
+      content.classList.remove('dragging');
+      const open=deltaX<-42;
+      content.style.transform=open?'translateX(-86px)':'translateX(0)';
+      if(event?.pointerId)row.releasePointerCapture?.(event.pointerId);
+    };
+    row.addEventListener('pointerup',finish);
+    row.addEventListener('pointercancel',finish);
+  });
+}
+
+function dashboard(){
+  const d=state.data;
+  const rooms=[...d.rooms].sort((a,b)=>a.position-b.position);
+  const computers=d.computers.filter(x=>!x.archived_at);
+  const licenses=d.licenses.filter(x=>!x.archived_at);
+  const freeComputers=computers.filter(x=>!stationOf('computer',x.id));
+  const freeAvid=licenses.filter(x=>x.category==='avid'&&!stationOf('license',x.id));
+  const freePlugins=licenses.filter(x=>x.category==='plugin'&&!pluginStation(x.id));
+  const completeRooms=rooms.filter(room=>{
+    const stations=d.stations.filter(s=>s.room_id===room.id);
+    return stations.length&&stations.every(station=>station.computer_id&&(station.avid_license_id||trialInfo(station).status!=='none'));
+  });
+  const attention=dashboardAttentionItems();
+  const reminders=[...(d.reminders||[])].sort(reminderSort);
+  const last=lastBackupInfo();
+  const backupAge=last?Math.floor((Date.now()-new Date(last.date).getTime())/86400000):null;
+  const backupLevel=last&&backupAge<=7?'ok':'warning';
+
+  return `<div class="dashboard-v7">
+    <section class="dashboard-metrics">
+      <button class="dashboard-metric glass" data-dashboard-nav="summary" data-dashboard-filter="all">
+        <span>Sale complete</span><strong>${completeRooms.length}<small> / ${rooms.length}</small></strong>
+        <em>${rooms.length-completeRooms.length} da controllare</em>
+      </button>
+      <button class="dashboard-metric glass" data-dashboard-nav="computers" data-dashboard-filter="warehouse">
+        <span>Computer liberi</span><strong>${freeComputers.length}</strong><em>Disponibili in magazzino</em>
+      </button>
+      <button class="dashboard-metric glass" data-dashboard-nav="licenses" data-dashboard-filter="warehouse">
+        <span>Avid libere</span><strong>${freeAvid.length}</strong><em>Non assegnate</em>
+      </button>
+      <button class="dashboard-metric glass" data-dashboard-nav="licenses" data-dashboard-filter="warehouse">
+        <span>Plugin liberi</span><strong>${freePlugins.length}</strong><em>Non assegnati</em>
+      </button>
+    </section>
+
+    <section class="dashboard-panel dashboard-attention glass">
+      <div class="dashboard-panel-head">
+        <div><small>CONTROLLO AUTOMATICO</small><h2>Attenzione richiesta</h2></div>
+        <span class="dashboard-count">${attention.length}</span>
+      </div>
+      ${attention.length?`<div class="dashboard-attention-list">
+        ${attention.map(item=>`<button type="button" class="dashboard-alert ${item.level}" data-dashboard-action="${item.action}">
+          <span class="dashboard-alert-dot"></span>
+          <div><strong>${esc(item.title)}</strong><small>${esc(item.text)}</small></div>
+          <b>›</b>
+        </button>`).join('')}
+      </div>`:'<div class="dashboard-empty-good"><strong>Tutto sotto controllo</strong><span>Nessuna criticità richiede attenzione.</span></div>'}
+    </section>
+
+    <section class="dashboard-lower-grid">
+      <div class="dashboard-panel reminders-panel glass" id="reminders-box">
+        <div class="dashboard-panel-head">
+          <div><small>PERSONALI</small><h2>Promemoria</h2></div>
+          <span class="dashboard-count">${reminders.filter(x=>!x.completed).length}</span>
+        </div>
+        <div class="reminders-list" id="reminders-list">
+          ${reminders.map(reminderRow).join('')}
+        </div>
+        <div class="reminder-empty-line">Tocca uno spazio libero per scrivere</div>
+      </div>
+
+      <div class="dashboard-panel backup-dashboard glass">
+        <div class="dashboard-panel-head">
+          <div><small>SICUREZZA DATI</small><h2>Ultimo backup</h2></div>
+          <span class="backup-state ${backupLevel}"></span>
+        </div>
+        <div class="backup-dashboard-main">
+          <strong>${last?esc(last.fileName):'Mai eseguito'}</strong>
+          <span>${last?new Date(last.date).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'}):'Non è ancora stato esportato alcun backup.'}</span>
+          ${last&&backupAge>7?`<em>Backup non eseguito da ${backupAge} giorni</em>`:''}
+        </div>
+        <button type="button" class="secondary" id="dashboard-backup">Apri Backup</button>
+      </div>
+    </section>
+  </div>`;
+}
 function metric(name,n,sub){return `<div class="metric glass"><span>${name}</span><strong>${n}</strong><small class="subtle">${sub}</small></div>`}
 
 
@@ -515,7 +797,7 @@ function summary(){
 
 const BACKUP_TABLES=[
   'rooms','stations','computers','hardware','licenses',
-  'station_plugins','audit_log'
+  'station_plugins','reminders','audit_log'
 ];
 
 function backupFileName(){
@@ -533,7 +815,7 @@ async function collectBackupData(){
   }
   return {
     app:'DVS Gestionale',
-    version:'Build 6.0.3',
+    version:'Build 7',
     exported_at:new Date().toISOString(),
     tables
   };
@@ -563,13 +845,13 @@ async function exportFullBackup(){
 async function restoreBackupPayload(payload){
   if(!payload?.tables)throw new Error('File di backup non valido.');
 
-  const order=['audit_log','station_plugins','stations','licenses','hardware','computers','rooms'];
+  const order=['audit_log','reminders','station_plugins','stations','licenses','hardware','computers','rooms'];
   for(const table of order){
     const {error}=await supabase.from(table).delete().neq('id','00000000-0000-0000-0000-000000000000');
     if(error)throw error;
   }
 
-  const insertOrder=['rooms','computers','hardware','licenses','stations','station_plugins','audit_log'];
+  const insertOrder=['rooms','computers','hardware','licenses','stations','station_plugins','reminders','audit_log'];
   for(const table of insertOrder){
     const rows=payload.tables[table]||[];
     if(rows.length){
@@ -849,6 +1131,17 @@ function bindCompactHeader(){
 
 function bindContent(){
   bindCompactHeader();
+  if(state.view==='dashboard')bindReminderInteractions();
+
+  document.querySelectorAll('[data-dashboard-nav]').forEach(button=>button.onclick=()=>{
+    dashboardNavigate(button.dataset.dashboardNav,button.dataset.dashboardFilter||'all');
+  });
+  document.querySelectorAll('[data-dashboard-action]').forEach(button=>button.onclick=()=>{
+    const [kind,id]=button.dataset.dashboardAction.split(':');
+    if(kind==='license'&&id)openDetail('licenses',id);
+    if(kind==='room'&&id){state.view='summary';state.filter='all';title.textContent=labels.summary;render();setTimeout(()=>document.querySelector(`[data-summary-room="${id}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}),50)}
+  });
+  document.getElementById('dashboard-backup')?.addEventListener('click',()=>openSetting('backup'));
   document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter;render()});
   document.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>{const [t,id]=b.dataset.item.split(':');openDetail(t,id)});
   document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>openRoom(b.dataset.room));
@@ -1743,7 +2036,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=6.0.3.idsegfix');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=7.dashboard');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();

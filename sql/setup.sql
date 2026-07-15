@@ -62,6 +62,15 @@ create table if not exists public.station_plugins (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.reminders (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid(),
+  text text not null,
+  completed boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.audit_log (
   id bigint generated always as identity primary key,
   user_id uuid not null default auth.uid(), action text not null, entity_type text not null,
@@ -78,7 +87,7 @@ where not exists(select 1 from public.stations s where s.room_id=r.id and s.posi
 
 -- RLS: l'app è leggibile/scrivibile soltanto dagli utenti autenticati.
 do $$ declare t text; begin
-  foreach t in array array['rooms','computers','hardware','licenses','stations','station_plugins','audit_log'] loop
+  foreach t in array array['rooms','computers','hardware','licenses','stations','station_plugins','reminders','audit_log'] loop
     execute format('alter table public.%I enable row level security',t);
     execute format('drop policy if exists authenticated_all on public.%I',t);
     execute format('create policy authenticated_all on public.%I for all to authenticated using (true) with check (true)',t);

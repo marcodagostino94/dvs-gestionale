@@ -241,3 +241,9 @@ HOTFIX BUILD 6.0.3
 - Cambiando Ultimate/Singolo il codice Avid viene ancora ricalcolato automaticamente.
 - Corretti gli spazi vuoti nei controlli AVID/PLUGIN, SINGOLO/ULTIMATE e MENSILE/ANNUALE.
 - La SQL della Build 6 già eseguita NON deve essere ripetuta.
+
+
+DVS GESTIONALE — BUILD 7
+- Eseguire una sola volta: sql/migrate_build_7_dashboard_reminders.sql
+- Nessuna modifica a Edge Function, cron o secret.
+- I Promemoria vengono salvati su Supabase e sono inclusi nel backup completo.
