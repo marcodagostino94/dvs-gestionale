@@ -949,3 +949,143 @@ body.print-preview-open #print-root>.print-doc-footer{max-width:1000px;margin-le
   .print-doc-footer{position:fixed;bottom:0;left:0;right:0}
   @page{margin:14mm 12mm 20mm}
 }
+
+
+/* ===== BUILD 5 — Rifinitura Sintesi ===== */
+
+.summary-production-head.summary-room-action{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:16px!important;
+  width:100%;
+  color:inherit;
+  cursor:pointer;
+}
+
+.summary-room-title-line{
+  display:flex;
+  align-items:center;
+  min-width:0;
+  gap:5px;
+  flex:1 1 auto;
+}
+
+.summary-room-title-line h3{
+  flex:0 0 auto;
+  margin:0;
+}
+
+.summary-server-config{
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:rgba(255,255,255,.42);
+  padding:0;
+  min-width:0;
+  max-width:56%;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  font-size:9px;
+  cursor:pointer;
+  text-align:left;
+}
+
+.summary-server-config:hover{
+  color:rgba(255,255,255,.68);
+}
+
+.summary-production-name{
+  flex:0 1 auto;
+  max-width:47%;
+  padding:1px 4px 2px;
+  border-radius:3px;
+  line-height:1.35;
+  color:rgba(255,255,255,.86)!important;
+  background-repeat:no-repeat;
+  background-size:100% 72%;
+  background-position:0 72%;
+}
+
+.summary-production-name.production-rai{
+  background-image:linear-gradient(rgba(61,134,255,.34),rgba(61,134,255,.34));
+}
+
+.summary-production-name.production-private{
+  background-image:linear-gradient(rgba(244,101,172,.31),rgba(244,101,172,.31));
+}
+
+.summary-production-name.production-other{
+  background-image:linear-gradient(rgba(164,169,179,.28),rgba(164,169,179,.28));
+}
+
+.summary-production-name.production-none{
+  background:none;
+  color:var(--muted)!important;
+}
+
+.field-help{
+  display:block;
+  margin-top:-6px;
+  color:var(--muted);
+  font-size:9px;
+}
+
+/* Pulse più marcato sull'intero riquadro */
+@keyframes dvsBuild5PulseWarning{
+  0%,100%{
+    background:linear-gradient(145deg,rgba(255,202,58,.16),rgba(103,75,0,.10));
+    border-color:rgba(255,202,58,.70);
+    box-shadow:0 8px 20px rgba(0,0,0,.14);
+    filter:brightness(1);
+  }
+  50%{
+    background:linear-gradient(145deg,rgba(255,224,112,.55),rgba(156,111,0,.36));
+    border-color:rgba(255,244,193,1);
+    box-shadow:inset 0 0 34px rgba(255,229,129,.24),0 0 27px rgba(255,202,58,.42);
+    filter:brightness(1.13);
+  }
+}
+
+@keyframes dvsBuild5PulseExpired{
+  0%,100%{
+    background:linear-gradient(145deg,rgba(255,71,82,.19),rgba(93,20,26,.12));
+    border-color:rgba(255,71,82,.76);
+    box-shadow:0 8px 20px rgba(0,0,0,.14);
+    filter:brightness(1);
+  }
+  50%{
+    background:linear-gradient(145deg,rgba(255,105,115,.57),rgba(152,31,41,.38));
+    border-color:rgba(255,185,190,1);
+    box-shadow:inset 0 0 34px rgba(255,113,122,.26),0 0 27px rgba(255,71,82,.44);
+    filter:brightness(1.13);
+  }
+}
+
+.pulse-critical.warning{
+  animation:dvsBuild5PulseWarning 2s ease-in-out infinite!important;
+}
+
+.pulse-critical.expired{
+  animation:dvsBuild5PulseExpired 2s ease-in-out infinite!important;
+}
+
+@media(max-width:720px){
+  .summary-production-head.summary-room-action{
+    gap:9px!important;
+  }
+  .summary-server-config{
+    max-width:48%;
+    font-size:8px;
+  }
+  .summary-production-name{
+    max-width:42%;
+    font-size:8px!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .pulse-critical.warning,.pulse-critical.expired{animation:none!important}
+}

@@ -7,6 +7,7 @@ create table if not exists public.rooms (
   position integer not null default 1,
   client_type text not null default '',
   production_name text not null default '',
+  server_config text,
   notes text not null default '',
   created_at timestamptz not null default now()
 );

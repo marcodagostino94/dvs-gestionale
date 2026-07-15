@@ -52,3 +52,13 @@
 ### Hotfix Build 4.1
 - Corretto il componente delle opzioni nel Centro Stampa.
 - Rimosso definitivamente il pulsante Stampa dalla Sintesi.
+
+
+## Build 5 — Rifinitura della Sintesi
+
+- Configurazione Server disponibile per tutte le Sale.
+- Configurazione Server visibile sulla stessa riga del nome Sala.
+- Accesso diretto all'editor toccando la configurazione.
+- Produzioni evidenziate: RAI blu, Privato rosa, Altro grigio.
+- Scadenze della Sintesi sempre espresse in giorni residui.
+- Pulse giallo e rosso reso più evidente.

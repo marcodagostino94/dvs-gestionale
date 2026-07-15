@@ -138,14 +138,23 @@ function inventoryCard(type,x){
 
 function expiryLabel(license){
   if(!license)return '';
-  const status=licenseStatus(license);
-  if(!license.expiry_date)return status.text;
+  if(!license.expiry_date)return licenseStatus(license).text.replace(/^Attiva • /,'');
   const today=new Date();today.setHours(0,0,0,0);
   const exp=new Date(license.expiry_date+'T00:00:00');
   const days=Math.ceil((exp-today)/86400000);
-  if(days>90)return `Scadenza ${fmtDate(license.expiry_date)}`;
-  return status.text.replace(/^Attiva • /,'');
+  if(days<0)return `Scaduta da ${Math.abs(days)} ${Math.abs(days)===1?'giorno':'giorni'}`;
+  if(days===0)return 'Scade oggi';
+  return `Scade tra ${days} ${days===1?'giorno':'giorni'}`;
 }
+
+function productionClass(room){
+  const type=(room?.client_type||'').toUpperCase();
+  if(type==='RAI')return 'production-rai';
+  if(type==='PRIVATO')return 'production-private';
+  if(type==='ALTRO')return 'production-other';
+  return 'production-none';
+}
+
 function productionLabel(room){
   return [room.client_type,room.production_name].filter(Boolean).join(' • ');
 }
@@ -170,7 +179,6 @@ function trialInfo(station){
 
   if(days<0)return {status,level:'expired',text:`Scaduta da ${Math.abs(days)} ${Math.abs(days)===1?'giorno':'giorni'}`,badge:'TRIAL ATTIVA'};
   if(days===0)return {status,level:'expired',text:'Scade oggi',badge:'TRIAL ATTIVA'};
-  if(days>90)return {status,level:'ok',text:`Scadenza ${fmtDate(expiry)}`,badge:'TRIAL ATTIVA'};
   return {status,level:days<=10?'warning':'ok',text:`Scade tra ${days} ${days===1?'giorno':'giorni'}`,badge:'TRIAL ATTIVA'};
 }
 
@@ -315,10 +323,13 @@ function summary(){
               const production=productionLabel(room);
 
               return `<article class="summary-production-card ${level}">
-                <button type="button" class="summary-production-head summary-room-action" data-summary-room="${room.id}">
-                  <div><h3>${esc(room.name)}</h3></div>
-                  <span class="summary-production-name">${production?esc(production):'Produzione non indicata'}</span>
-                </button>
+                <div class="summary-production-head summary-room-action" data-summary-room="${room.id}" role="button" tabindex="0">
+                  <div class="summary-room-title-line">
+                    <h3>${esc(room.name)}</h3>
+                    ${room.server_config?`<button type="button" class="summary-server-config" data-summary-server="${room.id}" title="${esc(room.server_config)}">· ${esc(room.server_config)}</button>`:''}
+                  </div>
+                  <span class="summary-production-name ${productionClass(room)}">${production?esc(production):'Produzione non indicata'}</span>
+                </div>
 
                 <div class="summary-stations">
                   ${stations.map((station,index)=>{
@@ -435,7 +446,7 @@ async function collectBackupData(){
   }
   return {
     app:'DVS Gestionale',
-    version:'4.4 Experimental Build 4.1',
+    version:'Build 5',
     exported_at:new Date().toISOString(),
     tables
   };
@@ -514,7 +525,7 @@ function printHeader(title){
     <div>
       <strong>Digital Video Service</strong>
       <h1>${esc(title)}</h1>
-      <p>DVS Gestionale · Versione 4.4 Experimental Build 4.1 · ${esc(now)}</p>
+      <p>DVS Gestionale · Versione Build 5 · ${esc(now)}</p>
     </div>
   </header>`;
 }
@@ -757,7 +768,23 @@ function bindContent(){
   document.querySelectorAll('[data-open-license]').forEach(b=>b.onclick=()=>openDetail('licenses',b.dataset.openLicense));
   document.querySelectorAll('[data-setting]').forEach(b=>b.onclick=()=>openSetting(b.dataset.setting));
   document.querySelectorAll('[data-summary-assign]').forEach(b=>b.onclick=()=>assignmentSheet(b.dataset.summaryAssign,b.dataset.station));
-  document.querySelectorAll('[data-summary-room]').forEach(b=>b.onclick=()=>openSummaryRoomActions(b.dataset.summaryRoom));
+  document.querySelectorAll('[data-summary-room]').forEach(b=>{
+    b.onclick=event=>{
+      if(event.target.closest('[data-summary-server]'))return;
+      openSummaryRoomActions(b.dataset.summaryRoom);
+    };
+    b.onkeydown=event=>{
+      if((event.key==='Enter'||event.key===' ')&&!event.target.closest('[data-summary-server]')){
+        event.preventDefault();
+        openSummaryRoomActions(b.dataset.summaryRoom);
+      }
+    };
+  });
+  document.querySelectorAll('[data-summary-server]').forEach(b=>b.onclick=event=>{
+    event.stopPropagation();
+    const room=state.data.rooms.find(r=>r.id===b.dataset.summaryServer);
+    if(room)openServerConfigEditor(room);
+  });
   document.getElementById('logout')?.addEventListener('click',async()=>supabase.auth.signOut());
 }
 
@@ -768,6 +795,7 @@ function openSummaryRoomActions(roomId){
 
   openSheet(`<div class="modal-head"><h2>${esc(room.name)}</h2><button class="close" data-close-sheet>×</button></div>
     <button class="choice" id="summary-production-action"><strong>Produzione</strong><br><small>${esc(productionLabel(room)||'Non indicata')}</small></button>
+    <button class="choice" id="summary-server-action"><strong>Configurazione Server</strong><br><small>${esc(room.server_config||'Non indicata')}</small></button>
     <button class="choice" id="summary-add-station"><strong>Aggiungi postazione</strong><br><small>Crea quattro riquadri vuoti nella Sala</small></button>
     ${stations.length>1?'<button class="choice danger-choice" id="summary-delete-station"><strong>Elimina postazione</strong><br><small>Rimuove l’ultima postazione aggiunta</small></button>':''}
     <button class="choice" data-close-sheet><strong>Chiudi</strong></button>`);
@@ -775,6 +803,11 @@ function openSummaryRoomActions(roomId){
   document.getElementById('summary-production-action').onclick=()=>{
     sheet.close();
     openSummaryProductionEditor(room);
+  };
+
+  document.getElementById('summary-server-action').onclick=()=>{
+    sheet.close();
+    openServerConfigEditor(room);
   };
 
   document.getElementById('summary-add-station').onclick=async()=>{
@@ -799,6 +832,48 @@ function openSummaryRoomActions(roomId){
       sheet.close();showToast('Postazione eliminata');await refresh();
     }catch(error){alert(error.message)}
   });
+}
+
+
+function openServerConfigEditor(room){
+  openModal(`<div class="modal-head"><h2>Configurazione Server · ${esc(room.name)}</h2><button class="close" data-close>×</button></div>
+    <div class="fields">
+      ${field('server-config','Configurazione Server',room.server_config||'')}
+      <small class="field-help">Esempio: 192.168.2.102 - 192.168.2.200</small>
+    </div>
+    <div class="production-actions">
+      <button class="danger production-remove" id="remove-server-config" ${room.server_config?'':'disabled'}>Elimina</button>
+      <div class="actions">
+        <button class="secondary" data-close>Annulla</button>
+        <button class="primary" id="save-server-config">Salva</button>
+      </div>
+    </div>`);
+
+  document.getElementById('save-server-config').onclick=async()=>{
+    const value=val('server-config').trim();
+    if(!value){
+      alert('Inserisci la configurazione oppure usa Elimina.');
+      return;
+    }
+    try{
+      await saveRow('rooms',{...room,server_config:value});
+      await addAudit('update','rooms',room.id,{server_config:value});
+      modal.close();
+      showToast('Configurazione Server salvata');
+      await refresh();
+    }catch(error){alert(error.message)}
+  };
+
+  document.getElementById('remove-server-config').onclick=async()=>{
+    if(!room.server_config||!confirm(`Eliminare la Configurazione Server da ${room.name}?`))return;
+    try{
+      await saveRow('rooms',{...room,server_config:null});
+      await addAudit('update','rooms',room.id,{server_config:null});
+      modal.close();
+      showToast('Configurazione Server eliminata');
+      await refresh();
+    }catch(error){alert(error.message)}
+  };
 }
 
 function openSummaryProductionEditor(room){
@@ -1431,7 +1506,7 @@ function openSetting(k){
     const activeAvid=state.data.licenses.filter(x=>!x.archived_at&&x.category==='avid').length;
     const activePlugins=state.data.licenses.filter(x=>!x.archived_at&&x.category==='plugin').length;
     const systemInfo=`DVS Gestionale
-Versione: 4.4 Experimental Build 4.1
+Versione: Build 5
 Database: Schema 4.3.1
 Sale: ${state.data.rooms.length}
 Computer: ${activeComputers}
@@ -1446,8 +1521,8 @@ Plugin: ${activePlugins}`;
         <p>Gestione Sale, Computer, Hardware e Licenze</p>
 
         <dl>
-          <div><dt>Versione</dt><dd>4.4 Experimental Build 4.1</dd></div>
-          <div><dt>Build</dt><dd>2026.07.14-B4.1</dd></div>
+          <div><dt>Versione</dt><dd>Build 5</dd></div>
+          <div><dt>Build</dt><dd>2026.07.15-B5</dd></div>
           <div><dt>Database</dt><dd>Supabase · Schema 4.3.1</dd></div>
         </dl>
 
@@ -1546,7 +1621,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=4.4.exp.b4.1');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=5.build5');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();
