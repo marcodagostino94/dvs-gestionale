@@ -275,3 +275,10 @@ BUILD 7.1.1 — No Swipe Fix
 - Pressione lunga sulle licenze apre sempre il dettaglio licenza.
 - Click singolo su Mac naviga; doppio click apre il dettaglio.
 - Nessuna SQL richiesta.
+
+
+BUILD 7.1.2 — Dashboard Pulse Fix
+- Pulse Dashboard uniformato alla Sintesi.
+- Alternanza netta: 1 secondo acceso / 1 secondo spento.
+- Rimossi filtri e transizioni continue dalla Dashboard.
+- Nessuna SQL richiesta.

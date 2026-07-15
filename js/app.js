@@ -948,7 +948,7 @@ async function collectBackupData(){
   }
   return {
     app:'DVS Gestionale',
-    version:'Build 7.1.1',
+    version:'Build 7.1.2',
     exported_at:new Date().toISOString(),
     tables
   };
@@ -2165,7 +2165,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=7.1.1.noswipe');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=7.1.2.dashpulse');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();

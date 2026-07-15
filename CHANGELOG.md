@@ -122,3 +122,8 @@
 - Aggiunta X adattiva per eliminazione.
 - Corretto il long press sulla prima licenza.
 - Corretto il conflitto tra click singolo e doppio click su Mac.
+
+
+### Build 7.1.2 — Dashboard Pulse Fix
+- Pulse giallo e rosso della Dashboard reso netto e fluido.
+- Eliminata l'animazione continua di gradienti e luminosità.
