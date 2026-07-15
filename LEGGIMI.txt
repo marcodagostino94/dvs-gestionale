@@ -247,3 +247,12 @@ DVS GESTIONALE — BUILD 7
 - Eseguire una sola volta: sql/migrate_build_7_dashboard_reminders.sql
 - Nessuna modifica a Edge Function, cron o secret.
 - I Promemoria vengono salvati su Supabase e sono inclusi nel backup completo.
+
+
+HOTFIX BUILD 7.0.1
+- Ripristinati i conteggi operativi nella Dashboard.
+- Rimossi Trial da attivare e postazioni incomplete dall'Attenzione.
+- Mantenute solo scadenze e Trial attive.
+- Clic sulle scadenze assegnate porta direttamente alla relativa Sala nella Sintesi.
+- Corretto il salvataggio dei Promemoria.
+- La SQL della Build 7 già eseguita NON deve essere ripetuta.

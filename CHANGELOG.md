@@ -99,3 +99,11 @@
 - Modifica diretta, completamento con quadratino e ordinamento automatico.
 - Swipe verso sinistra per eliminare.
 - Stato e accesso rapido all'ultimo backup.
+
+
+### Build 7.0.1 — Dashboard Fix
+- Ripristinati conteggi Sale, Computer, Avid e Plugin.
+- Attenzione limitata a scadenze e Trial attive.
+- Pulse giallo/rosso sulle criticità.
+- Navigazione diretta dalla criticità alla Sala.
+- Corretto il salvataggio persistente dei Promemoria.

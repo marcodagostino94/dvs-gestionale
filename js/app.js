@@ -56,51 +56,39 @@ async function saveReminder(reminder,text,completed=reminder.completed||false){
 
 function dashboardAttentionItems(){
   const items=[];
-  const licenses=state.data.licenses.filter(x=>!x.archived_at);
 
-  licenses.forEach(license=>{
-    const status=licenseStatus(license);
-    if(status.level!=='ok'){
-      const station=license.category==='plugin'?pluginStation(license.id):stationOf('license',license.id);
+  state.data.licenses
+    .filter(license=>!license.archived_at)
+    .forEach(license=>{
+      const status=licenseStatus(license);
+      if(status.level==='ok')return;
+
+      const station=license.category==='plugin'
+        ?pluginStation(license.id)
+        :stationOf('license',license.id);
+
       items.push({
         level:status.level,
         title:license.code,
         text:`${station?stationLabel(station):'Non assegnata'} · ${status.text}`,
-        action:`license:${license.id}`
+        action:station?`room:${station.room_id}`:`license:${license.id}`
       });
-    }
-  });
+    });
 
   state.data.stations.forEach(station=>{
-    const room=state.data.rooms.find(r=>r.id===station.room_id);
     const trial=trialInfo(station);
-    if(trial.status==='pending'){
-      items.push({
-        level:'warning',
-        title:room?.name||'Sala',
-        text:'Trial da attivare',
-        action:`room:${room?.id||''}`
-      });
-    }else if(trial.status==='active'&&trial.level!=='ok'){
-      items.push({
-        level:trial.level,
-        title:room?.name||'Sala',
-        text:trial.text,
-        action:`room:${room?.id||''}`
-      });
-    }
+    if(trial.status!=='active')return;
 
-    if(!station.computer_id){
-      items.push({
-        level:'neutral',
-        title:room?.name||'Sala',
-        text:'Nessun Computer assegnato',
-        action:`room:${room?.id||''}`
-      });
-    }
+    const room=state.data.rooms.find(r=>r.id===station.room_id);
+    items.push({
+      level:trial.level==='ok'?'trial':trial.level,
+      title:room?.name||'Sala',
+      text:trial.text||'Trial attiva',
+      action:`room:${station.room_id}`
+    });
   });
 
-  const rank={expired:0,warning:1,neutral:2};
+  const rank={expired:0,warning:1,trial:2};
   return items.sort((a,b)=>(rank[a.level]??9)-(rank[b.level]??9));
 }
 
@@ -120,6 +108,7 @@ function newReminderDraft(){
   if(document.querySelector('[data-reminder-draft]'))return;
   const list=document.getElementById('reminders-list');
   if(!list)return;
+
   const row=document.createElement('div');
   row.className='reminder-swipe reminder-draft-row';
   row.dataset.reminderDraft='1';
@@ -128,30 +117,47 @@ function newReminderDraft(){
     <input class="reminder-input" data-reminder-draft-input autocomplete="off" placeholder="">
   </div>`;
   list.appendChild(row);
+
   const input=row.querySelector('input');
-  input.focus();
+  let saving=false;
+  let finished=false;
 
   const commit=async()=>{
+    if(saving||finished)return;
+    saving=true;
     const text=input.value.trim();
-    if(text){
-      try{
-        await saveReminder({},text,false);
-        await refresh();
-      }catch(error){alert(error.message)}
-    }else{
+
+    if(!text){
+      finished=true;
       row.remove();
+      return;
+    }
+
+    input.disabled=true;
+    try{
+      await saveReminder({},text,false);
+      finished=true;
+      await refresh();
+    }catch(error){
+      saving=false;
+      input.disabled=false;
+      input.focus();
+      alert(error.message);
     }
   };
 
   input.addEventListener('keydown',event=>{
     if(event.key==='Enter'){
       event.preventDefault();
-      commit();
+      input.blur();
     }else if(event.key==='Escape'){
+      finished=true;
       row.remove();
     }
   });
-  input.addEventListener('blur',()=>setTimeout(commit,80),{once:true});
+
+  input.addEventListener('blur',commit,{once:true});
+  input.focus();
 }
 
 function bindReminderInteractions(){
@@ -163,15 +169,33 @@ function bindReminderInteractions(){
 
   document.querySelectorAll('[data-reminder-input]').forEach(input=>{
     const reminder=state.data.reminders.find(x=>x.id===input.dataset.reminderInput);
+    const original=reminder?.text||'';
+    let saving=false;
+
     const commit=async()=>{
+      if(saving)return;
+      const next=input.value.trim();
+      if(next===original)return;
+
+      saving=true;
       try{
-        await saveReminder(reminder,input.value,reminder.completed);
+        await saveReminder(reminder,next,reminder.completed);
         await refresh();
-      }catch(error){alert(error.message)}
+      }catch(error){
+        saving=false;
+        input.value=original;
+        alert(error.message);
+      }
     };
+
     input.addEventListener('keydown',event=>{
-      if(event.key==='Enter'){event.preventDefault();input.blur()}
-      if(event.key==='Escape'){input.value=reminder.text;input.blur()}
+      if(event.key==='Enter'){
+        event.preventDefault();
+        input.blur();
+      }else if(event.key==='Escape'){
+        input.value=original;
+        input.blur();
+      }
     });
     input.addEventListener('blur',commit,{once:true});
   });
@@ -203,7 +227,10 @@ function bindReminderInteractions(){
 
     row.addEventListener('pointerdown',event=>{
       if(event.target.closest('input,button'))return;
-      startX=event.clientX;startY=event.clientY;deltaX=0;dragging=true;
+      startX=event.clientX;
+      startY=event.clientY;
+      deltaX=0;
+      dragging=true;
       row.setPointerCapture?.(event.pointerId);
       content.classList.add('dragging');
     });
@@ -221,10 +248,10 @@ function bindReminderInteractions(){
       if(!dragging)return;
       dragging=false;
       content.classList.remove('dragging');
-      const open=deltaX<-42;
-      content.style.transform=open?'translateX(-86px)':'translateX(0)';
+      content.style.transform=deltaX<-42?'translateX(-86px)':'translateX(0)';
       if(event?.pointerId)row.releasePointerCapture?.(event.pointerId);
     };
+
     row.addEventListener('pointerup',finish);
     row.addEventListener('pointercancel',finish);
   });
@@ -235,13 +262,13 @@ function dashboard(){
   const rooms=[...d.rooms].sort((a,b)=>a.position-b.position);
   const computers=d.computers.filter(x=>!x.archived_at);
   const licenses=d.licenses.filter(x=>!x.archived_at);
-  const freeComputers=computers.filter(x=>!stationOf('computer',x.id));
-  const freeAvid=licenses.filter(x=>x.category==='avid'&&!stationOf('license',x.id));
-  const freePlugins=licenses.filter(x=>x.category==='plugin'&&!pluginStation(x.id));
-  const completeRooms=rooms.filter(room=>{
-    const stations=d.stations.filter(s=>s.room_id===room.id);
-    return stations.length&&stations.every(station=>station.computer_id&&(station.avid_license_id||trialInfo(station).status!=='none'));
-  });
+  const avid=licenses.filter(x=>x.category==='avid');
+  const plugins=licenses.filter(x=>x.category==='plugin');
+
+  const computersAssigned=computers.filter(x=>stationOf('computer',x.id)).length;
+  const avidAssigned=avid.filter(x=>stationOf('license',x.id)).length;
+  const pluginsAssigned=plugins.filter(x=>pluginStation(x.id)).length;
+
   const attention=dashboardAttentionItems();
   const reminders=[...(d.reminders||[])].sort(reminderSort);
   const last=lastBackupInfo();
@@ -251,17 +278,27 @@ function dashboard(){
   return `<div class="dashboard-v7">
     <section class="dashboard-metrics">
       <button class="dashboard-metric glass" data-dashboard-nav="summary" data-dashboard-filter="all">
-        <span>Sale complete</span><strong>${completeRooms.length}<small> / ${rooms.length}</small></strong>
-        <em>${rooms.length-completeRooms.length} da controllare</em>
+        <span>Sale</span>
+        <strong>${rooms.length}</strong>
+        <em>${computersAssigned} Computer nelle Sale</em>
       </button>
+
       <button class="dashboard-metric glass" data-dashboard-nav="computers" data-dashboard-filter="warehouse">
-        <span>Computer liberi</span><strong>${freeComputers.length}</strong><em>Disponibili in magazzino</em>
+        <span>Computer</span>
+        <strong>${computers.length}</strong>
+        <em>${computersAssigned} nelle Sale · ${computers.length-computersAssigned} liberi</em>
       </button>
-      <button class="dashboard-metric glass" data-dashboard-nav="licenses" data-dashboard-filter="warehouse">
-        <span>Avid libere</span><strong>${freeAvid.length}</strong><em>Non assegnate</em>
+
+      <button class="dashboard-metric glass" data-dashboard-nav="licenses" data-dashboard-filter="avid">
+        <span>Licenze Avid</span>
+        <strong>${avid.length}</strong>
+        <em>${avidAssigned} nelle Sale · ${avid.length-avidAssigned} libere</em>
       </button>
-      <button class="dashboard-metric glass" data-dashboard-nav="licenses" data-dashboard-filter="warehouse">
-        <span>Plugin liberi</span><strong>${freePlugins.length}</strong><em>Non assegnati</em>
+
+      <button class="dashboard-metric glass" data-dashboard-nav="licenses" data-dashboard-filter="plugin">
+        <span>Plugin</span>
+        <strong>${plugins.length}</strong>
+        <em>${pluginsAssigned} nelle Sale · ${plugins.length-pluginsAssigned} in magazzino</em>
       </button>
     </section>
 
@@ -271,12 +308,12 @@ function dashboard(){
         <span class="dashboard-count">${attention.length}</span>
       </div>
       ${attention.length?`<div class="dashboard-attention-list">
-        ${attention.map(item=>`<button type="button" class="dashboard-alert ${item.level}" data-dashboard-action="${item.action}">
+        ${attention.map(item=>`<button type="button" class="dashboard-alert ${item.level} ${item.level==='warning'||item.level==='expired'?'pulse-critical':''}" data-dashboard-action="${item.action}">
           <span class="dashboard-alert-dot"></span>
           <div><strong>${esc(item.title)}</strong><small>${esc(item.text)}</small></div>
           <b>›</b>
         </button>`).join('')}
-      </div>`:'<div class="dashboard-empty-good"><strong>Tutto sotto controllo</strong><span>Nessuna criticità richiede attenzione.</span></div>'}
+      </div>`:'<div class="dashboard-empty-good"><strong>Tutto sotto controllo</strong><span>Nessuna scadenza o Trial attiva richiede attenzione.</span></div>'}
     </section>
 
     <section class="dashboard-lower-grid">
@@ -815,7 +852,7 @@ async function collectBackupData(){
   }
   return {
     app:'DVS Gestionale',
-    version:'Build 7',
+    version:'Build 7.0.1',
     exported_at:new Date().toISOString(),
     tables
   };
@@ -2036,7 +2073,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=7.dashboard');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=7.0.1.dashboardfix');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();

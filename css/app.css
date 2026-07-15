@@ -1177,3 +1177,23 @@ input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,2
   .dashboard-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
   .dashboard-lower-grid{grid-template-columns:minmax(0,1.55fr) minmax(280px,.75fr)}
 }
+
+
+/* ===== BUILD 7.0.1 — Dashboard Fix ===== */
+.dashboard-alert.trial{
+  border-color:rgba(79,139,255,.24);
+  background:rgba(79,139,255,.065);
+}
+.dashboard-alert.trial .dashboard-alert-dot{
+  background:#6f9fff;
+  box-shadow:0 0 10px rgba(79,139,255,.50);
+}
+.dashboard-alert.pulse-critical.warning{
+  animation:dvsBuild5PulseWarning 2s ease-in-out infinite!important;
+}
+.dashboard-alert.pulse-critical.expired{
+  animation:dvsBuild5PulseExpired 2s ease-in-out infinite!important;
+}
+.reminder-input:disabled{
+  opacity:.65;
+}
