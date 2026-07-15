@@ -71,7 +71,7 @@ function dashboardAttentionItems(){
         level:status.level,
         title:license.code,
         text:`${station?stationLabel(station):'Non assegnata'} · ${status.text}`,
-        action:station?`room:${station.room_id}`:`license:${license.id}`
+        action:`license:${license.id}`
       });
     });
 
@@ -221,7 +221,8 @@ function openDashboardActionDetail(action){
 function bindDashboardAttentionInteractions(){
   document.querySelectorAll('[data-dashboard-action]').forEach(button=>{
     const action=button.dataset.dashboardAction;
-    let timer=null;
+    let longTimer=null;
+    let singleTimer=null;
     let longPressed=false;
     let startX=0,startY=0;
 
@@ -229,7 +230,24 @@ function bindDashboardAttentionInteractions(){
 
     button.addEventListener('dblclick',event=>{
       event.preventDefault();
+      event.stopPropagation();
+      if(singleTimer){
+        clearTimeout(singleTimer);
+        singleTimer=null;
+      }
       openDashboardActionDetail(action);
+    });
+
+    button.addEventListener('click',event=>{
+      if(event.pointerType==='touch')return;
+      if(event.detail>1)return;
+
+      event.preventDefault();
+      if(singleTimer)clearTimeout(singleTimer);
+      singleTimer=setTimeout(()=>{
+        singleTimer=null;
+        navigateDashboardAction(action);
+      },280);
     });
 
     button.addEventListener('pointerdown',event=>{
@@ -237,72 +255,49 @@ function bindDashboardAttentionInteractions(){
       longPressed=false;
       startX=event.clientX;
       startY=event.clientY;
-      timer=setTimeout(()=>{
+
+      longTimer=setTimeout(()=>{
         longPressed=true;
         openDashboardActionDetail(action);
       },560);
     });
 
     button.addEventListener('pointermove',event=>{
-      if(!timer)return;
+      if(!longTimer)return;
       if(Math.hypot(event.clientX-startX,event.clientY-startY)>10){
-        clearTimeout(timer);
-        timer=null;
+        clearTimeout(longTimer);
+        longTimer=null;
       }
     });
 
-    const cancel=()=>{
-      if(timer){
-        clearTimeout(timer);
-        timer=null;
+    const cancelLong=()=>{
+      if(longTimer){
+        clearTimeout(longTimer);
+        longTimer=null;
       }
     };
 
     button.addEventListener('pointerup',event=>{
       const wasLong=longPressed;
-      cancel();
+      cancelLong();
+
       if(event.pointerType!=='mouse'&&!wasLong){
         event.preventDefault();
         navigateDashboardAction(action);
       }
     });
-    button.addEventListener('pointercancel',cancel);
 
-    button.onclick=event=>{
-      if(event.detail>1)return;
-      if(event.pointerType==='touch')return;
-      navigateDashboardAction(action);
-    };
+    button.addEventListener('pointercancel',cancelLong);
   });
 }
 
 function bindReminderInteractions(){
   const box=document.getElementById('reminders-box');
-  let openRow=null;
-
-  const closeOpenRow=()=>{
-    if(!openRow)return;
-    const content=openRow.querySelector('.reminder-content');
-    if(content){
-      content.style.transition='transform .22s cubic-bezier(.2,.8,.2,1)';
-      content.style.transform='translateX(0)';
-    }
-    openRow.classList.remove('swipe-open');
-    openRow=null;
-  };
 
   box?.addEventListener('click',event=>{
     if(event.target.closest('[data-reminder-delete],input,button'))return;
-    if(openRow){
-      closeOpenRow();
-      return;
-    }
     newReminderDraft();
   });
-
-  document.addEventListener('pointerdown',event=>{
-    if(openRow&&!event.target.closest('[data-reminder-row]'))closeOpenRow();
-  },{once:true});
 
   document.querySelectorAll('[data-reminder-input]').forEach(input=>{
     const reminder=state.data.reminders.find(x=>x.id===input.dataset.reminderInput);
@@ -355,88 +350,6 @@ function bindReminderInteractions(){
         await refresh();
       }catch(error){alert(error.message)}
     };
-  });
-
-  document.querySelectorAll('.reminder-swipe:not(.reminder-draft-row)').forEach(row=>{
-    const content=row.querySelector('.reminder-content');
-    let pointerId=null;
-    let startX=0,startY=0,lastX=0,lastTime=0;
-    let horizontal=false;
-    let active=false;
-    let offset=row.classList.contains('swipe-open')?-86:0;
-
-    const setOffset=(value,animate=false)=>{
-      offset=Math.max(-96,Math.min(0,value));
-      content.style.transition=animate?'transform .22s cubic-bezier(.2,.8,.2,1)':'none';
-      content.style.transform=`translate3d(${offset}px,0,0)`;
-    };
-
-    row.addEventListener('pointerdown',event=>{
-      if(event.pointerType==='mouse')return;
-      if(event.target.closest('input,button'))return;
-
-      if(openRow&&openRow!==row)closeOpenRow();
-
-      pointerId=event.pointerId;
-      startX=event.clientX;
-      startY=event.clientY;
-      lastX=event.clientX;
-      lastTime=performance.now();
-      horizontal=false;
-      active=true;
-      row.setPointerCapture?.(pointerId);
-      content.classList.add('dragging');
-      setOffset(row.classList.contains('swipe-open')?-86:0,false);
-    });
-
-    row.addEventListener('pointermove',event=>{
-      if(!active||event.pointerId!==pointerId)return;
-      const dx=event.clientX-startX;
-      const dy=event.clientY-startY;
-
-      if(!horizontal){
-        if(Math.abs(dx)<7&&Math.abs(dy)<7)return;
-        if(Math.abs(dy)>Math.abs(dx)){
-          active=false;
-          content.classList.remove('dragging');
-          return;
-        }
-        horizontal=true;
-      }
-
-      event.preventDefault();
-      const base=row.classList.contains('swipe-open')?-86:0;
-      setOffset(base+dx,false);
-      lastX=event.clientX;
-      lastTime=performance.now();
-    },{passive:false});
-
-    const finish=event=>{
-      if(!active||event.pointerId!==pointerId)return;
-      active=false;
-      content.classList.remove('dragging');
-
-      const elapsed=Math.max(1,performance.now()-lastTime);
-      const velocity=(event.clientX-lastX)/elapsed;
-      const shouldOpen=horizontal&&(offset<-42||velocity<-.45);
-      const shouldClose=!horizontal||offset>-55||velocity>.45;
-
-      if(shouldOpen&&!shouldClose){
-        row.classList.add('swipe-open');
-        setOffset(-86,true);
-        openRow=row;
-      }else{
-        row.classList.remove('swipe-open');
-        setOffset(0,true);
-        if(openRow===row)openRow=null;
-      }
-
-      row.releasePointerCapture?.(pointerId);
-      pointerId=null;
-    };
-
-    row.addEventListener('pointerup',finish);
-    row.addEventListener('pointercancel',finish);
   });
 }
 
@@ -1035,7 +948,7 @@ async function collectBackupData(){
   }
   return {
     app:'DVS Gestionale',
-    version:'Build 7.1',
+    version:'Build 7.1.1',
     exported_at:new Date().toISOString(),
     tables
   };
@@ -2252,7 +2165,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=7.1.interaction');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=7.1.1.noswipe');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();

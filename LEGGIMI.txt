@@ -266,3 +266,12 @@ BUILD 7.1 — Interazioni Dashboard
 - Click sulle criticità porta a Sala o Non assegnati.
 - Pressione lunga su iPhone/iPad e doppio click su Mac aprono i dettagli.
 - Nessuna SQL richiesta.
+
+
+BUILD 7.1.1 — No Swipe Fix
+- Swipe Promemoria eliminato.
+- X fissa su iPhone/iPad.
+- X visibile al passaggio del mouse su Mac.
+- Pressione lunga sulle licenze apre sempre il dettaglio licenza.
+- Click singolo su Mac naviga; doppio click apre il dettaglio.
+- Nessuna SQL richiesta.

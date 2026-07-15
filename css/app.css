@@ -1241,3 +1241,50 @@ input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,2
   .reminder-swipe:hover .reminder-delete{opacity:1}
   .reminder-content{padding-right:36px}
 }
+
+
+/* ===== BUILD 7.1.1 — No Swipe Fix ===== */
+.reminder-swipe{
+  position:relative!important;
+  overflow:visible!important;
+  touch-action:auto!important;
+}
+.reminder-content,
+.reminder-swipe.swipe-open .reminder-content{
+  transform:none!important;
+  transition:none!important;
+  padding-right:42px!important;
+}
+.reminder-delete{
+  position:absolute!important;
+  z-index:5!important;
+  right:6px!important;
+  top:50%!important;
+  bottom:auto!important;
+  transform:translateY(-50%)!important;
+  width:30px!important;
+  height:30px!important;
+  border-radius:9px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:#d93440!important;
+  color:#fff!important;
+  font-size:0!important;
+  opacity:1!important;
+  cursor:pointer!important;
+}
+.reminder-delete::before{
+  content:'×';
+  font-size:18px;
+  line-height:1;
+}
+@media(hover:hover) and (pointer:fine){
+  .reminder-delete{
+    opacity:0!important;
+    transition:opacity .18s ease!important;
+  }
+  .reminder-swipe:hover .reminder-delete{
+    opacity:1!important;
+  }
+}

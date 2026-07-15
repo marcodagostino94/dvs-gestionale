@@ -115,3 +115,10 @@
 - Navigazione operativa con click/tap.
 - Dettaglio con pressione lunga su touch e doppio click su Mac.
 - Disattivata la selezione testo sulle criticità.
+
+
+### Build 7.1.1 — No Swipe Fix
+- Eliminato lo swipe dei Promemoria.
+- Aggiunta X adattiva per eliminazione.
+- Corretto il long press sulla prima licenza.
+- Corretto il conflitto tra click singolo e doppio click su Mac.
