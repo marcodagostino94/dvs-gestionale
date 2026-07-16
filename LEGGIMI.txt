@@ -307,3 +307,9 @@ V9 — FIX FINALE
 - Icona Workspace aggiornata per macOS e iOS.
 - La sezione Informazioni è rimasta invariata.
 - Nessuna SQL richiesta.
+
+
+V9 CORRETTA
+- Avid e Plugin: dettaglio con doppio click/pressione lunga.
+- Workspace PNG usate come icone effettive.
+- icon.svg non più usata come icona principale.

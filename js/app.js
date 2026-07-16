@@ -1369,92 +1369,61 @@ function bindRoomAssetInteractions(){
   document.querySelectorAll('[data-room-action]').forEach(button=>{
     const action=button.dataset.summaryAssign;
     const stationId=button.dataset.station;
-    const resourceType=button.dataset.resourceType;
-    const resourceId=button.dataset.resourceId;
     let clickTimer=null;
     let longTimer=null;
     let longPressed=false;
     let startX=0,startY=0;
 
     const mainAction=()=>assignmentSheet(action,stationId);
+
     const detailAction=()=>{
-      if(resourceType&&resourceId){
-        openDetail(resourceType,resourceId);
-        return;
+      if(action==='license'){
+        const station=state.data.stations.find(s=>s.id===stationId);
+        const licenseId=station?.avid_license_id||button.dataset.resourceId;
+        if(licenseId){openDetail('licenses',licenseId);return;}
       }
       if(action==='plugin'){
-        const ids=String(button.dataset.pluginIds||'').split(',').filter(Boolean);
-        if(ids.length===1){
-          openDetail('licenses',ids[0]);
-          return;
-        }
+        const ids=String(button.dataset.pluginIds||'').split(',').map(x=>x.trim()).filter(Boolean);
+        if(ids.length===1){openDetail('licenses',ids[0]);return;}
         if(ids.length>1){
           openModal(`<div class="modal-head"><h2>Plugin della postazione</h2><button class="close" data-close>×</button></div>
-            <div class="choices">
-              ${ids.map(id=>{
-                const plugin=state.data.licenses.find(x=>x.id===id);
-                return plugin?`<button class="choice" data-plugin-detail="${plugin.id}"><strong>${esc(plugin.code)}</strong><br><small>${esc(plugin.plugin_type||'Plugin')}</small></button>`:'';
-              }).join('')}
-            </div>`);
+            <div class="choices">${ids.map(id=>{const plugin=state.data.licenses.find(x=>x.id===id);return plugin?`<button class="choice" data-plugin-detail="${plugin.id}"><strong>${esc(plugin.code)}</strong><br><small>${esc(plugin.plugin_type||'Plugin')}</small></button>`:'';}).join('')}</div>`);
           document.querySelectorAll('[data-plugin-detail]').forEach(item=>item.onclick=()=>openDetail('licenses',item.dataset.pluginDetail));
           return;
         }
       }
+      const resourceType=button.dataset.resourceType;
+      const resourceId=button.dataset.resourceId;
+      if(resourceType&&resourceId){openDetail(resourceType,resourceId);return;}
       mainAction();
     };
 
     button.addEventListener('contextmenu',event=>event.preventDefault());
-
     button.addEventListener('dblclick',event=>{
-      event.preventDefault();
-      event.stopPropagation();
-      if(clickTimer){clearTimeout(clickTimer);clickTimer=null}
+      event.preventDefault();event.stopPropagation();
+      if(clickTimer){clearTimeout(clickTimer);clickTimer=null;}
       detailAction();
     });
-
     button.addEventListener('click',event=>{
       if(event.pointerType==='touch'||event.detail>1)return;
-      event.preventDefault();
-      event.stopPropagation();
+      event.preventDefault();event.stopPropagation();
       if(clickTimer)clearTimeout(clickTimer);
-      clickTimer=setTimeout(()=>{
-        clickTimer=null;
-        mainAction();
-      },280);
+      clickTimer=setTimeout(()=>{clickTimer=null;mainAction();},320);
     });
-
     button.addEventListener('pointerdown',event=>{
       if(event.pointerType==='mouse')return;
-      event.stopPropagation();
-      longPressed=false;
-      startX=event.clientX;
-      startY=event.clientY;
-      longTimer=setTimeout(()=>{
-        longPressed=true;
-        detailAction();
-      },560);
+      event.preventDefault();event.stopPropagation();
+      longPressed=false;startX=event.clientX;startY=event.clientY;
+      longTimer=setTimeout(()=>{longPressed=true;detailAction();},560);
     });
-
     button.addEventListener('pointermove',event=>{
       if(!longTimer)return;
-      if(Math.hypot(event.clientX-startX,event.clientY-startY)>10){
-        clearTimeout(longTimer);
-        longTimer=null;
-      }
+      if(Math.hypot(event.clientX-startX,event.clientY-startY)>10){clearTimeout(longTimer);longTimer=null;}
     });
-
-    const cancelLong=()=>{
-      if(longTimer){clearTimeout(longTimer);longTimer=null}
-    };
-
+    const cancelLong=()=>{if(longTimer){clearTimeout(longTimer);longTimer=null;}};
     button.addEventListener('pointerup',event=>{
-      const wasLong=longPressed;
-      cancelLong();
-      if(event.pointerType!=='mouse'&&!wasLong){
-        event.preventDefault();
-        event.stopPropagation();
-        mainAction();
-      }
+      const wasLong=longPressed;cancelLong();
+      if(event.pointerType!=='mouse'&&!wasLong){event.preventDefault();event.stopPropagation();mainAction();}
     });
     button.addEventListener('pointercancel',cancelLong);
   });
@@ -2383,7 +2352,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});window.addEventListener('beforeunload',stopRealtime);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=9.iconfix');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});window.addEventListener('beforeunload',stopRealtime);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=9.corrected');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();

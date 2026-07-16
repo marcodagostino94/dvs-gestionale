@@ -151,3 +151,8 @@
 ### V9 — Fix finale
 - Dettaglio corretto per Avid e Plugin nella sezione Sale.
 - Nuova icona Workspace integrata nel manifest e nei riferimenti iOS/macOS.
+
+
+### V9 corretta
+- Fix dettaglio Avid/Plugin nella sezione Sale.
+- Fix icone Workspace nel manifest e in iOS/macOS.
