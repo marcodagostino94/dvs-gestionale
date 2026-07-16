@@ -300,3 +300,10 @@ DVS WORKSPACE — V 9
 - Identità aggiornata a Workspace con icona DVS e bagliore blu.
 - Informazioni, cache, Service Worker e manifest aggiornati alla V9.
 - Nessuna SQL richiesta.
+
+
+V9 — FIX FINALE
+- Doppio click / pressione lunga corretti anche per Avid e Plugin.
+- Icona Workspace aggiornata per macOS e iOS.
+- La sezione Informazioni è rimasta invariata.
+- Nessuna SQL richiesta.

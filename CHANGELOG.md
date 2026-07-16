@@ -146,3 +146,8 @@
 - Note intelligenti in Computer, Licenze e Sale.
 - Identità grafica Workspace con bagliore blu.
 - Pagina Informazioni e sistema di versionamento aggiornati.
+
+
+### V9 — Fix finale
+- Dettaglio corretto per Avid e Plugin nella sezione Sale.
+- Nuova icona Workspace integrata nel manifest e nei riferimenti iOS/macOS.

@@ -977,7 +977,7 @@ function rooms(){
                         <i class="summary-edit-hint">Modifica</i>
                       </button>
 
-                      <button type="button" class="summary-resource summary-plugins summary-assignable ${pluginLevel} ${pluginLevel!=='ok'?'pulse-critical':''}" data-room-action="plugin" data-summary-assign="plugin" data-station="${station.id}" data-resource-type="licenses" data-resource-id="${plugins.length===1?plugins[0].id:''}">
+                      <button type="button" class="summary-resource summary-plugins summary-assignable ${pluginLevel} ${pluginLevel!=='ok'?'pulse-critical':''}" data-room-action="plugin" data-summary-assign="plugin" data-station="${station.id}" data-resource-type="licenses" data-resource-id="${plugins.length===1?plugins[0].id:''}" data-plugin-ids="${plugins.map(p=>p.id).join(',')}">
                         <div class="resource-title-row"><small>PLUGIN</small><span></span></div>
                         ${plugins.length?plugins.map(plugin=>{
                           const status=licenseStatus(plugin);
@@ -1378,8 +1378,29 @@ function bindRoomAssetInteractions(){
 
     const mainAction=()=>assignmentSheet(action,stationId);
     const detailAction=()=>{
-      if(resourceType&&resourceId)openDetail(resourceType,resourceId);
-      else mainAction();
+      if(resourceType&&resourceId){
+        openDetail(resourceType,resourceId);
+        return;
+      }
+      if(action==='plugin'){
+        const ids=String(button.dataset.pluginIds||'').split(',').filter(Boolean);
+        if(ids.length===1){
+          openDetail('licenses',ids[0]);
+          return;
+        }
+        if(ids.length>1){
+          openModal(`<div class="modal-head"><h2>Plugin della postazione</h2><button class="close" data-close>×</button></div>
+            <div class="choices">
+              ${ids.map(id=>{
+                const plugin=state.data.licenses.find(x=>x.id===id);
+                return plugin?`<button class="choice" data-plugin-detail="${plugin.id}"><strong>${esc(plugin.code)}</strong><br><small>${esc(plugin.plugin_type||'Plugin')}</small></button>`:'';
+              }).join('')}
+            </div>`);
+          document.querySelectorAll('[data-plugin-detail]').forEach(item=>item.onclick=()=>openDetail('licenses',item.dataset.pluginDetail));
+          return;
+        }
+      }
+      mainAction();
     };
 
     button.addEventListener('contextmenu',event=>event.preventDefault());
@@ -2362,7 +2383,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});window.addEventListener('beforeunload',stopRealtime);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=9.workspace');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});window.addEventListener('beforeunload',stopRealtime);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=9.iconfix');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();
