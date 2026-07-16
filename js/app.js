@@ -5,9 +5,9 @@ import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './ut
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
 
 const splash=document.getElementById('splash'),login=document.getElementById('login'),shell=document.getElementById('shell'),app=document.getElementById('app'),title=document.getElementById('title'),greeting=document.getElementById('greeting'),modal=document.getElementById('modal'),modalBody=document.getElementById('modal-body'),sheet=document.getElementById('sheet'),sheetBody=document.getElementById('sheet-body'),toast=document.getElementById('toast');
-const views=[['dashboard','dashboard','Dashboard'],['rooms','chair','Sale'],['computers','computer','Computer'],['hardware','rec','Hardware'],['licenses','key','Licenze'],['summary','summary','Sintesi EXP'],['settings','settings','Settings']];
+const views=[['dashboard','dashboard','Dashboard'],['rooms','chair','Sale'],['computers','computer','Computer'],['hardware','rec','Hardware'],['licenses','key','Licenze'],['settings','settings','Settings']];
 const state={view:'dashboard',data:null,filter:'all',session:null};
-const labels={dashboard:'Dashboard',rooms:'Sale',computers:'Computer',hardware:'Hardware',licenses:'Licenze',summary:'Sintesi · Experimental',settings:'Settings'};
+const labels={dashboard:'Dashboard',rooms:'Sale',computers:'Computer',hardware:'Hardware',licenses:'Licenze',settings:'Settings'};
 
 function navIcon(name){const icons={dashboard:`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>`,chair:`<svg viewBox="0 0 24 24"><path d="M7 11V7a5 5 0 0 1 10 0v4"/><path d="M5 11h14v5H5z"/><path d="M8 16v5M16 16v5M4 11V8M20 11V8"/></svg>`,computer:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,key:`<svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M15 12v2"/></svg>`,summary:`<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>`,settings:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.12-1.3l2-1.55-2-3.46-2.45 1A7 7 0 0 0 14.2 5.4L13.8 3h-4l-.4 2.4a7 7 0 0 0-2.23 1.29l-2.45-1-2 3.46 2 1.55A7 7 0 0 0 4.6 12c0 .44.04.87.12 1.3l-2 1.55 2 3.46 2.45-1a7 7 0 0 0 2.23 1.29l.4 2.4h4l.4-2.4a7 7 0 0 0 2.23-1.29l2.45 1 2-3.46-2-1.55c.08-.43.12-.86.12-1.3z"/></svg>`};return icons[name]||''}
 function navHTML(){return views.map(([id,icon,label])=>`<button class="nav-btn ${state.view===id?'active':''}" data-view="${id}">${icon==='rec'?`<span class="rec-nav-icon"><i></i></span>`:`<span class="nav-svg">${navIcon(icon)}</span>`}<small>${label}</small></button>`).join('')}
@@ -290,9 +290,9 @@ function navigateDashboardAction(action){
   const target=dashboardActionTarget(action);
 
   if(target.kind==='room'&&target.id){
-    state.view='summary';
+    state.view='rooms';
     state.filter='all';
-    title.textContent=labels.summary;
+    title.textContent=labels.rooms;
     render();
     setTimeout(()=>{
       const room=document.querySelector(`[data-summary-room="${target.id}"]`);
@@ -304,9 +304,9 @@ function navigateDashboardAction(action){
   }
 
   if(target.kind==='license'&&target.license){
-    state.view='summary';
+    state.view='rooms';
     state.filter='all';
-    title.textContent=labels.summary;
+    title.textContent=labels.rooms;
     render();
     setTimeout(()=>{
       if(target.station){
@@ -485,7 +485,7 @@ function dashboard(){
 
   return `<div class="dashboard-v7">
     <section class="dashboard-metrics">
-      <button class="dashboard-metric glass" data-dashboard-nav="summary" data-dashboard-filter="all">
+      <button class="dashboard-metric glass" data-dashboard-nav="rooms" data-dashboard-filter="all">
         <span>Sale</span>
         <strong>${rooms.length}</strong>
         <em>${computersAssigned} Computer nelle Sale</em>
@@ -563,26 +563,7 @@ function roomsForOffice(rooms,group){
   return rooms.filter(room=>room.position>=group.start&&room.position<=group.end);
 }
 
-function rooms(){
-  const allRooms=[...state.data.rooms].sort((a,b)=>a.position-b.position);
-  return `<div class="office-groups">${officeGroups.map(group=>{
-    const grouped=roomsForOffice(allRooms,group);
-    return `<section class="office-group">
-      <div class="office-label"><span>${group.title}</span></div>
-      <div class="grid room-grid">${grouped.map(room=>{
-        const sts=state.data.stations.filter(s=>s.room_id===room.id).sort((a,b)=>a.position-b.position);
-        const levels=sts.flatMap(s=>[s.avid_license_id,...state.data.station_plugins.filter(x=>x.station_id===s.id).map(x=>x.license_id)])
-          .filter(Boolean)
-          .map(id=>licenseStatus(state.data.licenses.find(l=>l.id===id)).level);
-        const level=levels.includes('expired')?'expired':levels.includes('warning')?'warning':'';
-        return `<article class="room-card ${level}" data-room="${room.id}">
-          <h3>${esc(room.name)}</h3>
-          ${sts.map(stationCard).join('')}
-        </article>`;
-      }).join('')}</div>
-    </section>`;
-  }).join('')}</div>`;
-}
+
 function stationCard(s){const c=state.data.computers.find(x=>x.id===s.computer_id),a=state.data.licenses.find(x=>x.id===s.avid_license_id),plugins=state.data.station_plugins.filter(x=>x.station_id===s.id).map(x=>state.data.licenses.find(l=>l.id===x.license_id)).filter(Boolean);return `<div class="station-row"><div class="resource-row"><div><strong>${c?esc(c.code):'Nessun computer'}</strong>${c?`<small>${esc([c.model,c.variant].filter(Boolean).join(' · '))}</small>`:''}</div>${c?.os_name?`<span class="badge os os-${esc(c.os_name.toLowerCase())}">${esc(c.os_name.toUpperCase())}</span>`:''}</div><div class="resource-row"><strong>${a?esc(a.code):'Nessuna Avid'}</strong>${a?`<div class="badges"><span class="badge ${a.avid_type==='Ultimate'?'ultimate':'singolo'}">${esc(a.avid_type.toUpperCase())}</span><span class="badge ${a.billing_cycle}">${cycleLabel(a.billing_cycle)}</span>${a.is_trial?'<span class="badge trial">TRIAL</span>':''}</div>`:''}</div>${plugins.map(p=>`<div class="resource-row"><strong>${esc(p.plugin_type.toUpperCase())}</strong><div class="badges"><span class="badge ${p.billing_cycle}">${cycleLabel(p.billing_cycle)}</span>${p.is_trial?'<span class="badge trial">TRIAL</span>':''}</div></div>`).join('')}${[a,...plugins].filter(Boolean).map(x=>licenseStatus(x)).filter(x=>x.level!=='ok').map(x=>`<div class="status ${x.level}">${esc(x.text)}</div>`).join('')}</div>`}
 
 
@@ -727,6 +708,12 @@ function filters(type){
   return `<div class="filters">${fs.map(([id,label])=>`<button class="filter ${state.filter===id?'active':''}" data-filter="${id}">${label}</button>`).join('')}</div>`;
 }
 function locationMarkup(text){return text==='Non assegnato'?'<span class="unassigned-text">Non assegnato</span>':esc(text)}
+
+function smartNote(text){
+  const clean=String(text||'').trim();
+  return clean?`<div class="smart-note"><span>NOTA</span><p>${esc(clean)}</p></div>`:'';
+}
+
 function inventoryCard(type,x){
   if(x.archived_at){
     return `<button class="list-card historic-item" data-item="${type}:${x.id}">
@@ -737,7 +724,7 @@ function inventoryCard(type,x){
       </div><span>›</span>
     </button>`;
   }
-  if(type==='computers')return `<button class="list-card" data-item="computers:${x.id}"><div><h3>${esc(x.code)} · ${esc([x.model,x.variant].filter(Boolean).join(' · '))}</h3><div class="badges">${x.os_name?`<span class="badge os os-${esc(x.os_name.toLowerCase())}">${esc(x.os_name.toUpperCase())}</span>`:''}</div><p>${locationMarkup(currentLocation('computer',x.id))} · Formattazione ${fmtDate(x.formatted_at)}</p></div><span>›</span></button>`;
+  if(type==='computers')return `<button class="list-card" data-item="computers:${x.id}"><div><h3>${esc(x.code)} · ${esc([x.model,x.variant].filter(Boolean).join(' · '))}</h3><div class="badges">${x.os_name?`<span class="badge os os-${esc(x.os_name.toLowerCase())}">${esc(x.os_name.toUpperCase())}</span>`:''}</div><p>${locationMarkup(currentLocation('computer',x.id))} · Formattazione ${fmtDate(x.formatted_at)}</p>${smartNote(x.notes)}</div><span>›</span></button>`;
   if(type==='hardware')return `<button class="list-card" data-item="hardware:${x.id}"><div><h3>${esc(x.code)} · ${esc(x.model||'')}</h3><p>${locationMarkup(currentLocation('hardware',x.id))}</p></div><span>›</span></button>`;
   const st=licenseStatus(x),kind=x.category==='avid'?x.avid_type:x.plugin_type;
   const loc=currentLocation(x.category==='plugin'?'plugin':'license',x.id);
@@ -745,7 +732,7 @@ function inventoryCard(type,x){
   return `<button class="list-card license-card ${st.level==='warning'?'license-warning':st.level==='expired'?'license-expired':''}" data-item="licenses:${x.id}">
     <div class="license-card-content"><div class="license-card-top"><h3>${esc(x.code)}</h3><span class="license-sid">${sid}</span></div>
     <div class="badges"><span class="badge ${x.category==='avid'?(x.avid_type==='Ultimate'?'ultimate':'singolo'):'plugin'}">${esc((kind||'').toUpperCase())}</span><span class="badge ${x.billing_cycle}">${cycleLabel(x.billing_cycle)}</span></div>
-    <div class="license-card-bottom"><span class="license-time">${esc(st.text)}</span><span class="license-location">${locationMarkup(loc)}</span></div></div><span class="card-chevron">›</span>
+    <div class="license-card-bottom"><span class="license-time">${esc(st.text)}</span><span class="license-location">${locationMarkup(loc)}</span></div>${smartNote(x.notes)}</div><span class="card-chevron">›</span>
   </button>`;
 }
 
@@ -883,7 +870,7 @@ function summaryLevel(room){
   return roomStatusDetails(room);
 }
 
-function summary(){
+function rooms(){
   const allRooms=[...state.data.rooms].sort((a,b)=>a.position-b.position);
   const counts=allRooms.reduce((acc,room)=>{acc[summaryLevel(room)]++;return acc},{ok:0,warning:0,expired:0});
 
@@ -897,6 +884,7 @@ function summary(){
       return `<button type="button" class="unassigned-asset-card" data-item="computers:${item.id}">
         <strong>${esc(item.code)}</strong>
         <span>${esc([item.model,item.variant].filter(Boolean).join(' · ')||'Disponibile')}</span>
+        ${smartNote(item.notes)}
       </button>`;
     }
     if(type==='hardware'){
@@ -914,13 +902,14 @@ function summary(){
       <div class="free-card-head"><strong>${esc(item.code)}</strong><span class="free-expiry">${esc(expiryLabel(item))}</span></div>
       <span>${esc(item.category==='avid'?item.avid_type:item.plugin_type)} · ${cycleLabel(item.billing_cycle)}</span>
       <div class="free-id">${detail}</div>
+      ${smartNote(item.notes)}
     </button>`;
   };
 
   return `<div class="summary-toolbar">
       <div>
-        <h2>Sintesi interattiva</h2>
-        <p>Clicca sui riquadri per modificare le assegnazioni oppure sull’intestazione della Sala per produzione e postazioni.</p>
+        <h2>Sale</h2>
+        <p>Clicca sui riquadri per modificare le assegnazioni oppure sull’intestazione della Sala per produzione, configurazione e postazioni.</p>
       </div>
 
     </div>
@@ -944,6 +933,7 @@ function summary(){
                   </div>
                   <span class="summary-production-name ${productionClass(room)}">${production?esc(production):'Produzione non indicata'}</span>
                 </div>
+                ${smartNote(room.notes)}
 
                 <div class="summary-stations">
                   ${stations.map((station,index)=>{
@@ -958,26 +948,27 @@ function summary(){
                     return `<div class="summary-station">
                       ${stations.length>1?`<div class="summary-station-label">POSTAZIONE ${index+1}</div>`:''}
 
-                      <button type="button" class="summary-resource summary-computer summary-assignable" data-summary-assign="computer" data-station="${station.id}">
+                      <button type="button" class="summary-resource summary-computer summary-assignable" data-room-action="computer" data-summary-assign="computer" data-station="${station.id}" data-resource-type="computers" data-resource-id="${computer?.id||''}">
                         <small>COMPUTER</small>
                         <strong>${computer?esc(computer.code):'—'}</strong>
                         <span>${computer?esc([computer.model,computer.variant].filter(Boolean).join(' · ')):'Non assegnato'}</span>
                         ${computer?.os_name?`<span class="badge os os-${esc(computer.os_name.toLowerCase())}">${esc(computer.os_name.toUpperCase())}</span>`:''}
+                        ${computer?smartNote(computer.notes):''}
                         <i class="summary-edit-hint">Modifica</i>
                       </button>
 
-                      <button type="button" class="summary-resource summary-hardware summary-assignable" data-summary-assign="hardware" data-station="${station.id}">
+                      <button type="button" class="summary-resource summary-hardware summary-assignable" data-room-action="hardware" data-summary-assign="hardware" data-station="${station.id}" data-resource-type="hardware" data-resource-id="${hardware?.id||''}">
                         <small>HARDWARE</small>
                         <strong>${hardware?esc(hardware.code):'—'}</strong>
                         <span>${hardware?esc(hardware.model||''):'Non assegnato'}</span>
                         <i class="summary-edit-hint">Modifica</i>
                       </button>
 
-                      <button type="button" class="summary-resource summary-avid summary-assignable ${avidLevel} ${avidLevel!=='ok'?'pulse-critical':''}" data-summary-assign="license" data-station="${station.id}">
+                      <button type="button" class="summary-resource summary-avid summary-assignable ${avidLevel} ${avidLevel!=='ok'?'pulse-critical':''}" data-room-action="license" data-summary-assign="license" data-station="${station.id}" data-resource-type="licenses" data-resource-id="${avid?.id||''}">
                         <div class="resource-title-row"><small>AVID</small><span class="resource-expiry ${avidLevel}">${avidState.kind==='license'?esc(expiryLabel(avid)):avidState.kind==='trial'?esc(avidState.status.text):''}</span></div>
                         <strong>${avidState.kind==='license'?esc(avid.code):avidState.kind.startsWith('trial')?'TRIAL':'—'}</strong>
                         ${avidState.kind==='license'
-                          ? `<div class="badges"><span class="badge ${avid.avid_type==='Ultimate'?'ultimate':'singolo'}">${esc(avid.avid_type.toUpperCase())}</span><span class="badge ${avid.billing_cycle}">${cycleLabel(avid.billing_cycle)}</span></div><span class="resource-id"><small>SYSTEM ID</small><strong>${esc(avid.system_id||'—')}</strong></span>`
+                          ? `<div class="badges"><span class="badge ${avid.avid_type==='Ultimate'?'ultimate':'singolo'}">${esc(avid.avid_type.toUpperCase())}</span><span class="badge ${avid.billing_cycle}">${cycleLabel(avid.billing_cycle)}</span></div><span class="resource-id"><small>SYSTEM ID</small><strong>${esc(avid.system_id||'—')}</strong></span>${smartNote(avid.notes)}`
                           : avidState.kind==='trial-pending'
                             ? '<div class="badges"><span class="badge trial-pending">TRIAL DA ATTIVARE</span></div>'
                             : avidState.kind==='trial'
@@ -986,7 +977,7 @@ function summary(){
                         <i class="summary-edit-hint">Modifica</i>
                       </button>
 
-                      <button type="button" class="summary-resource summary-plugins summary-assignable ${pluginLevel} ${pluginLevel!=='ok'?'pulse-critical':''}" data-summary-assign="plugin" data-station="${station.id}">
+                      <button type="button" class="summary-resource summary-plugins summary-assignable ${pluginLevel} ${pluginLevel!=='ok'?'pulse-critical':''}" data-room-action="plugin" data-summary-assign="plugin" data-station="${station.id}" data-resource-type="licenses" data-resource-id="${plugins.length===1?plugins[0].id:''}">
                         <div class="resource-title-row"><small>PLUGIN</small><span></span></div>
                         ${plugins.length?plugins.map(plugin=>{
                           const status=licenseStatus(plugin);
@@ -994,6 +985,7 @@ function summary(){
                             <div class="plugin-head"><strong>${esc(plugin.plugin_type)}</strong><span class="resource-expiry ${status.level}">${esc(expiryLabel(plugin))}</span></div>
                             <div class="badges"><span class="badge ${plugin.billing_cycle}">${cycleLabel(plugin.billing_cycle)}</span></div>
                             <span class="resource-id"><small>SERIALE</small><strong>${esc(plugin.plugin_serial||'—')}</strong></span>
+                            ${smartNote(plugin.notes)}
                           </div>`;
                         }).join(''):'<span>Non assegnato</span>'}
                         <i class="summary-edit-hint">Modifica</i>
@@ -1059,7 +1051,7 @@ async function collectBackupData(){
     tables[table]=data||[];
   }
   return {
-    app:'DVS Gestionale',
+    app:'DVS Workspace',
     version:'V 8',
     exported_at:new Date().toISOString(),
     tables
@@ -1139,7 +1131,7 @@ function printHeader(title){
     <div>
       <strong>Digital Video Service</strong>
       <h1>${esc(title)}</h1>
-      <p>DVS Gestionale · Versione Build 6 · ${esc(now)}</p>
+      <p>DVS Workspace · Versione V 9 · ${esc(now)}</p>
     </div>
   </header>`;
 }
@@ -1147,7 +1139,7 @@ function printHeader(title){
 function printFooter(){
   return `<footer class="print-doc-footer">
     <span>© 2026 Digital Video Service S.r.l.</span>
-    <span>DVS Gestionale · Sviluppato da Marco D'Agostino</span>
+    <span>DVS Workspace · Sviluppato da Marco D'Agostino</span>
     <span>Progettazione, sviluppo e gestione del sistema</span>
   </footer>`;
 }
@@ -1350,7 +1342,7 @@ function settings(){
 function render(){
   if(!state.data)return;
   const add=document.getElementById('add-btn');
-  if(add)add.hidden=state.view==='dashboard'||state.view==='summary'||state.view==='settings';
+  if(add)add.hidden=state.view==='dashboard'||state.view==='rooms'||state.view==='settings';
   app.innerHTML=state.view==='dashboard'
     ?dashboard()
     :state.view==='rooms'
@@ -1361,9 +1353,7 @@ function render(){
           ?inventory('hardware')
           :state.view==='licenses'
             ?inventory('licenses')
-            :state.view==='summary'
-              ?summary()
-              :settings();
+            :settings();
   bindContent();
 }
 
@@ -1372,6 +1362,81 @@ function bindCompactHeader(){
   window.removeEventListener('scroll',update);
   window.addEventListener('scroll',update,{passive:true});
   update();
+}
+
+
+function bindRoomAssetInteractions(){
+  document.querySelectorAll('[data-room-action]').forEach(button=>{
+    const action=button.dataset.summaryAssign;
+    const stationId=button.dataset.station;
+    const resourceType=button.dataset.resourceType;
+    const resourceId=button.dataset.resourceId;
+    let clickTimer=null;
+    let longTimer=null;
+    let longPressed=false;
+    let startX=0,startY=0;
+
+    const mainAction=()=>assignmentSheet(action,stationId);
+    const detailAction=()=>{
+      if(resourceType&&resourceId)openDetail(resourceType,resourceId);
+      else mainAction();
+    };
+
+    button.addEventListener('contextmenu',event=>event.preventDefault());
+
+    button.addEventListener('dblclick',event=>{
+      event.preventDefault();
+      event.stopPropagation();
+      if(clickTimer){clearTimeout(clickTimer);clickTimer=null}
+      detailAction();
+    });
+
+    button.addEventListener('click',event=>{
+      if(event.pointerType==='touch'||event.detail>1)return;
+      event.preventDefault();
+      event.stopPropagation();
+      if(clickTimer)clearTimeout(clickTimer);
+      clickTimer=setTimeout(()=>{
+        clickTimer=null;
+        mainAction();
+      },280);
+    });
+
+    button.addEventListener('pointerdown',event=>{
+      if(event.pointerType==='mouse')return;
+      event.stopPropagation();
+      longPressed=false;
+      startX=event.clientX;
+      startY=event.clientY;
+      longTimer=setTimeout(()=>{
+        longPressed=true;
+        detailAction();
+      },560);
+    });
+
+    button.addEventListener('pointermove',event=>{
+      if(!longTimer)return;
+      if(Math.hypot(event.clientX-startX,event.clientY-startY)>10){
+        clearTimeout(longTimer);
+        longTimer=null;
+      }
+    });
+
+    const cancelLong=()=>{
+      if(longTimer){clearTimeout(longTimer);longTimer=null}
+    };
+
+    button.addEventListener('pointerup',event=>{
+      const wasLong=longPressed;
+      cancelLong();
+      if(event.pointerType!=='mouse'&&!wasLong){
+        event.preventDefault();
+        event.stopPropagation();
+        mainAction();
+      }
+    });
+    button.addEventListener('pointercancel',cancelLong);
+  });
 }
 
 function bindContent(){
@@ -1388,7 +1453,7 @@ function bindContent(){
   document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>openRoom(b.dataset.room));
   document.querySelectorAll('[data-open-license]').forEach(b=>b.onclick=()=>openDetail('licenses',b.dataset.openLicense));
   document.querySelectorAll('[data-setting]').forEach(b=>b.onclick=()=>openSetting(b.dataset.setting));
-  document.querySelectorAll('[data-summary-assign]').forEach(b=>b.onclick=()=>assignmentSheet(b.dataset.summaryAssign,b.dataset.station));
+  bindRoomAssetInteractions();
   document.querySelectorAll('[data-summary-room]').forEach(b=>{
     b.onclick=event=>{
       if(event.target.closest('[data-summary-server]'))return;
@@ -2032,7 +2097,7 @@ async function disablePushNotifications(){
 async function showLocalPushTest(){
   if(Notification.permission!=='granted')throw new Error('Prima attiva le notifiche.');
   const registration=await navigator.serviceWorker.ready;
-  await registration.showNotification('DVS Gestionale',{
+  await registration.showNotification('DVS Workspace',{
     body:'Notifiche attive su questo dispositivo.',
     icon:'./assets/logo-dvs.png',
     badge:'./assets/logo-dvs.png',
@@ -2161,8 +2226,8 @@ function openSetting(k){
     const activeHardware=state.data.hardware.filter(x=>!x.archived_at).length;
     const activeAvid=state.data.licenses.filter(x=>!x.archived_at&&x.category==='avid').length;
     const activePlugins=state.data.licenses.filter(x=>!x.archived_at&&x.category==='plugin').length;
-    const systemInfo=`DVS Gestionale
-Versione: Build 6
+    const systemInfo=`DVS Workspace
+Versione: V 9
 Database: Schema 4.3.1
 Sale: ${state.data.rooms.length}
 Computer: ${activeComputers}
@@ -2173,25 +2238,24 @@ Plugin: ${activePlugins}`;
     openModal(`<div class="modal-head"><h2>Informazioni</h2><button class="close" data-close>×</button></div>
       <section class="about-card about-v44">
         <img src="./assets/logo-dvs.png" alt="Digital Video Service">
-        <h3>DVS Gestionale</h3>
-        <p>Gestione Sale, Computer, Hardware e Licenze</p>
+        <h3>DVS Workspace</h3>
+        <p>Workspace operativo di Digital Video Service</p>
 
         <dl>
-          <div><dt>Versione</dt><dd>Build 6</dd></div>
-          <div><dt>Build</dt><dd>2026.07.15-B6</dd></div>
+          <div><dt>Versione</dt><dd>V 9</dd></div>
+          <div><dt>Release</dt><dd>V9</dd></div>
           <div><dt>Database</dt><dd>Supabase · Schema 4.3.1</dd></div>
         </dl>
 
         <div class="about-section">
           <h4>Novità di questa versione</h4>
           <ul class="changelog-list">
-            <li>Scadenze spostate nei riquadri Avid e Plugin</li>
-            <li>Criticità evidenziate con colore e pulsazione lenta</li>
-            <li>System ID e seriali visibili nella Sintesi</li>
-            <li>Non assegnati con scadenze e identificativi</li>
-            <li>Licenze ordinate per assegnazione e categoria</li>
-            <li>Produzione e nuova postazione dalla Sintesi</li>
-            <li>Rimozione diretta dei Plugin dalla postazione</li>
+            <li>Sintesi trasformata nella nuova sezione Sale</li>
+            <li>Vecchia schermata Sale eliminata</li>
+            <li>Interazioni uniformate tra Mac, iPhone e iPad</li>
+            <li>Note intelligenti visibili solo quando compilate</li>
+            <li>Sincronizzazione Realtime mantenuta</li>
+            <li>Identità aggiornata a DVS Workspace</li>
           </ul>
         </div>
 
@@ -2298,7 +2362,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});window.addEventListener('beforeunload',stopRealtime);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=8.realtime');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});window.addEventListener('beforeunload',stopRealtime);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=9.workspace');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();

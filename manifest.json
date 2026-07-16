@@ -1,6 +1,6 @@
 {
-  "name": "DVS Gestionale",
-  "short_name": "DVS",
+  "name": "DVS Workspace",
+  "short_name": "Workspace",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0e0e10",

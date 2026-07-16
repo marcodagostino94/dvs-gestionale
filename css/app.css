@@ -1326,3 +1326,47 @@ input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,2
   animation:dashboardPulseExpiredStep 2s steps(1,end) infinite!important;
   filter:none!important;
 }
+
+
+/* ===== V9 — Workspace, Sale unificate, Note intelligenti ===== */
+.smart-note{
+  width:100%;
+  margin-top:8px;
+  padding:7px 9px;
+  border-left:2px solid rgba(85,185,243,.58);
+  border-radius:0 9px 9px 0;
+  background:rgba(85,185,243,.07);
+  text-align:left;
+}
+.smart-note span{
+  display:block;
+  margin-bottom:2px;
+  color:rgba(126,199,255,.78);
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.65px;
+}
+.smart-note p{
+  margin:0!important;
+  color:rgba(255,255,255,.72)!important;
+  font-size:9px!important;
+  line-height:1.35;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+.summary-production-card > .smart-note{
+  margin:0 12px 10px;
+  width:auto;
+}
+.summary-resource .smart-note,
+.summary-plugin .smart-note{
+  margin-top:7px;
+}
+.unassigned-asset-card .smart-note{
+  margin-top:7px;
+}
+[data-room-action]{
+  -webkit-user-select:none!important;
+  user-select:none!important;
+  -webkit-touch-callout:none!important;
+}

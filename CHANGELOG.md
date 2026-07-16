@@ -136,3 +136,13 @@
 - Dashboard, Sintesi, Sale, Computer, Hardware, Licenze, Storico e Promemoria live.
 - Modali e menu aperti non vengono chiusi dagli aggiornamenti ricevuti.
 - Riallineamento automatico dopo una riconnessione.
+
+
+## V 9 — DVS Workspace
+- Sintesi spostata nella sezione Sale.
+- Eliminata la vecchia schermata Sale.
+- Unificata la gestione delle Sale in una sola pagina.
+- Interazioni uniformate: click/tap azione principale, doppio click/pressione lunga dettaglio.
+- Note intelligenti in Computer, Licenze e Sale.
+- Identità grafica Workspace con bagliore blu.
+- Pagina Informazioni e sistema di versionamento aggiornati.

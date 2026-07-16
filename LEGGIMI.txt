@@ -290,3 +290,13 @@ DVS GESTIONALE V 8
 - Aprire il gestionale su due dispositivi con lo stesso account per testare il Realtime.
 - Le modifiche effettuate su un dispositivo compaiono sugli altri dopo circa 1 secondo.
 - Non è necessario aggiornare manualmente la pagina.
+
+
+DVS WORKSPACE — V 9
+- La precedente Sintesi è diventata la sezione Sale.
+- La vecchia schermata Sale è stata eliminata.
+- Interazioni Sale: click/tap azione principale; doppio click/pressione lunga dettaglio.
+- Note intelligenti visibili solo quando compilate in Computer, Licenze e Sale.
+- Identità aggiornata a Workspace con icona DVS e bagliore blu.
+- Informazioni, cache, Service Worker e manifest aggiornati alla V9.
+- Nessuna SQL richiesta.
