@@ -24,6 +24,118 @@ function currentLocation(kind,id){const s=kind==='plugin'?pluginStation(id):stat
 async function refresh(){state.data=await loadAll();render()}
 
 
+const REALTIME_TABLES=[
+  'rooms',
+  'stations',
+  'computers',
+  'hardware',
+  'licenses',
+  'station_plugins',
+  'reminders',
+  'audit_log'
+];
+
+let realtimeChannel=null;
+let realtimeTimer=null;
+let realtimeLoading=false;
+let realtimePending=false;
+let realtimeGeneration=0;
+
+function realtimeUiIsEditing(){
+  return modal?.open||sheet?.open;
+}
+
+async function applyRealtimeChanges(){
+  if(!state.session)return;
+
+  if(realtimeLoading){
+    realtimePending=true;
+    return;
+  }
+
+  realtimeLoading=true;
+  const generation=++realtimeGeneration;
+
+  try{
+    const data=await loadAll();
+    if(generation!==realtimeGeneration)return;
+
+    state.data=data;
+
+    // render() aggiorna soltanto il contenuto dell'app.
+    // I dialog aperti vivono fuori da #app e rimangono quindi intatti.
+    render();
+  }catch(error){
+    console.warn('DVS Realtime: aggiornamento non riuscito',error);
+  }finally{
+    realtimeLoading=false;
+
+    if(realtimePending){
+      realtimePending=false;
+      scheduleRealtimeRefresh();
+    }
+  }
+}
+
+function scheduleRealtimeRefresh(){
+  if(!state.session)return;
+
+  clearTimeout(realtimeTimer);
+  realtimeTimer=setTimeout(()=>{
+    realtimeTimer=null;
+    applyRealtimeChanges();
+  },1000);
+}
+
+function stopRealtime(){
+  clearTimeout(realtimeTimer);
+  realtimeTimer=null;
+  realtimePending=false;
+  realtimeGeneration++;
+
+  if(realtimeChannel){
+    supabase.removeChannel(realtimeChannel);
+    realtimeChannel=null;
+  }
+}
+
+function startRealtime(){
+  stopRealtime();
+  if(!state.session)return;
+
+  let channel=supabase.channel(`dvs-live-${state.session.user.id}`,{
+    config:{
+      broadcast:{self:false},
+      presence:{key:state.session.user.id}
+    }
+  });
+
+  REALTIME_TABLES.forEach(table=>{
+    channel=channel.on(
+      'postgres_changes',
+      {
+        event:'*',
+        schema:'public',
+        table
+      },
+      scheduleRealtimeRefresh
+    );
+  });
+
+  realtimeChannel=channel.subscribe(status=>{
+    if(status==='SUBSCRIBED'){
+      // Allinea il dispositivo anche dopo una riconnessione.
+      scheduleRealtimeRefresh();
+    }
+
+    if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
+      console.warn(`DVS Realtime: ${status}`);
+    }
+  });
+}
+
+
+
 function dashboardNavigate(view,filter='all'){
   state.view=view;
   state.filter=filter;
@@ -948,7 +1060,7 @@ async function collectBackupData(){
   }
   return {
     app:'DVS Gestionale',
-    version:'Build 7.1.2',
+    version:'V 8',
     exported_at:new Date().toISOString(),
     tables
   };
@@ -2143,7 +2255,28 @@ async function boot(){
     handleSession(s);
   });
 }
-async function handleSession(session){state.session=session;if(!session){shell.classList.add('hidden');login.classList.remove('hidden');return}login.classList.add('hidden');shell.classList.remove('hidden');greeting.textContent=`Digital Video Service · ${session.user.email}`;try{await refresh()}catch(e){app.innerHTML=`<div class="empty"><strong>Database non ancora configurato.</strong><br><br>Esegui il file <code>sql/setup.sql</code> nel SQL Editor di Supabase e ricarica.<br><br>${esc(e.message)}</div>`}}
+async function handleSession(session){
+  state.session=session;
+
+  if(!session){
+    stopRealtime();
+    shell.classList.add('hidden');
+    login.classList.remove('hidden');
+    return;
+  }
+
+  login.classList.add('hidden');
+  shell.classList.remove('hidden');
+  greeting.textContent=`Digital Video Service · ${session.user.email}`;
+
+  try{
+    await refresh();
+    startRealtime();
+  }catch(e){
+    stopRealtime();
+    app.innerHTML=`<div class="empty"><strong>Database non ancora configurato.</strong><br><br>Esegui il file <code>sql/setup.sql</code> nel SQL Editor di Supabase e ricarica.<br><br>${esc(e.message)}</div>`;
+  }
+}
 document.getElementById('login-form').onsubmit=async e=>{
   e.preventDefault();
   document.getElementById('login-error').textContent='';
@@ -2165,7 +2298,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=7.1.2.dashpulse');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});window.addEventListener('beforeunload',stopRealtime);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=8.realtime');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();

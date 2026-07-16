@@ -282,3 +282,11 @@ BUILD 7.1.2 — Dashboard Pulse Fix
 - Alternanza netta: 1 secondo acceso / 1 secondo spento.
 - Rimossi filtri e transizioni continue dalla Dashboard.
 - Nessuna SQL richiesta.
+
+
+DVS GESTIONALE V 8
+- Eseguire una sola volta: sql/migrate_v_8_realtime.sql
+- Nessuna modifica a Edge Function, cron o secret.
+- Aprire il gestionale su due dispositivi con lo stesso account per testare il Realtime.
+- Le modifiche effettuate su un dispositivo compaiono sugli altri dopo circa 1 secondo.
+- Non è necessario aggiornare manualmente la pagina.

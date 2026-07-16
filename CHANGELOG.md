@@ -127,3 +127,12 @@
 ### Build 7.1.2 — Dashboard Pulse Fix
 - Pulse giallo e rosso della Dashboard reso netto e fluido.
 - Eliminata l'animazione continua di gradienti e luminosità.
+
+
+## V 8 — Sincronizzazione Realtime
+- Sincronizzazione automatica tra Mac, iPhone e iPad.
+- Aggiornamento dei dati senza ricaricare la pagina.
+- Eventi ravvicinati raggruppati in un solo aggiornamento dopo circa 1 secondo.
+- Dashboard, Sintesi, Sale, Computer, Hardware, Licenze, Storico e Promemoria live.
+- Modali e menu aperti non vengono chiusi dagli aggiornamenti ricevuti.
+- Riallineamento automatico dopo una riconnessione.
