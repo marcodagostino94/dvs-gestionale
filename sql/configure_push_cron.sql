@@ -3,8 +3,8 @@
 -- 1. aver distribuito la Edge Function send-expiry-notifications;
 -- 2. aver salvato la SERVICE ROLE KEY nel Vault.
 --
--- Il processo parte ogni giorno alle 07:00 UTC:
--- circa le 09:00 in Italia durante l'ora legale e le 08:00 durante l'ora solare.
+-- Il processo parte ogni giorno alle 10:00 UTC:
+-- circa le 12:00 in Italia durante l'ora legale e le 11:00 durante l'ora solare.
 
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
@@ -25,7 +25,7 @@ where exists (
 
 select cron.schedule(
   'dvs-expiry-notifications',
-  '0 7 * * *',
+  '0 10 * * *',
   $$
   select net.http_post(
     url := 'https://fybkmudsrzyrhyoludsg.supabase.co/functions/v1/send-expiry-notifications',

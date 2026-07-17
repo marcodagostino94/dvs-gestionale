@@ -2133,11 +2133,17 @@ function pushSupported(){
 function isStandaloneApp(){
   return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 }
+async function serviceWorkerRegistration(timeoutMs=6000){
+  if(!('serviceWorker' in navigator))return null;
+  const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Il Service Worker non risponde. Chiudi e riapri l’app, poi riprova.')),timeoutMs));
+  return Promise.race([navigator.serviceWorker.ready,timeout]);
+}
 async function rawPushSubscription(){
   if(!pushSupported())return null;
-  const registration=await navigator.serviceWorker.ready;
-  return registration.pushManager.getSubscription();
+  const registration=await serviceWorkerRegistration();
+  return registration?.pushManager?.getSubscription()||null;
 }
+
 function bytesEqual(left,right){
   if(!left||!right||left.byteLength!==right.byteLength)return false;
   const a=new Uint8Array(left),b=new Uint8Array(right);
@@ -2207,58 +2213,66 @@ async function showLocalPushTest(){
 }
 async function openNotificationsSetting(){
   const supported=pushSupported();
-  const rawSubscription=supported?await rawPushSubscription():null;
-  const subscription=rawSubscription&&subscriptionUsesCurrentKey(rawSubscription)?rawSubscription:null;
-  const needsUpdate=!!rawSubscription&&!subscription;
   const installed=isStandaloneApp();
   const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
 
+  // Il pannello viene aperto immediatamente: il controllo del Service Worker
+  // non può più bloccare il pulsante Notifiche.
   openModal(`<div class="modal-head"><h2>Notifiche</h2><button class="close" data-close>×</button></div>
     <section class="notification-settings">
-      <div class="notification-state ${subscription?'enabled':'disabled'}">
-        <strong>${subscription?'Notifiche attive':needsUpdate?'Aggiornamento notifiche richiesto':'Notifiche non attive'}</strong>
-        <span>${supported?(needsUpdate?'Premi Aggiorna notifiche per registrare la nuova chiave di sicurezza.':'Questo dispositivo può ricevere gli avvisi delle scadenze.'):'Questo browser non supporta le notifiche push.'}</span>
+      <div class="notification-state disabled" id="notification-state">
+        <strong>Verifica in corso…</strong>
+        <span>Controllo della registrazione push di questo dispositivo.</span>
       </div>
-
       ${isiOS&&!installed?`<div class="notification-notice"><strong>Su iPhone e iPad</strong><span>Apri il gestionale da Safari, scegli Condividi → Aggiungi alla schermata Home, poi riaprilo dall’icona.</span></div>`:''}
-
       <div class="notification-schedule">
         <h3>Avvisi previsti</h3>
-        <div><span>10 giorni prima</span><strong>✓</strong></div>
+        <div><span>Licenze e Trial: 10 giorni prima</span><strong>✓</strong></div>
         <div><span>5 giorni prima</span><strong>✓</strong></div>
         <div><span>3 giorni prima</span><strong>✓</strong></div>
         <div><span>1 giorno prima</span><strong>✓</strong></div>
         <div><span>Giorno della scadenza</span><strong>✓</strong></div>
         <div><span>Dopo la scadenza</span><strong>Una volta al giorno</strong></div>
+        <div><span>Controllo Supabase</span><strong>Ogni giorno alle 10:00 UTC</strong></div>
       </div>
-
-      <div class="actions">
-        ${subscription
-          ? '<button class="secondary" id="test-notifications">Prova notifica</button><button class="danger" id="disable-notifications">Disattiva</button>'
-          : '<button class="primary" id="enable-notifications" '+(!supported?'disabled':'')+'>'+(needsUpdate?'Aggiorna notifiche':'Attiva notifiche')+'</button>'}
-      </div>
+      <div class="actions" id="notification-actions"></div>
     </section>`);
 
-  document.getElementById('enable-notifications')?.addEventListener('click',async()=>{
-    try{
-      await enablePushNotifications();
-      showToast('Notifiche attivate');
-      modal.close();
-      await openNotificationsSetting();
-    }catch(error){alert(error.message)}
-  });
-  document.getElementById('disable-notifications')?.addEventListener('click',async()=>{
-    if(!confirm('Disattivare le notifiche su questo dispositivo?'))return;
-    try{
-      await disablePushNotifications();
-      showToast('Notifiche disattivate');
-      modal.close();
-      await openNotificationsSetting();
-    }catch(error){alert(error.message)}
-  });
-  document.getElementById('test-notifications')?.addEventListener('click',async()=>{
-    try{await showLocalPushTest()}catch(error){alert(error.message)}
-  });
+  const stateBox=document.getElementById('notification-state');
+  const actions=document.getElementById('notification-actions');
+  if(!supported){
+    stateBox.innerHTML='<strong>Notifiche non supportate</strong><span>Questo browser o dispositivo non supporta le notifiche push.</span>';
+    actions.innerHTML='<button class="secondary" data-close>Chiudi</button>';
+    actions.querySelector('[data-close]')?.addEventListener('click',()=>modal.close());
+    return;
+  }
+
+  try{
+    const rawSubscription=await rawPushSubscription();
+    const subscription=rawSubscription&&subscriptionUsesCurrentKey(rawSubscription)?rawSubscription:null;
+    const needsUpdate=!!rawSubscription&&!subscription;
+    stateBox.className=`notification-state ${subscription?'enabled':'disabled'}`;
+    stateBox.innerHTML=`<strong>${subscription?'Notifiche attive':needsUpdate?'Aggiornamento notifiche richiesto':'Notifiche non attive'}</strong><span>${needsUpdate?'Premi Aggiorna notifiche per registrare la chiave di sicurezza corrente.':'Questo dispositivo può ricevere gli avvisi inviati da Supabase.'}</span>`;
+    actions.innerHTML=subscription
+      ? '<button class="secondary" id="test-notifications">Prova notifica</button><button class="danger" id="disable-notifications">Disattiva</button>'
+      : `<button class="primary" id="enable-notifications">${needsUpdate?'Aggiorna notifiche':'Attiva notifiche'}</button>`;
+
+    document.getElementById('enable-notifications')?.addEventListener('click',async()=>{
+      try{await enablePushNotifications();showToast('Notifiche attivate');modal.close();await openNotificationsSetting()}catch(error){alert(error.message)}
+    });
+    document.getElementById('disable-notifications')?.addEventListener('click',async()=>{
+      if(!confirm('Disattivare le notifiche su questo dispositivo?'))return;
+      try{await disablePushNotifications();showToast('Notifiche disattivate');modal.close();await openNotificationsSetting()}catch(error){alert(error.message)}
+    });
+    document.getElementById('test-notifications')?.addEventListener('click',async()=>{
+      try{await showLocalPushTest()}catch(error){alert(error.message)}
+    });
+  }catch(error){
+    stateBox.className='notification-state disabled';
+    stateBox.innerHTML=`<strong>Impossibile verificare le notifiche</strong><span>${esc(error.message||'Errore sconosciuto')}</span>`;
+    actions.innerHTML='<button class="primary" id="retry-notifications">Riprova</button>';
+    document.getElementById('retry-notifications')?.addEventListener('click',()=>{modal.close();openNotificationsSetting()});
+  }
 }
 
 function openSetting(k){
@@ -2463,7 +2477,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});window.addEventListener('beforeunload',stopRealtime);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=9.finale');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});window.addEventListener('beforeunload',stopRealtime);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=10.pre-golden');boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();

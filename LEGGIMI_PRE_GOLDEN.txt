@@ -1,0 +1,15 @@
+DVS Workspace — V10 Pre-Golden
+
+L'app è stata modificata esclusivamente nella sezione Notifiche.
+
+Per completare l'estensione delle push alle Trial attive su Supabase:
+1. Eseguire sql/migrate_v10_pre_golden_trial_notifications.sql nel SQL Editor.
+2. Sostituire e distribuire la Edge Function:
+   supabase/functions/send-expiry-notifications/index.ts
+3. Per programmare il controllo alle 10:00 UTC, rieseguire la parte cron di
+   sql/configure_push_cron.sql. Non ricreare il secret nel Vault se esiste già:
+   in quel caso eseguire soltanto unschedule + cron.schedule.
+4. Pubblicare i file dell'app aggiornati e aprire Settings → Notifiche.
+
+Nota oraria: 10:00 UTC corrisponde normalmente alle 11:00 o 12:00 in Italia,
+in base all'ora solare/legale, come accettato per questo progetto.

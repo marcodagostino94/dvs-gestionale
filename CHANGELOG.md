@@ -170,3 +170,11 @@
 - Intestazione DVS, stile uniforme e numerazione pagine.
 - Correzione delle icone nella sezione Settings.
 - Aggiornamento degli asset delle notifiche al logo Workspace.
+
+## V10 Pre-Golden — Notifiche
+- Ripristinata l’apertura immediata del pannello Notifiche anche se il Service Worker tarda a rispondere.
+- Aggiunti messaggi di errore e pulsante Riprova senza bloccare la schermata Settings.
+- Mantenute registrazione Web Push, VAPID e sottoscrizioni Supabase esistenti.
+- Estesi gli avvisi alle Trial Avid attive con scadenza.
+- Cron di esempio aggiornato alle 10:00 UTC quotidiane.
+- Nessuna modifica alle altre funzioni approvate della V10.
