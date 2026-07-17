@@ -313,3 +313,11 @@ V9 CORRETTA
 - Avid e Plugin: dettaglio con doppio click/pressione lunga.
 - Workspace PNG usate come icone effettive.
 - icon.svg non più usata come icona principale.
+
+
+V9 — CORREZIONE FINALE
+- Eliminata la riapertura del vecchio menu Sale dopo le assegnazioni.
+- Tap/click singolo apre solo la selezione diretta dell'asset.
+- Doppio click/pressione lunga mantiene l'apertura dettaglio.
+- Icona Workspace ritagliata dalla versione approvata, senza margine esterno.
+- Nessuna SQL richiesta.

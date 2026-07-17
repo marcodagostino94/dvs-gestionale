@@ -156,3 +156,8 @@
 ### V9 corretta
 - Fix dettaglio Avid/Plugin nella sezione Sale.
 - Fix icone Workspace nel manifest e in iOS/macOS.
+
+
+### V9 — Correzione finale
+- Rimosso il vecchio menu Sale richiamato dopo un'assegnazione.
+- Icona Workspace aggiornata con ritaglio full-bleed per iOS/macOS.
