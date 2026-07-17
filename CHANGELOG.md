@@ -176,3 +176,11 @@
 - Eliminato il fallimento totale dell'installazione quando una singola risorsa non è disponibile.
 - Forzato l'aggiornamento del Service Worker senza cache e aggiunti timeout diagnostici.
 - Nessuna modifica alle altre funzioni o all'interfaccia approvata della V10.
+
+## V_10_GOLD_MASTER_07_2026
+- Release finale approvata di DVS Workspace.
+- Versione centralizzata e aggiornata in Informazioni, Notifiche, stampe e backup.
+- Pulizia conservativa del codice senza modifiche alle funzioni approvate.
+- Cache e Service Worker riallineati alla release finale.
+- Verifica conclusiva del sistema notifiche push su Mac e iPhone.
+- Stabilizzazione finale per la pubblicazione su GitHub Pages.

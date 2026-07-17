@@ -1,0 +1,21 @@
+DVS WORKSPACE — V_10_GOLD_MASTER_07_2026
+
+INTERVENTI FINALI
+- Versione finale centralizzata nel codice.
+- Numero versione aggiornato nella sezione Informazioni.
+- Numero versione aggiunto nella sezione Notifiche.
+- Versione aggiornata nelle stampe e nei backup esportati.
+- Cache-busting e Service Worker riallineati alla release finale.
+- Changelog e documentazione aggiornati.
+- Nessuna modifica ai flussi operativi, ai dati, al database o all'interfaccia approvata.
+
+CONTROLLI ESEGUITI
+- Controllo sintattico di js/app.js: superato.
+- Controllo sintattico di sw.js: superato.
+- Verifica riferimenti obsoleti principali: superata.
+- Struttura del pacchetto: verificata.
+
+NOTA DI PUBBLICAZIONE
+Sostituire il contenuto del repository con i file di questo pacchetto, eseguire commit e push,
+quindi attendere l'aggiornamento di GitHub Pages. Alla prima apertura è consigliato chiudere e
+riaprire l'app per consentire l'attivazione del nuovo Service Worker.

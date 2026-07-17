@@ -1397,3 +1397,7 @@ input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,2
   @page portrait{size:A4 portrait;margin:14mm 12mm 20mm}
   @page landscape{size:A4 landscape;margin:12mm 12mm 18mm}
 }
+
+/* Gold Master: metadati versione nel pannello notifiche */
+.notification-version{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 4px;color:var(--muted);font-size:.9rem}
+.notification-version strong{color:var(--text);font-size:.85rem;text-align:right;overflow-wrap:anywhere}

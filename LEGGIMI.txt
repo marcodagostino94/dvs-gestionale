@@ -1,3 +1,6 @@
+DVS WORKSPACE — V_10_GOLD_MASTER_07_2026
+Release finale · Luglio 2026
+
 DVS GESTIONALE v4.0 — BASE PULITA
 
 1. Apri Supabase > SQL Editor > New query.

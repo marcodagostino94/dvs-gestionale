@@ -1,9 +1,9 @@
-const CACHE='dvs-v-10-1-pre-golden';
+const CACHE='dvs-v-10-gold-master-07-2026';
 const ASSETS=[
   './',
   './index.html',
-  './css/app.css?v=10',
-  './js/app.js?v=10',
+  './css/app.css?v=10-gold-master-07-2026',
+  './js/app.js?v=10-gold-master-07-2026',
   './js/api.js',
   './js/config.js',
   './js/supabase.js',
@@ -12,7 +12,7 @@ const ASSETS=[
   './assets/apple-touch-icon.png',
   './assets/workspace-icon-192.png',
   './assets/workspace-icon-512.png',
-  './manifest.webmanifest?v=10',
+  './manifest.webmanifest?v=10-gold-master-07-2026',
   './manifest.json'
 ];
 

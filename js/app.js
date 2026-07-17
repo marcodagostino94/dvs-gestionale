@@ -2,6 +2,11 @@ import { supabase } from './supabase.js';
 import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, addAudit } from './api.js';
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
+const APP_NAME='DVS Workspace';
+const APP_VERSION='V_10_GOLD_MASTER_07_2026';
+const APP_RELEASE='Gold Master · 07/2026';
+const DATABASE_SCHEMA='4.3.1';
+
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
 
 const splash=document.getElementById('splash'),login=document.getElementById('login'),shell=document.getElementById('shell'),app=document.getElementById('app'),title=document.getElementById('title'),greeting=document.getElementById('greeting'),modal=document.getElementById('modal'),modalBody=document.getElementById('modal-body'),sheet=document.getElementById('sheet'),sheetBody=document.getElementById('sheet-body'),toast=document.getElementById('toast');
@@ -1063,8 +1068,8 @@ async function collectBackupData(){
     tables[table]=data||[];
   }
   return {
-    app:'DVS Workspace',
-    version:'V 8',
+    app:APP_NAME,
+    version:APP_VERSION,
     exported_at:new Date().toISOString(),
     tables
   };
@@ -1143,7 +1148,7 @@ function printHeader(title){
     <div>
       <strong>Digital Video Service</strong>
       <h1>${esc(title)}</h1>
-      <p>DVS Workspace · Versione V 10 · ${esc(now)}</p>
+      <p>${APP_NAME} · Versione ${APP_VERSION} · ${esc(now)}</p>
     </div>
   </header>`;
 }
@@ -2130,7 +2135,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=10.1-pre-golden';
+const SERVICE_WORKER_URL='./sw.js?v=10-gold-master-07-2026';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');
@@ -2258,6 +2263,8 @@ async function openNotificationsSetting(){
 
       ${isiOS&&!installed?`<div class="notification-notice"><strong>Su iPhone e iPad</strong><span>Apri il gestionale da Safari, scegli Condividi → Aggiungi alla schermata Home, poi riaprilo dall’icona.</span></div>`:''}
 
+      <div class="notification-version"><span>Versione</span><strong>${APP_VERSION}</strong></div>
+
       <div class="notification-schedule">
         <h3>Avvisi previsti</h3>
         <div><span>10 giorni prima</span><strong>✓</strong></div>
@@ -2363,9 +2370,10 @@ function openSetting(k){
     const activeHardware=state.data.hardware.filter(x=>!x.archived_at).length;
     const activeAvid=state.data.licenses.filter(x=>!x.archived_at&&x.category==='avid').length;
     const activePlugins=state.data.licenses.filter(x=>!x.archived_at&&x.category==='plugin').length;
-    const systemInfo=`DVS Workspace
-Versione: V 9
-Database: Schema 4.3.1
+    const systemInfo=`${APP_NAME}
+Versione: ${APP_VERSION}
+Release: ${APP_RELEASE}
+Database: Schema ${DATABASE_SCHEMA}
 Sale: ${state.data.rooms.length}
 Computer: ${activeComputers}
 Hardware: ${activeHardware}
@@ -2375,24 +2383,24 @@ Plugin: ${activePlugins}`;
     openModal(`<div class="modal-head"><h2>Informazioni</h2><button class="close" data-close>×</button></div>
       <section class="about-card about-v44">
         <img src="./assets/logo-dvs.png" alt="Digital Video Service">
-        <h3>DVS Workspace</h3>
+        <h3>${APP_NAME}</h3>
         <p>Workspace operativo di Digital Video Service</p>
 
         <dl>
-          <div><dt>Versione</dt><dd>V 9</dd></div>
-          <div><dt>Release</dt><dd>V9</dd></div>
-          <div><dt>Database</dt><dd>Supabase · Schema 4.3.1</dd></div>
+          <div><dt>Versione</dt><dd>${APP_VERSION}</dd></div>
+          <div><dt>Release</dt><dd>${APP_RELEASE}</dd></div>
+          <div><dt>Database</dt><dd>Supabase · Schema ${DATABASE_SCHEMA}</dd></div>
         </dl>
 
         <div class="about-section">
           <h4>Novità di questa versione</h4>
           <ul class="changelog-list">
-            <li>Sintesi trasformata nella nuova sezione Sale</li>
-            <li>Vecchia schermata Sale eliminata</li>
-            <li>Interazioni uniformate tra Mac, iPhone e iPad</li>
-            <li>Note intelligenti visibili solo quando compilate</li>
-            <li>Sincronizzazione Realtime mantenuta</li>
-            <li>Identità aggiornata a DVS Workspace</li>
+            <li>Centro Stampa definitivo e uniforme</li>
+            <li>Notifiche push verificate su Mac e iPhone</li>
+            <li>Controlli automatici delle scadenze e delle Trial</li>
+            <li>Service Worker stabilizzato per GitHub Pages</li>
+            <li>Metadati di versione centralizzati</li>
+            <li>Pulizia e stabilizzazione finale del codice</li>
           </ul>
         </div>
 
