@@ -171,10 +171,8 @@
 - Correzione delle icone nella sezione Settings.
 - Aggiornamento degli asset delle notifiche al logo Workspace.
 
-## V10 Pre-Golden — Notifiche
-- Ripristinata l’apertura immediata del pannello Notifiche anche se il Service Worker tarda a rispondere.
-- Aggiunti messaggi di errore e pulsante Riprova senza bloccare la schermata Settings.
-- Mantenute registrazione Web Push, VAPID e sottoscrizioni Supabase esistenti.
-- Estesi gli avvisi alle Trial Avid attive con scadenza.
-- Cron di esempio aggiornato alle 10:00 UTC quotidiane.
-- Nessuna modifica alle altre funzioni approvate della V10.
+## V10.1 Pre-Golden
+- Ripristinata la registrazione affidabile del Service Worker su GitHub Pages.
+- Eliminato il fallimento totale dell'installazione quando una singola risorsa non è disponibile.
+- Forzato l'aggiornamento del Service Worker senza cache e aggiunti timeout diagnostici.
+- Nessuna modifica alle altre funzioni o all'interfaccia approvata della V10.

@@ -2130,20 +2130,50 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
+const SERVICE_WORKER_URL='./sw.js?v=10.1-pre-golden';
+let serviceWorkerRegistrationPromise=null;
+async function ensureServiceWorkerRegistration(){
+  if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');
+  if(!serviceWorkerRegistrationPromise){
+    serviceWorkerRegistrationPromise=(async()=>{
+      const registration=await navigator.serviceWorker.register(SERVICE_WORKER_URL,{scope:'./',updateViaCache:'none'});
+      try{await registration.update()}catch(error){console.warn('[DVS] Aggiornamento Service Worker non riuscito:',error)}
+      if(registration.active)return registration;
+      const worker=registration.installing||registration.waiting;
+      if(worker){
+        await new Promise((resolve,reject)=>{
+          const timeout=setTimeout(()=>reject(new Error('Il Service Worker non si è attivato in tempo.')),12000);
+          const verify=()=>{
+            if(worker.state==='activated'){
+              clearTimeout(timeout);resolve();
+            }else if(worker.state==='redundant'){
+              clearTimeout(timeout);reject(new Error('Installazione del Service Worker non riuscita.'));
+            }
+          };
+          worker.addEventListener('statechange',verify);
+          verify();
+        });
+      }
+      const ready=await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_,reject)=>setTimeout(()=>reject(new Error('Il Service Worker non risponde. Ricarica la pagina e riprova.')),12000))
+      ]);
+      return ready;
+    })().catch(error=>{
+      serviceWorkerRegistrationPromise=null;
+      throw error;
+    });
+  }
+  return serviceWorkerRegistrationPromise;
+}
 function isStandaloneApp(){
   return window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 }
-async function serviceWorkerRegistration(timeoutMs=6000){
-  if(!('serviceWorker' in navigator))return null;
-  const timeout=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Il Service Worker non risponde. Chiudi e riapri l’app, poi riprova.')),timeoutMs));
-  return Promise.race([navigator.serviceWorker.ready,timeout]);
-}
 async function rawPushSubscription(){
   if(!pushSupported())return null;
-  const registration=await serviceWorkerRegistration();
-  return registration?.pushManager?.getSubscription()||null;
+  const registration=await ensureServiceWorkerRegistration();
+  return registration.pushManager.getSubscription();
 }
-
 function bytesEqual(left,right){
   if(!left||!right||left.byteLength!==right.byteLength)return false;
   const a=new Uint8Array(left),b=new Uint8Array(right);
@@ -2175,7 +2205,7 @@ async function enablePushNotifications(){
   if(!pushSupported())throw new Error('Le notifiche push non sono supportate su questo dispositivo o browser.');
   const permission=await Notification.requestPermission();
   if(permission!=='granted')throw new Error('Autorizzazione alle notifiche non concessa.');
-  const registration=await navigator.serviceWorker.ready;
+  const registration=await ensureServiceWorkerRegistration();
   let subscription=await registration.pushManager.getSubscription();
 
   if(subscription&&!subscriptionUsesCurrentKey(subscription)){
@@ -2203,7 +2233,7 @@ async function disablePushNotifications(){
 }
 async function showLocalPushTest(){
   if(Notification.permission!=='granted')throw new Error('Prima attiva le notifiche.');
-  const registration=await navigator.serviceWorker.ready;
+  const registration=await ensureServiceWorkerRegistration();
   await registration.showNotification('DVS Workspace',{
     body:'Notifiche attive su questo dispositivo.',
     icon:'./assets/logo-dvs.png',
@@ -2213,66 +2243,58 @@ async function showLocalPushTest(){
 }
 async function openNotificationsSetting(){
   const supported=pushSupported();
+  const rawSubscription=supported?await rawPushSubscription():null;
+  const subscription=rawSubscription&&subscriptionUsesCurrentKey(rawSubscription)?rawSubscription:null;
+  const needsUpdate=!!rawSubscription&&!subscription;
   const installed=isStandaloneApp();
   const isiOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
 
-  // Il pannello viene aperto immediatamente: il controllo del Service Worker
-  // non può più bloccare il pulsante Notifiche.
   openModal(`<div class="modal-head"><h2>Notifiche</h2><button class="close" data-close>×</button></div>
     <section class="notification-settings">
-      <div class="notification-state disabled" id="notification-state">
-        <strong>Verifica in corso…</strong>
-        <span>Controllo della registrazione push di questo dispositivo.</span>
+      <div class="notification-state ${subscription?'enabled':'disabled'}">
+        <strong>${subscription?'Notifiche attive':needsUpdate?'Aggiornamento notifiche richiesto':'Notifiche non attive'}</strong>
+        <span>${supported?(needsUpdate?'Premi Aggiorna notifiche per registrare la nuova chiave di sicurezza.':'Questo dispositivo può ricevere gli avvisi delle scadenze.'):'Questo browser non supporta le notifiche push.'}</span>
       </div>
+
       ${isiOS&&!installed?`<div class="notification-notice"><strong>Su iPhone e iPad</strong><span>Apri il gestionale da Safari, scegli Condividi → Aggiungi alla schermata Home, poi riaprilo dall’icona.</span></div>`:''}
+
       <div class="notification-schedule">
         <h3>Avvisi previsti</h3>
-        <div><span>Licenze e Trial: 10 giorni prima</span><strong>✓</strong></div>
+        <div><span>10 giorni prima</span><strong>✓</strong></div>
         <div><span>5 giorni prima</span><strong>✓</strong></div>
         <div><span>3 giorni prima</span><strong>✓</strong></div>
         <div><span>1 giorno prima</span><strong>✓</strong></div>
         <div><span>Giorno della scadenza</span><strong>✓</strong></div>
         <div><span>Dopo la scadenza</span><strong>Una volta al giorno</strong></div>
-        <div><span>Controllo Supabase</span><strong>Ogni giorno alle 10:00 UTC</strong></div>
       </div>
-      <div class="actions" id="notification-actions"></div>
+
+      <div class="actions">
+        ${subscription
+          ? '<button class="secondary" id="test-notifications">Prova notifica</button><button class="danger" id="disable-notifications">Disattiva</button>'
+          : '<button class="primary" id="enable-notifications" '+(!supported?'disabled':'')+'>'+(needsUpdate?'Aggiorna notifiche':'Attiva notifiche')+'</button>'}
+      </div>
     </section>`);
 
-  const stateBox=document.getElementById('notification-state');
-  const actions=document.getElementById('notification-actions');
-  if(!supported){
-    stateBox.innerHTML='<strong>Notifiche non supportate</strong><span>Questo browser o dispositivo non supporta le notifiche push.</span>';
-    actions.innerHTML='<button class="secondary" data-close>Chiudi</button>';
-    actions.querySelector('[data-close]')?.addEventListener('click',()=>modal.close());
-    return;
-  }
-
-  try{
-    const rawSubscription=await rawPushSubscription();
-    const subscription=rawSubscription&&subscriptionUsesCurrentKey(rawSubscription)?rawSubscription:null;
-    const needsUpdate=!!rawSubscription&&!subscription;
-    stateBox.className=`notification-state ${subscription?'enabled':'disabled'}`;
-    stateBox.innerHTML=`<strong>${subscription?'Notifiche attive':needsUpdate?'Aggiornamento notifiche richiesto':'Notifiche non attive'}</strong><span>${needsUpdate?'Premi Aggiorna notifiche per registrare la chiave di sicurezza corrente.':'Questo dispositivo può ricevere gli avvisi inviati da Supabase.'}</span>`;
-    actions.innerHTML=subscription
-      ? '<button class="secondary" id="test-notifications">Prova notifica</button><button class="danger" id="disable-notifications">Disattiva</button>'
-      : `<button class="primary" id="enable-notifications">${needsUpdate?'Aggiorna notifiche':'Attiva notifiche'}</button>`;
-
-    document.getElementById('enable-notifications')?.addEventListener('click',async()=>{
-      try{await enablePushNotifications();showToast('Notifiche attivate');modal.close();await openNotificationsSetting()}catch(error){alert(error.message)}
-    });
-    document.getElementById('disable-notifications')?.addEventListener('click',async()=>{
-      if(!confirm('Disattivare le notifiche su questo dispositivo?'))return;
-      try{await disablePushNotifications();showToast('Notifiche disattivate');modal.close();await openNotificationsSetting()}catch(error){alert(error.message)}
-    });
-    document.getElementById('test-notifications')?.addEventListener('click',async()=>{
-      try{await showLocalPushTest()}catch(error){alert(error.message)}
-    });
-  }catch(error){
-    stateBox.className='notification-state disabled';
-    stateBox.innerHTML=`<strong>Impossibile verificare le notifiche</strong><span>${esc(error.message||'Errore sconosciuto')}</span>`;
-    actions.innerHTML='<button class="primary" id="retry-notifications">Riprova</button>';
-    document.getElementById('retry-notifications')?.addEventListener('click',()=>{modal.close();openNotificationsSetting()});
-  }
+  document.getElementById('enable-notifications')?.addEventListener('click',async()=>{
+    try{
+      await enablePushNotifications();
+      showToast('Notifiche attivate');
+      modal.close();
+      await openNotificationsSetting();
+    }catch(error){alert(error.message)}
+  });
+  document.getElementById('disable-notifications')?.addEventListener('click',async()=>{
+    if(!confirm('Disattivare le notifiche su questo dispositivo?'))return;
+    try{
+      await disablePushNotifications();
+      showToast('Notifiche disattivate');
+      modal.close();
+      await openNotificationsSetting();
+    }catch(error){alert(error.message)}
+  });
+  document.getElementById('test-notifications')?.addEventListener('click',async()=>{
+    try{await showLocalPushTest()}catch(error){alert(error.message)}
+  });
 }
 
 function openSetting(k){
@@ -2477,7 +2499,7 @@ document.getElementById('login-form').onsubmit=async e=>{
     else if(modal.open)modal.close();
   }
 });
-modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});window.addEventListener('beforeunload',stopRealtime);if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js?v=10.pre-golden');boot();
+modal.addEventListener('click',e=>{if(e.target===modal)modal.close()});sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.close()});window.addEventListener('beforeunload',stopRealtime);if('serviceWorker'in navigator)ensureServiceWorkerRegistration().catch(error=>console.error('[DVS] Service Worker:',error));boot();
 
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&document.body.classList.contains('print-preview-open'))closePrintPreview();

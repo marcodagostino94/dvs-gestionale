@@ -1,10 +1,60 @@
-const CACHE='dvs-v-10-pre-golden';const ASSETS=[
+const CACHE='dvs-v-10-1-pre-golden';
+const ASSETS=[
+  './',
+  './index.html',
+  './css/app.css?v=10',
+  './js/app.js?v=10',
+  './js/api.js',
+  './js/config.js',
+  './js/supabase.js',
+  './js/utils.js',
+  './assets/logo-dvs.png',
   './assets/apple-touch-icon.png',
-  './assets/workspace-icon-512.png',
   './assets/workspace-icon-192.png',
-  './manifest.webmanifest',
-  './manifest.json','./','./index.html','./css/app.css?v=10','./js/app.js?v=10-pre-golden','./js/api.js','./js/config.js','./js/supabase.js','./js/utils.js','./assets/logo-dvs.png','./manifest.webmanifest'];self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))))});
+  './assets/workspace-icon-512.png',
+  './manifest.webmanifest?v=10',
+  './manifest.json'
+];
 
+self.addEventListener('install',event=>{
+  event.waitUntil((async()=>{
+    const cache=await caches.open(CACHE);
+    await Promise.all(ASSETS.map(async asset=>{
+      try{
+        const response=await fetch(asset,{cache:'reload'});
+        if(!response.ok)throw new Error(`${response.status} ${asset}`);
+        await cache.put(asset,response);
+      }catch(error){
+        console.warn('[DVS SW] Risorsa non precaricata:',asset,error);
+      }
+    }));
+    await self.skipWaiting();
+  })());
+});
+
+self.addEventListener('activate',event=>{
+  event.waitUntil((async()=>{
+    const keys=await caches.keys();
+    await Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener('fetch',event=>{
+  if(event.request.method!=='GET'||new URL(event.request.url).origin!==self.location.origin)return;
+  event.respondWith((async()=>{
+    try{
+      const response=await fetch(event.request);
+      if(response&&response.ok){
+        const cache=await caches.open(CACHE);
+        cache.put(event.request,response.clone()).catch(()=>{});
+      }
+      return response;
+    }catch(error){
+      return (await caches.match(event.request))||(event.request.mode==='navigate'?await caches.match('./index.html'):Response.error());
+    }
+  })());
+});
 
 self.addEventListener('push',event=>{
   let payload={title:'DVS Workspace',body:'È disponibile un nuovo avviso.',url:'./'};
@@ -25,10 +75,10 @@ self.addEventListener('push',event=>{
 
 self.addEventListener('notificationclick',event=>{
   event.notification.close();
-  const target=new URL(event.notification.data?.url||'./',self.location.origin).href;
+  const target=new URL(event.notification.data?.url||'./',self.registration.scope).href;
   event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(windows=>{
     for(const client of windows){
-      if(client.url.startsWith(self.location.origin)&&'focus'in client){
+      if(client.url.startsWith(self.registration.scope)&&'focus'in client){
         client.navigate(target);
         return client.focus();
       }
