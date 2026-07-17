@@ -161,3 +161,12 @@
 ### V9 — Correzione finale
 - Rimosso il vecchio menu Sale richiamato dopo un'assegnazione.
 - Icona Workspace aggiornata con ritaglio full-bleed per iOS/macOS.
+
+## V10
+- Centro Stampa definitivo con categorie Sale, Computer, Hardware, Licenze, Plugin e Archivio completo.
+- Modalità layout oppure archivio dettagliato tramite “Stampa dettagli”.
+- Filtro “Escludi non assegnati”.
+- Orientamento orizzontale per Sale e verticale per le altre categorie.
+- Intestazione DVS, stile uniforme e numerazione pagine.
+- Correzione delle icone nella sezione Settings.
+- Aggiornamento degli asset delle notifiche al logo Workspace.

@@ -9,7 +9,19 @@ const views=[['dashboard','dashboard','Dashboard'],['rooms','chair','Sale'],['co
 const state={view:'dashboard',data:null,filter:'all',session:null};
 const labels={dashboard:'Dashboard',rooms:'Sale',computers:'Computer',hardware:'Hardware',licenses:'Licenze',settings:'Settings'};
 
-function navIcon(name){const icons={dashboard:`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>`,chair:`<svg viewBox="0 0 24 24"><path d="M7 11V7a5 5 0 0 1 10 0v4"/><path d="M5 11h14v5H5z"/><path d="M8 16v5M16 16v5M4 11V8M20 11V8"/></svg>`,computer:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,key:`<svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M15 12v2"/></svg>`,summary:`<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>`,settings:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.12-1.3l2-1.55-2-3.46-2.45 1A7 7 0 0 0 14.2 5.4L13.8 3h-4l-.4 2.4a7 7 0 0 0-2.23 1.29l-2.45-1-2 3.46 2 1.55A7 7 0 0 0 4.6 12c0 .44.04.87.12 1.3l-2 1.55 2 3.46 2.45-1a7 7 0 0 0 2.23 1.29l.4 2.4h4l.4-2.4a7 7 0 0 0 2.23-1.29l2.45 1 2-3.46-2-1.55c.08-.43.12-.86.12-1.3z"/></svg>`};return icons[name]||''}
+function navIcon(name){
+  const icons={
+    dashboard:`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>`,
+    chair:`<svg viewBox="0 0 24 24"><path d="M7 11V7a5 5 0 0 1 10 0v4"/><path d="M5 11h14v5H5z"/><path d="M8 16v5M16 16v5M4 11V8M20 11V8"/></svg>`,
+    computer:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
+    key:`<svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M15 12v2"/></svg>`,
+    summary:`<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>`,
+    settings:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.12-1.3l2-1.55-2-3.46-2.45 1A7 7 0 0 0 14.2 5.4L13.8 3h-4l-.4 2.4a7 7 0 0 0-2.23 1.29l-2.45-1-2 3.46 2 1.55A7 7 0 0 0 4.6 12c0 .44.04.87.12 1.3l-2 1.55 2 3.46 2.45-1a7 7 0 0 0 2.23 1.29l.4 2.4h4l.4-2.4a7 7 0 0 0 2.23-1.29l2.45 1 2-3.46-2-1.55c.08-.43.12-.86.12-1.3z"/></svg>`,
+    bell:`<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>`,
+    audit:`<svg viewBox="0 0 24 24"><path d="M9 5h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M3 3v14a2 2 0 0 0 2 2M11 10h6M11 14h6"/></svg>`,
+    logout:`<svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M14 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"/></svg>`
+  };return icons[name]||''
+}
 function navHTML(){return views.map(([id,icon,label])=>`<button class="nav-btn ${state.view===id?'active':''}" data-view="${id}">${icon==='rec'?`<span class="rec-nav-icon"><i></i></span>`:`<span class="nav-svg">${navIcon(icon)}</span>`}<small>${label}</small></button>`).join('')}
 function bindNav(){document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view))}
 function setView(v){state.view=v;state.filter='all';title.textContent=labels[v];document.getElementById('desktop-nav').innerHTML=navHTML();document.getElementById('mobile-nav').innerHTML=navHTML();bindNav();render()}
@@ -1131,7 +1143,7 @@ function printHeader(title){
     <div>
       <strong>Digital Video Service</strong>
       <h1>${esc(title)}</h1>
-      <p>DVS Workspace · Versione V 9 · ${esc(now)}</p>
+      <p>DVS Workspace · Versione V 10 · ${esc(now)}</p>
     </div>
   </header>`;
 }
@@ -1139,159 +1151,138 @@ function printHeader(title){
 function printFooter(){
   return `<footer class="print-doc-footer">
     <span>© 2026 Digital Video Service S.r.l.</span>
-    <span>DVS Workspace · Sviluppato da Marco D'Agostino</span>
-    <span>Progettazione, sviluppo e gestione del sistema</span>
+    <span>DVS Workspace</span>
+    <span class="print-page-number">Pagina</span>
   </footer>`;
 }
 
-function printSummaryDocument(includeUnassigned=true){
+function printDocument(title,body,orientation='portrait'){
+  return `<article class="print-document print-${orientation}">${printHeader(title)}<main class="print-document-body">${body}</main>${printFooter()}</article>`;
+}
+
+function printAssigned(kind,item){
+  if(kind==='computers')return !!stationOf('computer',item.id);
+  if(kind==='hardware')return !!stationOf('hardware',item.id);
+  if(kind==='plugins')return !!pluginStation(item.id);
+  return !!stationOf('license',item.id);
+}
+
+function printLocation(kind,item){
+  const station=kind==='computers'?stationOf('computer',item.id):kind==='hardware'?stationOf('hardware',item.id):kind==='plugins'?pluginStation(item.id):stationOf('license',item.id);
+  return station?stationLabel(station):'Non assegnato';
+}
+
+function printItems(kind,excludeUnassigned=false){
+  let items;
+  if(kind==='plugins')items=state.data.licenses.filter(x=>!x.archived_at&&x.category==='plugin');
+  else if(kind==='licenses')items=state.data.licenses.filter(x=>!x.archived_at&&x.category==='avid');
+  else items=state.data[kind].filter(x=>!x.archived_at);
+  if(excludeUnassigned)items=items.filter(x=>printAssigned(kind,x));
+  return items.sort(numSort);
+}
+
+function printSummaryDocument(excludeUnassigned=false){
   const rooms=[...state.data.rooms].sort((a,b)=>a.position-b.position);
-  return `${printHeader('Sale')}
-    <main class="print-document-body">
-      ${rooms.map(room=>{
-        const stations=state.data.stations.filter(s=>s.room_id===room.id).sort((a,b)=>a.position-b.position);
-        return `<section class="print-room">
-          <div class="print-room-head"><h2>${esc(room.name)}</h2><span>${esc(productionLabel(room)||'')}</span></div>
-          ${stations.map((station,index)=>{
-            const computer=state.data.computers.find(x=>x.id===station.computer_id);
-            const hardware=state.data.hardware.find(x=>x.id===station.hardware_id);
-            const avid=state.data.licenses.find(x=>x.id===station.avid_license_id);
-            const plugins=stationPluginItems(station.id);
-            return `<div class="print-station">
-              ${stations.length>1?`<h3>Postazione ${index+1}</h3>`:''}
-              <div><b>Computer</b><span>${computer?esc(`${computer.code} · ${computer.model||''}`):'Non assegnato'}</span></div>
-              <div><b>Hardware</b><span>${hardware?esc(`${hardware.code} · ${hardware.model||''}`):'Non assegnato'}</span></div>
-              <div><b>Avid</b><span>${avid?esc(`${avid.code} · ${avid.avid_type||''} · System ID ${avid.system_id||'—'}`):'Non assegnata'}</span></div>
-              <div><b>Plugin</b><span>${plugins.length?plugins.map(p=>esc(`${p.code} · ${p.plugin_type||''} · ${p.plugin_serial||'—'}`)).join('<br>'):'Non assegnato'}</span></div>
-            </div>`;
-          }).join('')}
-        </section>`;
-      }).join('')}
-      ${includeUnassigned?printUnassignedSection():''}
-    </main>${printFooter()}`;
+  const roomHtml=rooms.map(room=>{
+    const stations=state.data.stations.filter(s=>s.room_id===room.id).sort((a,b)=>a.position-b.position);
+    const stationHtml=stations.map((station,index)=>{
+      const computer=state.data.computers.find(x=>x.id===station.computer_id);
+      const hardware=state.data.hardware.find(x=>x.id===station.hardware_id);
+      const avid=state.data.licenses.find(x=>x.id===station.avid_license_id);
+      const plugins=stationPluginItems(station.id);
+      return `<div class="print-room-station">
+        <div class="print-station-name">${stations.length>1?`Postazione ${index+1}`:'Postazione'}</div>
+        <div class="print-layout-cell"><b>Computer</b><span>${computer?esc(`${computer.code} · ${computer.model||''}`):'Non assegnato'}</span></div>
+        <div class="print-layout-cell"><b>Hardware</b><span>${hardware?esc(`${hardware.code} · ${hardware.model||''}`):'Non assegnato'}</span></div>
+        <div class="print-layout-cell"><b>Avid</b><span>${avid?esc(`${avid.code} · ${avid.avid_type||''}`):'Non assegnata'}</span></div>
+        <div class="print-layout-cell"><b>Plugin</b><span>${plugins.length?plugins.map(p=>esc(`${p.code} · ${p.plugin_type||''}`)).join('<br>'):'Non assegnato'}</span></div>
+      </div>`;
+    }).join('');
+    return `<section class="print-room-layout"><div class="print-room-head"><h2>${esc(room.name)}</h2><span>${esc(productionLabel(room)||'')}</span></div>${stationHtml}</section>`;
+  }).join('');
+  return printDocument('Sale',roomHtml+(excludeUnassigned?'':printUnassignedSection()),'landscape');
 }
 
 function printUnassignedSection(){
-  const computers=state.data.computers.filter(x=>!x.archived_at&&!stationOf('computer',x.id)).sort(numSort);
-  const hardware=state.data.hardware.filter(x=>!x.archived_at&&!stationOf('hardware',x.id)).sort(numSort);
-  const avid=state.data.licenses.filter(x=>!x.archived_at&&x.category==='avid'&&!stationOf('license',x.id)).sort(numSort);
-  const plugins=state.data.licenses.filter(x=>!x.archived_at&&x.category==='plugin'&&!pluginStation(x.id)).sort(numSort);
-  const col=(title,items,render)=>`<div><h3>${title}</h3>${items.length?items.map(render).join(''):'<p>Nessun elemento</p>'}</div>`;
-  return `<section class="print-unassigned"><h2>Non assegnati</h2><div class="print-unassigned-grid">
-    ${col('Computer',computers,x=>`<p>${esc(x.code)} · ${esc(x.model||'')}</p>`)}
-    ${col('Hardware',hardware,x=>`<p>${esc(x.code)} · ${esc(x.model||'')}</p>`)}
-    ${col('Avid',avid,x=>`<p>${esc(x.code)} · ${esc(x.avid_type||'')} · ${esc(expiryLabel(x))}</p>`)}
-    ${col('Plugin',plugins,x=>`<p>${esc(x.code)} · ${esc(x.plugin_type||'')} · ${esc(expiryLabel(x))}</p>`)}
-  </div></section>`;
+  const groups=[['Computer',printItems('computers').filter(x=>!printAssigned('computers',x)),x=>`${x.code} · ${x.model||''}`],['Hardware',printItems('hardware').filter(x=>!printAssigned('hardware',x)),x=>`${x.code} · ${x.model||''}`],['Avid',printItems('licenses').filter(x=>!printAssigned('licenses',x)),x=>`${x.code} · ${x.avid_type||''}`],['Plugin',printItems('plugins').filter(x=>!printAssigned('plugins',x)),x=>`${x.code} · ${x.plugin_type||''}`]];
+  return `<section class="print-unassigned"><h2>Non assegnati</h2><div class="print-unassigned-grid">${groups.map(([title,items,label])=>`<div><h3>${title}</h3>${items.length?items.map(x=>`<p>${esc(label(x))}</p>`).join(''):'<p>Nessun elemento</p>'}</div>`).join('')}</div></section>`;
 }
 
-function printInventoryDocument(type,complete=false,scope='all'){
-  let items=state.data[type].filter(x=>!x.archived_at);
-  const isAssigned=x=>type==='computers'?!!stationOf('computer',x.id):type==='hardware'?!!stationOf('hardware',x.id):x.category==='plugin'?!!pluginStation(x.id):!!stationOf('license',x.id);
-  if(scope==='assigned')items=items.filter(isAssigned);
-  if(scope==='unassigned')items=items.filter(x=>!isAssigned(x));
-  items.sort(type==='licenses'?(a,b)=>(a.category===b.category?numSort(a,b):(a.category==='avid'?-1:1)):numSort);
-
-  const title=type==='computers'?'Computer':type==='hardware'?'Hardware':'Licenze';
-  const rows=items.map(x=>{
-    const location=type==='computers'?stationOf('computer',x.id):type==='hardware'?stationOf('hardware',x.id):x.category==='plugin'?pluginStation(x.id):stationOf('license',x.id);
-    if(type==='computers'){
-      return `<tr><td>${esc(x.code)}</td><td>${esc(x.model||'')}</td><td>${esc(x.os_name||'')}</td><td>${complete?esc(x.serial||'—'):''}</td><td>${location?esc(stationLabel(location)):'Non assegnato'}</td></tr>`;
-    }
-    if(type==='hardware'){
-      return `<tr><td>${esc(x.code)}</td><td>${esc(x.model||'')}</td><td>${complete?esc(x.serial||'—'):''}</td><td>${location?esc(stationLabel(location)):'Non assegnato'}</td></tr>`;
-    }
-    return `<tr><td>${esc(x.code)}</td><td>${esc(x.category==='avid'?x.avid_type:x.plugin_type)}</td><td>${esc(x.category==='avid'?x.system_id||'—':x.plugin_serial||'—')}</td><td>${esc(expiryLabel(x))}</td><td>${location?esc(stationLabel(location)):'Non assegnato'}</td></tr>`;
-  }).join('');
-
-  return `${printHeader(title)}<main class="print-document-body"><table class="print-table">
-    <thead><tr>${type==='computers'?'<th>Codice</th><th>Modello</th><th>OS</th><th>Seriale</th><th>Posizione</th>':type==='hardware'?'<th>Codice</th><th>Modello</th><th>Seriale</th><th>Posizione</th>':'<th>Codice</th><th>Tipo</th><th>ID / Seriale</th><th>Scadenza</th><th>Posizione</th>'}</tr></thead>
-    <tbody>${rows}</tbody></table></main>${printFooter()}`;
+function printLayoutDocument(kind,excludeUnassigned=false){
+  const items=printItems(kind,excludeUnassigned);
+  const titles={computers:'Computer',hardware:'Hardware',licenses:'Licenze Avid',plugins:'Plugin'};
+  const cards=items.map(x=>{
+    let meta='';
+    if(kind==='computers')meta=[x.model,x.os_name,x.os_version].filter(Boolean).join(' · ');
+    if(kind==='hardware')meta=[x.model,x.serial].filter(Boolean).join(' · ');
+    if(kind==='licenses')meta=[x.avid_type,x.system_id?`System ID ${x.system_id}`:'',expiryLabel(x)].filter(Boolean).join(' · ');
+    if(kind==='plugins')meta=[x.plugin_type,x.plugin_serial,expiryLabel(x)].filter(Boolean).join(' · ');
+    return `<section class="print-inventory-card"><div><h2>${esc(x.code||'—')}</h2><p>${esc(meta||'Nessun dettaglio sintetico')}</p></div><span>${esc(printLocation(kind,x))}</span></section>`;
+  }).join('')||'<p class="print-empty">Nessun elemento da stampare.</p>';
+  return printDocument(titles[kind],`<div class="print-card-list">${cards}</div>`,'portrait');
 }
 
-function openPrintPreview(html){
-  const existing=document.getElementById('print-root');
-  if(existing)existing.remove();
+function detailPairs(kind,x){
+  if(kind==='computers')return [['Codice',x.code],['Modello',x.model],['Variante',x.variant],['Processore',x.processor],['RAM',x.ram],['Scheda grafica',x.gpu],['Sistema operativo',[x.os_name,x.os_version].filter(Boolean).join(' ')],['Seriale',x.serial],['Data formattazione',fmtDate(x.format_date)],['Posizione',printLocation(kind,x)],['Note',x.notes]];
+  if(kind==='hardware')return [['Codice',x.code],['Modello',x.model],['Tipologia',x.hardware_type],['Seriale',x.serial],['Posizione',printLocation(kind,x)],['Note',x.notes]];
+  if(kind==='licenses')return [['Codice',x.code],['Tipologia Avid',x.avid_type],['System ID',x.system_id],['Codice licenza',x.license_code],['Ciclo',cycleLabel(x)],['Scadenza',expiryLabel(x)],['Posizione',printLocation(kind,x)],['Note',x.notes]];
+  return [['Codice',x.code],['Plugin',x.plugin_type],['Seriale',x.plugin_serial],['Ciclo',cycleLabel(x)],['Scadenza',expiryLabel(x)],['Posizione',printLocation(kind,x)],['Note',x.notes]];
+}
+
+function printDetailedDocument(kind,excludeUnassigned=false){
+  const items=printItems(kind,excludeUnassigned);
+  const titles={computers:'Archivio Computer',hardware:'Archivio Hardware',licenses:'Archivio Licenze Avid',plugins:'Archivio Plugin'};
+  const records=items.map(x=>`<section class="print-detail-record"><h2>${esc(x.code||'—')}</h2><dl>${detailPairs(kind,x).filter(([,v])=>v!==null&&v!==undefined&&String(v).trim()!=='').map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(String(v))}</dd></div>`).join('')}</dl></section>`).join('')||'<p class="print-empty">Nessun elemento da stampare.</p>';
+  return printDocument(titles[kind],records,'portrait');
+}
+
+function printArchiveDocument(excludeUnassigned=false){
+  return ['computers','hardware','licenses','plugins'].map(kind=>printDetailedDocument(kind,excludeUnassigned)).join('');
+}
+
+function openPrintPreview(html,orientation='portrait'){
+  document.getElementById('print-root')?.remove();
   const root=document.createElement('div');
   root.id='print-root';
   root.innerHTML=html;
   document.body.appendChild(root);
   document.body.classList.add('print-preview-open');
+  document.body.classList.toggle('print-landscape-mode',orientation==='landscape');
 }
-
-function closePrintPreview(){
-  document.getElementById('print-root')?.remove();
-  document.body.classList.remove('print-preview-open');
-}
-
-function runSystemPrint(){
-  window.print();
-}
-
-function printOptionCheck(id,label,isChecked=false){
-  return `<label class="option-check">
-    <input id="${id}" type="checkbox" ${isChecked?'checked':''}>
-    <span>${label}</span>
-  </label>`;
-}
+function closePrintPreview(){document.getElementById('print-root')?.remove();document.body.classList.remove('print-preview-open','print-landscape-mode')}
+function runSystemPrint(){window.print()}
+function printOptionCheck(id,label,isChecked=false){return `<label class="option-check"><input id="${id}" type="checkbox" ${isChecked?'checked':''}><span>${label}</span></label>`}
 
 function openPrintCenter(){
-  openModal(`<div class="modal-head"><h2>Stampa ed esportazione</h2><button class="close" data-close>×</button></div>
+  openModal(`<div class="modal-head"><h2>Centro Stampa</h2><button class="close" data-close>×</button></div>
     <div class="print-center">
-      <label>Documento
-        <select id="print-document">
-          <option value="summary">Sale</option>
-          <option value="computers">Computer</option>
-          <option value="hardware">Hardware</option>
-          <option value="licenses">Licenze</option>
-          <option value="archive">Archivio completo</option>
-        </select>
-      </label>
-
-      <div id="print-options">
-        ${printOptionCheck('print-complete','Scheda completa',false)}
-        ${printOptionCheck('print-unassigned','Includi Non assegnati',true)}
-        <label>Contenuto
-          <select id="print-scope">
-            <option value="all">Tutto</option>
-            <option value="assigned">Solo assegnati</option>
-            <option value="unassigned">Solo non assegnati</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="actions print-actions">
-        <button class="secondary" id="print-preview">Anteprima</button>
-        <button class="secondary" id="print-save-pdf">Salva come PDF</button>
-        <button class="primary" id="print-now">Stampa</button>
-      </div>
+      <label>Categoria<select id="print-document"><option value="summary">Sale</option><option value="computers">Computer</option><option value="hardware">Hardware</option><option value="licenses">Licenze</option><option value="plugins">Plugin</option><option value="archive">Archivio completo</option></select></label>
+      <div id="print-options">${printOptionCheck('print-complete','Stampa dettagli',false)}${printOptionCheck('print-exclude-unassigned','Escludi non assegnati',false)}</div>
+      <p class="print-center-help" id="print-mode-help">Stampa il layout Sale come visualizzato nel gestionale.</p>
+      <div class="actions print-actions"><button class="secondary" id="print-preview">Anteprima</button><button class="secondary" id="print-save-pdf">Salva come PDF</button><button class="primary" id="print-now">Stampa</button></div>
     </div>`);
 
+  const docEl=document.getElementById('print-document');
+  const detailEl=document.getElementById('print-complete');
+  const help=document.getElementById('print-mode-help');
+  const updateHelp=()=>{
+    const doc=docEl.value,detail=detailEl.checked;
+    detailEl.disabled=doc==='summary'||doc==='archive';
+    if(doc==='summary')help.textContent='Stampa il layout delle Sale in orizzontale.';
+    else if(doc==='archive')help.textContent='Stampa l’archivio dettagliato completo di tutte le categorie.';
+    else help.textContent=detail?'Stampa l’archivio dettagliato della categoria.':'Stampa il layout sintetico della categoria, come nell’app.';
+  };
+  docEl.onchange=updateHelp; detailEl.onchange=updateHelp; updateHelp();
   const build=()=>{
-    const doc=val('print-document');
-    const complete=checked('print-complete');
-    const includeUnassigned=checked('print-unassigned');
-    const scope=val('print-scope');
-    if(doc==='summary')return printSummaryDocument(includeUnassigned);
-    if(doc==='archive')return printSummaryDocument(true)+printInventoryDocument('computers',true,'all')+printInventoryDocument('hardware',true,'all')+printInventoryDocument('licenses',true,'all');
-    return printInventoryDocument(doc,complete,scope);
+    const doc=docEl.value,detail=detailEl.checked,exclude=checked('print-exclude-unassigned');
+    if(doc==='summary')return {html:printSummaryDocument(exclude),orientation:'landscape'};
+    if(doc==='archive')return {html:printArchiveDocument(exclude),orientation:'portrait'};
+    return {html:detail?printDetailedDocument(doc,exclude):printLayoutDocument(doc,exclude),orientation:'portrait'};
   };
-
-  document.getElementById('print-preview').onclick=()=>{
-    openPrintPreview(build());
-    modal.close();
-  };
-  document.getElementById('print-now').onclick=()=>{
-    openPrintPreview(build());
-    modal.close();
-    setTimeout(runSystemPrint,100);
-  };
-  document.getElementById('print-save-pdf').onclick=()=>{
-    openPrintPreview(build());
-    modal.close();
-    showToast('Nella finestra di stampa scegli “Salva come PDF”');
-    setTimeout(runSystemPrint,100);
-  };
+  const execute=(print=false,pdf=false)=>{const result=build();openPrintPreview(result.html,result.orientation);modal.close();if(pdf)showToast('Nella finestra di stampa scegli “Salva come PDF”');if(print||pdf)setTimeout(runSystemPrint,120)};
+  document.getElementById('print-preview').onclick=()=>execute();
+  document.getElementById('print-now').onclick=()=>execute(true);
+  document.getElementById('print-save-pdf').onclick=()=>execute(false,true);
 }
 
 function settings(){

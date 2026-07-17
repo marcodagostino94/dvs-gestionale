@@ -1370,3 +1370,30 @@ input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,2
   user-select:none!important;
   -webkit-touch-callout:none!important;
 }
+
+/* ===== V10 — Centro Stampa e icone Settings ===== */
+.setting-icon{display:grid;place-items:center;color:rgba(255,255,255,.88)}
+.setting-icon svg{width:28px;height:28px;display:block;fill:none!important;stroke:currentColor!important;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.danger-setting .setting-icon{color:#ff7f88}
+.print-center-help{margin:0;padding:11px 13px;border-radius:12px;background:rgba(255,255,255,.045);color:var(--muted);font-size:11px;line-height:1.45}
+.print-document{background:#fff;color:#111;max-width:1000px;margin:0 auto 26px}
+.print-document+.print-document{break-before:page}
+.print-card-list{display:grid;gap:10px}
+.print-inventory-card{display:flex;align-items:center;justify-content:space-between;gap:18px;border:1px solid #d8d8d8;border-radius:10px;padding:12px 14px;break-inside:avoid}
+.print-inventory-card h2{margin:0 0 4px;font-size:14px;color:#981f2a}.print-inventory-card p{margin:0;font-size:9px;color:#555}.print-inventory-card>span{font-size:9px;font-weight:700;text-align:right}
+.print-room-layout{border:1px solid #d8d8d8;border-radius:10px;padding:12px;margin-bottom:12px;break-inside:avoid}
+.print-room-station{display:grid;grid-template-columns:75px repeat(4,minmax(0,1fr));gap:7px;margin-top:8px}
+.print-station-name{font-size:9px;font-weight:800;padding:8px 5px}
+.print-layout-cell{border:1px solid #e2e2e2;border-radius:7px;padding:8px;min-height:52px}.print-layout-cell b{display:block;font-size:8px;text-transform:uppercase;color:#981f2a;margin-bottom:5px}.print-layout-cell span{font-size:8px;line-height:1.35}
+.print-detail-record{border:1px solid #d8d8d8;border-radius:10px;padding:14px;margin-bottom:12px;break-inside:avoid}.print-detail-record h2{margin:0 0 10px;color:#981f2a;font-size:15px}.print-detail-record dl{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px}.print-detail-record dl div{display:grid;grid-template-columns:110px 1fr;gap:8px;padding:5px 0;border-bottom:1px solid #eee;font-size:9px}.print-detail-record dt{font-weight:800}.print-detail-record dd{margin:0;overflow-wrap:anywhere}.print-empty{color:#666;text-align:center;padding:30px}
+.print-page-number::after{content:" " counter(page)}
+@media print{
+  #print-root{counter-reset:page}
+  .print-document{max-width:none!important;margin:0!important;page:portrait}
+  .print-document.print-landscape{page:landscape}
+  .print-document.print-portrait{page:portrait}
+  .print-doc-header{position:static!important}
+  .print-doc-footer{position:fixed!important}
+  @page portrait{size:A4 portrait;margin:14mm 12mm 20mm}
+  @page landscape{size:A4 landscape;margin:12mm 12mm 18mm}
+}

@@ -1,9 +1,9 @@
-const CACHE='dvs-v-9-finale';const ASSETS=[
+const CACHE='dvs-v-10';const ASSETS=[
   './assets/apple-touch-icon.png',
   './assets/workspace-icon-512.png',
   './assets/workspace-icon-192.png',
   './manifest.webmanifest',
-  './manifest.json','./','./index.html','./css/app.css?v=9.finale','./js/app.js?v=9.finale','./js/api.js','./js/config.js','./js/supabase.js','./js/utils.js','./assets/logo-dvs.png','./manifest.webmanifest'];self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))))});
+  './manifest.json','./','./index.html','./css/app.css?v=10','./js/app.js?v=10','./js/api.js','./js/config.js','./js/supabase.js','./js/utils.js','./assets/logo-dvs.png','./manifest.webmanifest'];self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))))});
 
 
 self.addEventListener('push',event=>{
@@ -15,8 +15,8 @@ self.addEventListener('push',event=>{
   }
   event.waitUntil(self.registration.showNotification(payload.title,{
     body:payload.body,
-    icon:'./assets/logo-dvs.png',
-    badge:'./assets/logo-dvs.png',
+    icon:'./assets/workspace-icon-192.png',
+    badge:'./assets/workspace-icon-192.png',
     tag:payload.tag||'dvs-expiry',
     data:{url:payload.url||'./',licenseId:payload.licenseId||null},
     renotify:true
