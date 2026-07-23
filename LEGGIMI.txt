@@ -1,3 +1,13 @@
+DVS WORKSPACE — VERSIONE 11.0
+Release · Luglio 2026
+
+NOVITÀ
+- Generatore Etichetta Sala nella pagina Sale
+- Anteprima PDF in tempo reale
+- Esportazione PDF A4 orizzontale con nome Sala XX.pdf
+- Campi Progetto, Regia e Produzione sempre facoltativi
+- Nessun dato salvato e nessuna modifica richiesta a Supabase
+
 DVS WORKSPACE — V_10_GOLD_MASTER_07_2026
 Release finale · Luglio 2026
 

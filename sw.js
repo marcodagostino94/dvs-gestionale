@@ -1,18 +1,21 @@
-const CACHE='dvs-v-10-gold-master-07-2026-icon-fix';
+const CACHE='dvs-workspace-v11-0';
 const ASSETS=[
   './',
   './index.html',
-  './css/app.css?v=10-gold-master-07-2026',
-  './js/app.js?v=10-gold-master-07-2026',
+  './css/app.css?v=11-0',
+  './js/app.js?v=11-0',
+  './js/pdf-lib.min.js?v=11-0',
   './js/api.js',
   './js/config.js',
   './js/supabase.js',
   './js/utils.js',
   './assets/logo-dvs.png',
+  './assets/etichetta-sala-background.png',
+  './assets/etichetta-sala-logo.png',
   './assets/apple-touch-icon.png',
   './assets/workspace-icon-192.png',
   './assets/workspace-icon-512.png',
-  './manifest.webmanifest?v=10-gold-master-07-2026-icon-fix',
+  './manifest.webmanifest?v=11-0',
   './manifest.json'
 ];
 

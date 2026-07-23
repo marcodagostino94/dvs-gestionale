@@ -3,8 +3,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='V_10_GOLD_MASTER_07_2026';
-const APP_RELEASE='Gold Master · 07/2026';
+const APP_VERSION='11.0';
+const APP_RELEASE='Workspace v11.0 · 07/2026';
 const DATABASE_SCHEMA='4.3.1';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -34,6 +34,213 @@ function showToast(t){toast.textContent=t;toast.classList.remove('hidden');setTi
 function openModal(html){modalBody.innerHTML=html;modal.showModal();modalBody.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>modal.close())}
 function openSheet(html){sheetBody.innerHTML=html;sheet.showModal();sheetBody.querySelectorAll('[data-close-sheet]').forEach(b=>b.onclick=()=>sheet.close())}
 function uuid(){return crypto.randomUUID()}
+function labelRoomNumber(room){
+  const match=String(room?.name||'').match(/\d+/);
+  const number=match?Number(match[0]):Number(room?.position||0);
+  return String(Number.isFinite(number)?number:0).padStart(2,'0');
+}
+
+let labelTemplateImagesPromise=null;
+function labelTemplateImages(){
+  if(labelTemplateImagesPromise)return labelTemplateImagesPromise;
+  const load=src=>new Promise((resolve,reject)=>{
+    const image=new Image();
+    image.onload=()=>resolve(image);
+    image.onerror=reject;
+    image.src=src;
+  });
+  labelTemplateImagesPromise=Promise.all([
+    load('./assets/etichetta-sala-background.png'),
+    load('./assets/etichetta-sala-logo.png')
+  ]);
+  return labelTemplateImagesPromise;
+}
+
+function labelRoundedRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+function labelFitText(ctx,text,maxWidth,startSize,minSize){
+  let size=startSize;
+  do{
+    ctx.font=`700 ${size}px Futura, "Arial Black", Arial, sans-serif`;
+    if(ctx.measureText(text).width<=maxWidth)return size;
+    size-=2;
+  }while(size>minSize);
+  return minSize;
+}
+
+async function renderRoomLabelCanvas(room,values){
+  const [background,logo]=await labelTemplateImages();
+  const canvas=document.createElement('canvas');
+  canvas.width=1600;
+  canvas.height=1131;
+  const ctx=canvas.getContext('2d');
+  const sx=background.width*.10072;
+  const sw=background.width-sx*2;
+
+  ctx.drawImage(background,sx,0,sw,background.height,0,0,canvas.width,canvas.height);
+  ctx.fillStyle='rgba(9,11,13,.46667)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(logo,79,62,436,132);
+
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillStyle='#fff';
+  const roomText=`SALA ${labelRoomNumber(room)}`;
+  labelFitText(ctx,roomText,580,100,66);
+  ctx.fillText(roomText,1228,126);
+
+  const rows=[
+    {label:'PROGETTO',value:values.project,y:272,labelY:382,valueY:444,start:64},
+    {label:'REGIA',value:values.direction,y:540,labelY:650,valueY:712,start:60},
+    {label:'PRODUZIONE',value:values.production,y:807,labelY:917,valueY:979,start:67}
+  ];
+
+  rows.forEach(row=>{
+    labelRoundedRect(ctx,205,row.y,1190,198,19);
+    ctx.fillStyle='rgba(18,21,24,.86667)';
+    ctx.fill();
+    ctx.lineWidth=2;
+    ctx.strokeStyle='#a90016';
+    ctx.stroke();
+    ctx.fillStyle='#b00018';
+    ctx.fillRect(205,row.y+24,7,149);
+
+    ctx.fillStyle='#ff2848';
+    ctx.font='700 32px Futura, "Arial Black", Arial, sans-serif';
+    ctx.fillText(row.label,800,row.labelY);
+
+    const text=String(row.value||'').trim().toUpperCase();
+    if(text){
+      ctx.fillStyle='#fff';
+      labelFitText(ctx,text,1050,row.start,32);
+      ctx.fillText(text,800,row.valueY);
+    }
+  });
+
+  return canvas;
+}
+
+async function createRoomLabelPdf(room,values){
+  if(!window.PDFLib)throw new Error('Motore PDF non disponibile');
+  const canvas=await renderRoomLabelCanvas(room,values);
+  const pdf=await PDFLib.PDFDocument.create();
+  const page=pdf.addPage([841.8898,595.2756]);
+  const image=await pdf.embedPng(canvas.toDataURL('image/png'));
+  page.drawImage(image,{x:0,y:0,width:841.8898,height:595.2756});
+  return pdf.save({useObjectStreams:true});
+}
+
+async function saveRoomLabelPdf(room,values){
+  const bytes=await createRoomLabelPdf(room,values);
+  const filename=`Sala ${labelRoomNumber(room)}.pdf`;
+  const blob=new Blob([bytes],{type:'application/pdf'});
+  if('showSaveFilePicker' in window){
+    const handle=await window.showSaveFilePicker({
+      suggestedName:filename,
+      types:[{description:'Documento PDF',accept:{'application/pdf':['.pdf']}}]
+    });
+    const writable=await handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    return;
+  }
+  const link=document.createElement('a');
+  link.href=URL.createObjectURL(blob);
+  link.download=filename;
+  link.click();
+  setTimeout(()=>URL.revokeObjectURL(link.href),2000);
+}
+
+function openRoomLabel(room){
+  const values={project:'',direction:'',production:''};
+  let previewUrl='';
+  let previewGeneration=0;
+  let previewTimer=null;
+
+  openModal(`<div class="modal-head"><div><h2>🏷️ Etichetta · ${esc(room.name)}</h2><p class="label-modal-subtitle">A4 orizzontale · stampa A5</p></div><button class="close" data-close>×</button></div>
+    <div class="room-label-layout">
+      <div class="room-label-form">
+        <div class="fields">
+          ${field('label-project','Progetto','')}
+          ${field('label-direction','Regia','')}
+          ${field('label-production','Produzione','')}
+        </div>
+        <p class="room-label-help">Tutti i campi sono facoltativi. Il numero della sala viene inserito automaticamente.</p>
+        <div class="actions room-label-actions">
+          <button class="secondary" data-close>Annulla</button>
+          <button class="primary" id="export-room-label">Esporta PDF</button>
+        </div>
+      </div>
+      <div class="room-label-preview-wrap">
+        <span>Anteprima PDF</span>
+        <iframe id="room-label-preview" class="room-label-preview" title="Anteprima Etichetta Sala"></iframe>
+        <div id="room-label-preview-status" class="room-label-preview-status">Preparazione anteprima…</div>
+      </div>
+    </div>`);
+
+  const preview=document.getElementById('room-label-preview');
+  const status=document.getElementById('room-label-preview-status');
+  const readValues=()=>{
+    values.project=val('label-project');
+    values.direction=val('label-direction');
+    values.production=val('label-production');
+  };
+  const updatePreview=async()=>{
+    const generation=++previewGeneration;
+    readValues();
+    status.textContent='Aggiornamento anteprima…';
+    status.classList.remove('hidden');
+    try{
+      const bytes=await createRoomLabelPdf(room,{...values});
+      if(generation!==previewGeneration)return;
+      if(previewUrl)URL.revokeObjectURL(previewUrl);
+      previewUrl=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+      preview.src=previewUrl;
+      status.classList.add('hidden');
+    }catch(error){
+      status.textContent='Anteprima non disponibile';
+      console.error(error);
+    }
+  };
+  ['label-project','label-direction','label-production'].forEach(id=>{
+    document.getElementById(id).addEventListener('input',()=>{
+      clearTimeout(previewTimer);
+      previewTimer=setTimeout(updatePreview,120);
+    });
+  });
+  document.getElementById('export-room-label').onclick=async event=>{
+    const button=event.currentTarget;
+    readValues();
+    button.disabled=true;
+    button.textContent='Generazione…';
+    try{
+      await saveRoomLabelPdf(room,{...values});
+      showToast(`PDF pronto · Sala ${labelRoomNumber(room)}`);
+    }catch(error){
+      if(error?.name!=='AbortError'){
+        console.error(error);
+        showToast('Impossibile esportare il PDF');
+      }
+    }finally{
+      button.disabled=false;
+      button.textContent='Esporta PDF';
+    }
+  };
+  modal.addEventListener('close',()=>{
+    clearTimeout(previewTimer);
+    if(previewUrl)URL.revokeObjectURL(previewUrl);
+  },{once:true});
+  updatePreview();
+}
+
 function stationLabel(station){const room=state.data.rooms.find(r=>r.id===station.room_id);const count=state.data.stations.filter(s=>s.room_id===station.room_id).length;const idx=state.data.stations.filter(s=>s.room_id===station.room_id).sort((a,b)=>a.position-b.position).findIndex(s=>s.id===station.id);return `${room?.name||'Sala'}${count>1?` · ${idx+1}`:''}`}
 function stationOf(kind,id){return state.data.stations.find(s=>kind==='computer'?s.computer_id===id:kind==='hardware'?s.hardware_id===id:s.avid_license_id===id)}
 function pluginStation(id){const rel=state.data.station_plugins.find(x=>x.license_id===id);return rel?state.data.stations.find(s=>s.id===rel.station_id):null}
@@ -947,6 +1154,7 @@ function rooms(){
                   <div class="summary-room-title-line">
                     <h3>${esc(room.name)}</h3>
                     ${room.server_config?`<button type="button" class="summary-server-config" data-summary-server="${room.id}" title="${esc(room.server_config)}">· ${esc(room.server_config)}</button>`:''}
+                    <button type="button" class="room-label-button" data-room-label="${room.id}" title="Genera Etichetta Sala">🏷️ Etichetta</button>
                   </div>
                   <span class="summary-production-name ${productionClass(room)}">${production?esc(production):'Produzione non indicata'}</span>
                 </div>
@@ -1563,11 +1771,11 @@ function bindContent(){
   bindRoomAssetInteractions();
   document.querySelectorAll('[data-summary-room]').forEach(b=>{
     b.onclick=event=>{
-      if(event.target.closest('[data-summary-server]'))return;
+      if(event.target.closest('[data-summary-server],[data-room-label]'))return;
       openSummaryRoomActions(b.dataset.summaryRoom);
     };
     b.onkeydown=event=>{
-      if((event.key==='Enter'||event.key===' ')&&!event.target.closest('[data-summary-server]')){
+      if((event.key==='Enter'||event.key===' ')&&!event.target.closest('[data-summary-server],[data-room-label]')){
         event.preventDefault();
         openSummaryRoomActions(b.dataset.summaryRoom);
       }
@@ -1577,6 +1785,11 @@ function bindContent(){
     event.stopPropagation();
     const room=state.data.rooms.find(r=>r.id===b.dataset.summaryServer);
     if(room)openServerConfigEditor(room);
+  });
+  document.querySelectorAll('[data-room-label]').forEach(b=>b.onclick=event=>{
+    event.stopPropagation();
+    const room=state.data.rooms.find(r=>r.id===b.dataset.roomLabel);
+    if(room)openRoomLabel(room);
   });
   document.getElementById('logout')?.addEventListener('click',async()=>supabase.auth.signOut());
 }
@@ -2135,7 +2348,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=10-gold-master-07-2026';
+const SERVICE_WORKER_URL='./sw.js?v=11-0';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');
@@ -2395,12 +2608,10 @@ Plugin: ${activePlugins}`;
         <div class="about-section">
           <h4>Novità di questa versione</h4>
           <ul class="changelog-list">
-            <li>Centro Stampa definitivo e uniforme</li>
-            <li>Notifiche push verificate su Mac e iPhone</li>
-            <li>Controlli automatici delle scadenze e delle Trial</li>
-            <li>Service Worker stabilizzato per GitHub Pages</li>
-            <li>Metadati di versione centralizzati</li>
-            <li>Pulizia e stabilizzazione finale del codice</li>
+            <li>Generatore Etichetta Sala</li>
+            <li>Anteprima PDF in tempo reale</li>
+            <li>Esportazione PDF in formato A4 orizzontale</li>
+            <li>Ottimizzazioni generali</li>
           </ul>
         </div>
 

@@ -184,3 +184,11 @@
 - Cache e Service Worker riallineati alla release finale.
 - Verifica conclusiva del sistema notifiche push su Mac e iPhone.
 - Stabilizzazione finale per la pubblicazione su GitHub Pages.
+# DVS Workspace 11.0
+
+- Nuovo generatore Etichetta Sala nella pagina Sale.
+- Numero sala compilato automaticamente.
+- Campi facoltativi Progetto, Regia e Produzione.
+- Anteprima PDF aggiornata in tempo reale.
+- Esportazione A4 orizzontale con nome `Sala XX.pdf`.
+- Modulo indipendente: nessuna scrittura nel database e nessuna persistenza dei dati.
