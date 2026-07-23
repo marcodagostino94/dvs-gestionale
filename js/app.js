@@ -98,9 +98,9 @@ async function renderRoomLabelCanvas(room,values){
   ctx.fillText(roomText,1228,126);
 
   const rows=[
-    {label:'PROGETTO',value:values.project,y:272,labelY:382,valueY:444,start:64},
-    {label:'REGIA',value:values.direction,y:540,labelY:650,valueY:712,start:60},
-    {label:'PRODUZIONE',value:values.production,y:807,labelY:917,valueY:979,start:67}
+    {label:'PROGETTO',value:values.project,y:272,labelY:319,valueY:405,start:64},
+    {label:'REGIA',value:values.direction,y:540,labelY:587,valueY:673,start:60},
+    {label:'PRODUZIONE',value:values.production,y:807,labelY:854,valueY:940,start:67}
   ];
 
   rows.forEach(row=>{
@@ -2348,7 +2348,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=11-0';
+const SERVICE_WORKER_URL='./sw.js?v=11-0-1';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');

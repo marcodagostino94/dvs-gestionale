@@ -1,9 +1,9 @@
-const CACHE='dvs-workspace-v11-0';
+const CACHE='dvs-workspace-v11-0-1';
 const ASSETS=[
   './',
   './index.html',
   './css/app.css?v=11-0',
-  './js/app.js?v=11-0',
+  './js/app.js?v=11-0-1',
   './js/pdf-lib.min.js?v=11-0',
   './js/api.js',
   './js/config.js',
