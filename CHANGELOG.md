@@ -192,3 +192,13 @@
 - Anteprima PDF aggiornata in tempo reale.
 - Esportazione A4 orizzontale con nome `Sala XX.pdf`.
 - Modulo indipendente: nessuna scrittura nel database e nessuna persistenza dei dati.
+
+## DVS Workspace 12.0
+
+- Nuova barra iPhone flottante in stile Apple Liquid Glass, limitata agli schermi fino a 600 px.
+- Navigazione orizzontale con snap, centratura automatica e apertura della sezione al termine dello scorrimento.
+- Layout Mac e iPad invariati.
+- L’esportazione backup aggiorna nome e timestamp solo dopo la conferma effettiva del salvataggio/condivisione.
+- L’annullamento del selettore non modifica più lo stato dell’ultimo backup.
+- Stato dell’ultimo backup persistente e condiviso tramite la tabella Supabase `app_settings`.
+- Compatibilità locale mantenuta come sola lettura di emergenza; nessuna modifica ai file backup esistenti.

@@ -1,0 +1,19 @@
+DVS WORKSPACE V12 — CHANGELOG TECNICO
+
+MENU IPHONE
+- Nuova navigazione Liquid Glass attiva esclusivamente fino a 600 px.
+- Track orizzontale con CSS scroll-snap e centratura delle sei sezioni.
+- Al termine dello swipe viene individuata l’icona più vicina al centro e aperta automaticamente la pagina corrispondente.
+- Icone e sezioni originali del Gestionale mantenute.
+- Breakpoint iPad e layout desktop non modificati.
+
+BACKUP
+- Eliminato l’aggiornamento anticipato di localStorage all’avvio del download.
+- Mac: scrittura tramite File System Access API; il successo viene registrato solo dopo writable.close().
+- iPhone/iPad: esportazione tramite Web Share API; l’annullamento (AbortError) non aggiorna lo stato.
+- Nome file e timestamp sono salvati nella nuova tabella Supabase app_settings solo dopo l’esportazione confermata.
+- app_settings è sincronizzata via Supabase Realtime, rendendo lo stato comune a Mac, iPad e iPhone.
+- I file JSON di backup esistenti e il relativo formato non vengono alterati.
+
+INSTALLAZIONE
+- Su un database esistente eseguire una sola volta sql/migrate_v12_backup_status.sql.

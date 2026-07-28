@@ -3,15 +3,15 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='11.0';
-const APP_RELEASE='Workspace v11.0 · 07/2026';
-const DATABASE_SCHEMA='4.3.1';
+const APP_VERSION='12.0';
+const APP_RELEASE='Workspace v12.0 · 07/2026';
+const DATABASE_SCHEMA='4.3.1 + V12 backup metadata';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
 
 const splash=document.getElementById('splash'),login=document.getElementById('login'),shell=document.getElementById('shell'),app=document.getElementById('app'),title=document.getElementById('title'),greeting=document.getElementById('greeting'),modal=document.getElementById('modal'),modalBody=document.getElementById('modal-body'),sheet=document.getElementById('sheet'),sheetBody=document.getElementById('sheet-body'),toast=document.getElementById('toast');
 const views=[['dashboard','dashboard','Dashboard'],['rooms','chair','Sale'],['computers','computer','Computer'],['hardware','rec','Hardware'],['licenses','key','Licenze'],['settings','settings','Settings']];
-const state={view:'dashboard',data:null,filter:'all',session:null};
+const state={view:'dashboard',data:null,filter:'all',session:null,backup:null};
 const labels={dashboard:'Dashboard',rooms:'Sale',computers:'Computer',hardware:'Hardware',licenses:'Licenze',settings:'Settings'};
 
 function navIcon(name){
@@ -28,7 +28,32 @@ function navIcon(name){
   };return icons[name]||''
 }
 function navHTML(){return views.map(([id,icon,label])=>`<button class="nav-btn ${state.view===id?'active':''}" data-view="${id}">${icon==='rec'?`<span class="rec-nav-icon"><i></i></span>`:`<span class="nav-svg">${navIcon(icon)}</span>`}<small>${label}</small></button>`).join('')}
-function bindNav(){document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view))}
+let mobileNavTimer=null;
+function setupMobileLiquidNav(){
+  const nav=document.getElementById('mobile-nav');
+  if(!nav||!matchMedia('(max-width:600px)').matches)return;
+  const buttons=[...nav.querySelectorAll('.nav-btn')];
+  const active=buttons.find(button=>button.dataset.view===state.view)||buttons[0];
+  requestAnimationFrame(()=>active?.scrollIntoView({behavior:'auto',inline:'center',block:'nearest'}));
+  nav.onscroll=()=>{
+    nav.classList.add('is-scrolling');
+    clearTimeout(mobileNavTimer);
+    mobileNavTimer=setTimeout(()=>{
+      nav.classList.remove('is-scrolling');
+      const center=nav.scrollLeft+nav.clientWidth/2;
+      const nearest=buttons.reduce((best,button)=>{
+        const distance=Math.abs(button.offsetLeft+button.offsetWidth/2-center);
+        return !best||distance<best.distance?{button,distance}:best;
+      },null)?.button;
+      if(nearest&&nearest.dataset.view!==state.view)setView(nearest.dataset.view);
+      else nearest?.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
+    },130);
+  };
+}
+function bindNav(){
+  document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>setView(button.dataset.view));
+  setupMobileLiquidNav();
+}
 function setView(v){state.view=v;state.filter='all';title.textContent=labels[v];document.getElementById('desktop-nav').innerHTML=navHTML();document.getElementById('mobile-nav').innerHTML=navHTML();bindNav();render()}
 function showToast(t){toast.textContent=t;toast.classList.remove('hidden');setTimeout(()=>toast.classList.add('hidden'),2200)}
 function openModal(html){modalBody.innerHTML=html;modal.showModal();modalBody.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>modal.close())}
@@ -245,7 +270,11 @@ function stationLabel(station){const room=state.data.rooms.find(r=>r.id===statio
 function stationOf(kind,id){return state.data.stations.find(s=>kind==='computer'?s.computer_id===id:kind==='hardware'?s.hardware_id===id:s.avid_license_id===id)}
 function pluginStation(id){const rel=state.data.station_plugins.find(x=>x.license_id===id);return rel?state.data.stations.find(s=>s.id===rel.station_id):null}
 function currentLocation(kind,id){const s=kind==='plugin'?pluginStation(id):stationOf(kind,id);return s?stationLabel(s):'Non assegnato'}
-async function refresh(){state.data=await loadAll();render()}
+async function refresh(){
+  const [data]=await Promise.all([loadAll(),loadBackupInfo()]);
+  state.data=data;
+  render();
+}
 
 
 const REALTIME_TABLES=[
@@ -256,7 +285,8 @@ const REALTIME_TABLES=[
   'licenses',
   'station_plugins',
   'reminders',
-  'audit_log'
+  'audit_log',
+  'app_settings'
 ];
 
 let realtimeChannel=null;
@@ -281,7 +311,7 @@ async function applyRealtimeChanges(){
   const generation=++realtimeGeneration;
 
   try{
-    const data=await loadAll();
+    const [data]=await Promise.all([loadAll(),loadBackupInfo()]);
     if(generation!==realtimeGeneration)return;
 
     state.data=data;
@@ -1283,24 +1313,57 @@ async function collectBackupData(){
   };
 }
 
-function downloadJSON(data,fileName){
+async function saveBackupFile(data,fileName){
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=fileName;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  if('showSaveFilePicker' in window){
+    const handle=await window.showSaveFilePicker({
+      suggestedName:fileName,
+      types:[{description:'Backup DVS Workspace',accept:{'application/json':['.json']}}]
+    });
+    const writable=await handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    return;
+  }
+  const file=new File([blob],fileName,{type:'application/json'});
+  if(navigator.canShare?.({files:[file]})){
+    await navigator.share({files:[file],title:'Backup DVS Workspace'});
+    return;
+  }
+  throw new Error('Questo browser non può confermare il salvataggio. Usa Safari su iPhone/iPad oppure Chrome/Edge su Mac.');
+}
+
+async function saveBackupInfo(stamp){
+  const {error}=await supabase.from('app_settings').upsert({
+    key:'last_backup',
+    value:stamp,
+    updated_at:stamp.date,
+    updated_by:state.session?.user?.id||null
+  },{onConflict:'key'});
+  if(error)throw error;
+  state.backup=stamp;
+  localStorage.setItem('dvs_last_backup',JSON.stringify(stamp));
+}
+
+async function loadBackupInfo(){
+  try{
+    const {data,error}=await supabase.from('app_settings').select('value').eq('key','last_backup').maybeSingle();
+    if(error)throw error;
+    state.backup=data?.value||null;
+    if(state.backup)localStorage.setItem('dvs_last_backup',JSON.stringify(state.backup));
+  }catch(error){
+    console.warn('[DVS] Stato backup condiviso non disponibile:',error.message);
+    try{state.backup=JSON.parse(localStorage.getItem('dvs_last_backup')||'null')}catch{state.backup=null}
+  }
+  return state.backup;
 }
 
 async function exportFullBackup(){
   const payload=await collectBackupData();
   const fileName=backupFileName();
-  downloadJSON(payload,fileName);
+  await saveBackupFile(payload,fileName);
   const stamp={fileName,date:new Date().toISOString()};
-  localStorage.setItem('dvs_last_backup',JSON.stringify(stamp));
+  await saveBackupInfo(stamp);
   return stamp;
 }
 
@@ -1343,9 +1406,7 @@ function openBackupImportPicker(){
 }
 
 function lastBackupInfo(){
-  try{
-    return JSON.parse(localStorage.getItem('dvs_last_backup')||'null');
-  }catch{return null}
+  return state.backup;
 }
 
 
@@ -2541,7 +2602,9 @@ function openSetting(k){
         modal.close();
         showToast('Backup esportato');
         render();
-      }catch(error){alert(error.message)}
+      }catch(error){
+        if(error?.name!=='AbortError')alert(`Esportazione non riuscita: ${error.message}`);
+      }
     };
 
     document.getElementById('import-backup').onclick=()=>{
@@ -2561,7 +2624,9 @@ function openSetting(k){
         try{
           await exportFullBackup();
           showToast('Backup esportato');
-        }catch(error){alert(error.message)}
+        }catch(error){
+          if(error?.name!=='AbortError')alert(`Esportazione non riuscita: ${error.message}`);
+        }
       };
       document.getElementById('continue-import').onclick=()=>{
         modal.close();

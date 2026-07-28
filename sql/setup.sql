@@ -77,6 +77,13 @@ create table if not exists public.audit_log (
   entity_id uuid, details jsonb not null default '{}'::jsonb, created_at timestamptz not null default now()
 );
 
+create table if not exists public.app_settings (
+  key text primary key,
+  value jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  updated_by uuid references auth.users(id) on delete set null
+);
+
 -- 15 sale iniziali, senza dati reali.
 insert into public.rooms(name,position)
 select 'Sala '||n,n from generate_series(1,15) n
@@ -87,7 +94,7 @@ where not exists(select 1 from public.stations s where s.room_id=r.id and s.posi
 
 -- RLS: l'app è leggibile/scrivibile soltanto dagli utenti autenticati.
 do $$ declare t text; begin
-  foreach t in array array['rooms','computers','hardware','licenses','stations','station_plugins','reminders','audit_log'] loop
+  foreach t in array array['rooms','computers','hardware','licenses','stations','station_plugins','reminders','audit_log','app_settings'] loop
     execute format('alter table public.%I enable row level security',t);
     execute format('drop policy if exists authenticated_all on public.%I',t);
     execute format('create policy authenticated_all on public.%I for all to authenticated using (true) with check (true)',t);
@@ -130,3 +137,10 @@ do $$ declare t text; begin foreach t in array array['computers','hardware','lic
   execute format('drop trigger if exists trg_touch_updated_at on public.%I',t);
   execute format('create trigger trg_touch_updated_at before update on public.%I for each row execute function public.touch_updated_at()',t);
 end loop; end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table public.app_settings;
+exception
+  when duplicate_object then null;
+end $$;
