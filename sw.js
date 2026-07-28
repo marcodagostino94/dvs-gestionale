@@ -1,10 +1,10 @@
-const CACHE='dvs-workspace-v12-1';
+const CACHE='dvs-workspace-v13-0';
 const ASSETS=[
   './',
   './index.html',
-  './css/app.css?v=12-1',
-  './js/app.js?v=12-1',
-  './js/pdf-lib.min.js?v=12-0',
+  './css/app.css?v=13-0',
+  './js/app.js?v=13-0',
+  './js/pdf-lib.min.js?v=13-0',
   './js/api.js',
   './js/config.js',
   './js/supabase.js',
@@ -15,7 +15,7 @@ const ASSETS=[
   './assets/apple-touch-icon.png',
   './assets/workspace-icon-192.png',
   './assets/workspace-icon-512.png',
-  './manifest.webmanifest?v=12-1',
+  './manifest.webmanifest?v=13-0',
   './manifest.json'
 ];
 

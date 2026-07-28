@@ -1,10 +1,11 @@
-DVS WORKSPACE V12 — CHANGELOG TECNICO
+DVS WORKSPACE V13 — CHANGELOG TECNICO
 
 MENU IPHONE
 - Nuova navigazione Liquid Glass attiva esclusivamente fino a 600 px.
 - Le sei icone restano fisse e sempre visibili.
 - La sola capsula rossa segue il dito mediante una posizione frazionaria CSS.
 - Al termine dello swipe la capsula si aggancia all’icona più vicina e apre automaticamente la pagina corrispondente.
+- La posizione della capsula è calcolata tramite offsetLeft/offsetWidth reali: nessun errore cumulativo e nessun taglio alle estremità.
 - Icone e sezioni originali del Gestionale mantenute.
 - Breakpoint iPad e layout desktop non modificati.
 

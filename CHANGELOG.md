@@ -209,3 +209,13 @@
 - Soltanto la capsula Liquid Glass rossa segue lo swipe orizzontale.
 - Al rilascio la capsula si aggancia alla sezione più vicina e apre automaticamente la relativa pagina.
 - Backup V12 invariato.
+
+## DVS Workspace 13.0
+
+- Centratura della capsula Liquid Glass calcolata sulle coordinate reali delle sei icone.
+- Eliminato l’errore progressivo di allineamento visibile da Sale a Settings.
+- Aggiunto margine interno uniforme: la capsula non viene più tagliata alle estremità.
+- Navigazione, swipe e apertura automatica della pagina invariati.
+- Backup condiviso V12 mantenuto senza modifiche.
+- Versione, Informazioni, cache offline e documentazione aggiornate alla V13.
+- Archivio di distribuzione ripulito esclusivamente dai residui non applicativi.

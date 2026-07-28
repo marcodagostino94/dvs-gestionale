@@ -3,8 +3,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='12.1';
-const APP_RELEASE='Workspace v12.1 · 07/2026';
+const APP_VERSION='13.0';
+const APP_RELEASE='Workspace v13.0 · 07/2026';
 const DATABASE_SCHEMA='4.3.1 + V12 backup metadata';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -33,10 +33,23 @@ function setupMobileLiquidNav(){
   if(!nav||!matchMedia('(max-width:600px)').matches)return;
   const buttons=[...nav.querySelectorAll('.nav-btn')];
   const activeIndex=Math.max(0,views.findIndex(([id])=>id===state.view));
-  nav.style.setProperty('--nav-position',activeIndex);
+  const selectorMetrics=index=>{
+    const button=buttons[index];
+    return {
+      x:button.offsetLeft+3,
+      width:Math.max(0,button.offsetWidth-6)
+    };
+  };
+  const placeSelector=index=>{
+    const metrics=selectorMetrics(index);
+    nav.style.setProperty('--selector-x',`${metrics.x}px`);
+    nav.style.setProperty('--selector-width',`${metrics.width}px`);
+  };
+  requestAnimationFrame(()=>placeSelector(activeIndex));
   let startX=0;
   let startY=0;
   let startIndex=activeIndex;
+  let startSelectorX=0;
   let dragging=false;
   let horizontal=false;
 
@@ -45,6 +58,7 @@ function setupMobileLiquidNav(){
     startX=event.clientX;
     startY=event.clientY;
     startIndex=Math.max(0,views.findIndex(([id])=>id===state.view));
+    startSelectorX=selectorMetrics(startIndex).x;
     dragging=true;
     horizontal=false;
     nav.classList.add('is-dragging');
@@ -57,9 +71,10 @@ function setupMobileLiquidNav(){
     if(!horizontal&&Math.abs(dx)>7&&Math.abs(dx)>Math.abs(dy))horizontal=true;
     if(!horizontal)return;
     event.preventDefault();
-    const cellWidth=nav.clientWidth/buttons.length;
-    const position=Math.max(0,Math.min(buttons.length-1,startIndex+dx/cellWidth));
-    nav.style.setProperty('--nav-position',position);
+    const firstX=selectorMetrics(0).x;
+    const lastX=selectorMetrics(buttons.length-1).x;
+    const selectorX=Math.max(firstX,Math.min(lastX,startSelectorX+dx));
+    nav.style.setProperty('--selector-x',`${selectorX}px`);
   };
   const finishSwipe=event=>{
     if(!dragging)return;
@@ -67,22 +82,25 @@ function setupMobileLiquidNav(){
     nav.classList.remove('is-dragging');
     nav.releasePointerCapture?.(event.pointerId);
     if(!horizontal){
-      nav.style.setProperty('--nav-position',startIndex);
+      placeSelector(startIndex);
       return;
     }
-    const cellWidth=nav.clientWidth/buttons.length;
-    const destination=Math.max(0,Math.min(buttons.length-1,Math.round(startIndex+(event.clientX-startX)/cellWidth)));
+    const selectorX=parseFloat(nav.style.getPropertyValue('--selector-x'))||startSelectorX;
+    const destination=buttons.reduce((nearest,button,index)=>{
+      const distance=Math.abs(selectorMetrics(index).x-selectorX);
+      return distance<nearest.distance?{index,distance}:nearest;
+    },{index:0,distance:Infinity}).index;
     nav.dataset.suppressClick='1';
     setTimeout(()=>delete nav.dataset.suppressClick,0);
     if(views[destination][0]!==state.view)setView(views[destination][0]);
-    else nav.style.setProperty('--nav-position',destination);
+    else placeSelector(destination);
   };
   nav.onpointerup=finishSwipe;
   nav.onpointercancel=()=>{
     dragging=false;
     horizontal=false;
     nav.classList.remove('is-dragging');
-    nav.style.setProperty('--nav-position',activeIndex);
+    placeSelector(activeIndex);
   };
 }
 function bindNav(){
