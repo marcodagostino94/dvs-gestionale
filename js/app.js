@@ -3,8 +3,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='12.0';
-const APP_RELEASE='Workspace v12.0 · 07/2026';
+const APP_VERSION='12.1';
+const APP_RELEASE='Workspace v12.1 · 07/2026';
 const DATABASE_SCHEMA='4.3.1 + V12 backup metadata';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -28,30 +28,72 @@ function navIcon(name){
   };return icons[name]||''
 }
 function navHTML(){return views.map(([id,icon,label])=>`<button class="nav-btn ${state.view===id?'active':''}" data-view="${id}">${icon==='rec'?`<span class="rec-nav-icon"><i></i></span>`:`<span class="nav-svg">${navIcon(icon)}</span>`}<small>${label}</small></button>`).join('')}
-let mobileNavTimer=null;
 function setupMobileLiquidNav(){
   const nav=document.getElementById('mobile-nav');
   if(!nav||!matchMedia('(max-width:600px)').matches)return;
   const buttons=[...nav.querySelectorAll('.nav-btn')];
-  const active=buttons.find(button=>button.dataset.view===state.view)||buttons[0];
-  requestAnimationFrame(()=>active?.scrollIntoView({behavior:'auto',inline:'center',block:'nearest'}));
-  nav.onscroll=()=>{
-    nav.classList.add('is-scrolling');
-    clearTimeout(mobileNavTimer);
-    mobileNavTimer=setTimeout(()=>{
-      nav.classList.remove('is-scrolling');
-      const center=nav.scrollLeft+nav.clientWidth/2;
-      const nearest=buttons.reduce((best,button)=>{
-        const distance=Math.abs(button.offsetLeft+button.offsetWidth/2-center);
-        return !best||distance<best.distance?{button,distance}:best;
-      },null)?.button;
-      if(nearest&&nearest.dataset.view!==state.view)setView(nearest.dataset.view);
-      else nearest?.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
-    },130);
+  const activeIndex=Math.max(0,views.findIndex(([id])=>id===state.view));
+  nav.style.setProperty('--nav-position',activeIndex);
+  let startX=0;
+  let startY=0;
+  let startIndex=activeIndex;
+  let dragging=false;
+  let horizontal=false;
+
+  nav.onpointerdown=event=>{
+    if(event.pointerType==='mouse'&&event.button!==0)return;
+    startX=event.clientX;
+    startY=event.clientY;
+    startIndex=Math.max(0,views.findIndex(([id])=>id===state.view));
+    dragging=true;
+    horizontal=false;
+    nav.classList.add('is-dragging');
+    nav.setPointerCapture?.(event.pointerId);
+  };
+  nav.onpointermove=event=>{
+    if(!dragging)return;
+    const dx=event.clientX-startX;
+    const dy=event.clientY-startY;
+    if(!horizontal&&Math.abs(dx)>7&&Math.abs(dx)>Math.abs(dy))horizontal=true;
+    if(!horizontal)return;
+    event.preventDefault();
+    const cellWidth=nav.clientWidth/buttons.length;
+    const position=Math.max(0,Math.min(buttons.length-1,startIndex+dx/cellWidth));
+    nav.style.setProperty('--nav-position',position);
+  };
+  const finishSwipe=event=>{
+    if(!dragging)return;
+    dragging=false;
+    nav.classList.remove('is-dragging');
+    nav.releasePointerCapture?.(event.pointerId);
+    if(!horizontal){
+      nav.style.setProperty('--nav-position',startIndex);
+      return;
+    }
+    const cellWidth=nav.clientWidth/buttons.length;
+    const destination=Math.max(0,Math.min(buttons.length-1,Math.round(startIndex+(event.clientX-startX)/cellWidth)));
+    nav.dataset.suppressClick='1';
+    setTimeout(()=>delete nav.dataset.suppressClick,0);
+    if(views[destination][0]!==state.view)setView(views[destination][0]);
+    else nav.style.setProperty('--nav-position',destination);
+  };
+  nav.onpointerup=finishSwipe;
+  nav.onpointercancel=()=>{
+    dragging=false;
+    horizontal=false;
+    nav.classList.remove('is-dragging');
+    nav.style.setProperty('--nav-position',activeIndex);
   };
 }
 function bindNav(){
-  document.querySelectorAll('[data-view]').forEach(button=>button.onclick=()=>setView(button.dataset.view));
+  document.querySelectorAll('[data-view]').forEach(button=>button.onclick=event=>{
+    const nav=button.closest('#mobile-nav');
+    if(nav?.dataset.suppressClick){
+      event.preventDefault();
+      return;
+    }
+    setView(button.dataset.view);
+  });
   setupMobileLiquidNav();
 }
 function setView(v){state.view=v;state.filter='all';title.textContent=labels[v];document.getElementById('desktop-nav').innerHTML=navHTML();document.getElementById('mobile-nav').innerHTML=navHTML();bindNav();render()}

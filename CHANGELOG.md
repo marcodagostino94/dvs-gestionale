@@ -202,3 +202,10 @@
 - L’annullamento del selettore non modifica più lo stato dell’ultimo backup.
 - Stato dell’ultimo backup persistente e condiviso tramite la tabella Supabase `app_settings`.
 - Compatibilità locale mantenuta come sola lettura di emergenza; nessuna modifica ai file backup esistenti.
+
+### DVS Workspace 12.1 — Correzione barra iPhone
+
+- Le sei icone del menu rimangono fisse e sempre visibili.
+- Soltanto la capsula Liquid Glass rossa segue lo swipe orizzontale.
+- Al rilascio la capsula si aggancia alla sezione più vicina e apre automaticamente la relativa pagina.
+- Backup V12 invariato.
