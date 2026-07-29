@@ -227,3 +227,11 @@
 - Le note Hardware assegnate sono ora visibili dentro le relative postazioni della sezione Sale.
 - Le note Hardware non assegnate sono visibili anche nell’elenco in fondo alla sezione Sale.
 - Nessuna modifica al database: viene utilizzato il campo `notes` Hardware già esistente.
+
+## DVS Workspace 15.0
+
+- Nel selettore delle licenze Avid della sezione Sale viene mostrato anche il System ID.
+- La riga principale riporta ora codice, tipologia Avid e System ID.
+- Per le licenze prive del dato viene mostrato `System ID —`.
+- Colori, disponibilità, assegnazioni e gestione Trial restano invariati.
+- Nessuna migrazione SQL richiesta.

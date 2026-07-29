@@ -3,8 +3,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='14.0';
-const APP_RELEASE='Workspace v14.0 · 07/2026';
+const APP_VERSION='15.0';
+const APP_RELEASE='Workspace v15.0 · 07/2026';
 const DATABASE_SCHEMA='4.3.1 + V12 backup metadata';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -2294,8 +2294,11 @@ function assignmentSheet(kind,stationId){
     ${kind==='license'?'<div class="choice-section-label">LICENZE AVID</div>':''}
     ${items.sort(numSort).map(x=>{
       const used=kind==='plugin'?pluginStation(x.id):stationOf(kind==='license'?'license':kind,x.id);
+      const choiceTitle=kind==='license'
+        ? `${x.code} · ${x.avid_type||''} · System ID ${x.system_id||'—'}`
+        : `${x.code} · ${x.model||x.plugin_type||''}`;
       return `<button class="choice ${used&&used.id!==stationId?'used':'free'} ${current.includes(x.id)?'selected':''}" data-choice="${x.id}">
-        <strong>${esc(x.code)} · ${esc(x.model||x.avid_type||x.plugin_type||'')}</strong><br>
+        <strong>${esc(choiceTitle)}</strong><br>
         <small>${used?esc(stationLabel(used)):'Disponibile'}</small>
       </button>`;
     }).join('')}
