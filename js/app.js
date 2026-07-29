@@ -3,8 +3,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='15.0';
-const APP_RELEASE='Workspace v15.0 · 07/2026';
+const APP_VERSION='16.0';
+const APP_RELEASE='Workspace v16.0 · 07/2026';
 const DATABASE_SCHEMA='4.3.1 + V12 backup metadata';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -2300,6 +2300,7 @@ function assignmentSheet(kind,stationId){
       return `<button class="choice ${used&&used.id!==stationId?'used':'free'} ${current.includes(x.id)?'selected':''}" data-choice="${x.id}">
         <strong>${esc(choiceTitle)}</strong><br>
         <small>${used?esc(stationLabel(used)):'Disponibile'}</small>
+        ${smartNote(x.notes)}
       </button>`;
     }).join('')}
     ${kind==='license'?`

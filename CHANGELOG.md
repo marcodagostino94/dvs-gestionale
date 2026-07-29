@@ -235,3 +235,11 @@
 - Per le licenze prive del dato viene mostrato `System ID —`.
 - Colori, disponibilità, assegnazioni e gestione Trial restano invariati.
 - Nessuna migrazione SQL richiesta.
+
+## DVS Workspace 16.0
+
+- Le note intelligenti blu sono ora visibili in tutti i selettori della sezione Sale.
+- Supportati i menu di selezione Computer/Mac, Hardware, licenze Avid e Plugin.
+- Il tab viene mostrato soltanto quando la risorsa contiene una nota.
+- Colori, disponibilità e comportamento delle assegnazioni restano invariati.
+- Nessuna migrazione SQL richiesta.
