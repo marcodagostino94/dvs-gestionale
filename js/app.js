@@ -3,8 +3,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='13.0';
-const APP_RELEASE='Workspace v13.0 · 07/2026';
+const APP_VERSION='14.0';
+const APP_RELEASE='Workspace v14.0 · 07/2026';
 const DATABASE_SCHEMA='4.3.1 + V12 backup metadata';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -1039,7 +1039,7 @@ function inventoryCard(type,x){
     </button>`;
   }
   if(type==='computers')return `<button class="list-card" data-item="computers:${x.id}"><div><h3>${esc(x.code)} · ${esc([x.model,x.variant].filter(Boolean).join(' · '))}</h3><div class="badges">${x.os_name?`<span class="badge os os-${esc(x.os_name.toLowerCase())}">${esc(x.os_name.toUpperCase())}</span>`:''}</div><p>${locationMarkup(currentLocation('computer',x.id))} · Formattazione ${fmtDate(x.formatted_at)}</p>${smartNote(x.notes)}</div><span>›</span></button>`;
-  if(type==='hardware')return `<button class="list-card" data-item="hardware:${x.id}"><div><h3>${esc(x.code)} · ${esc(x.model||'')}</h3><p>${locationMarkup(currentLocation('hardware',x.id))}</p></div><span>›</span></button>`;
+  if(type==='hardware')return `<button class="list-card" data-item="hardware:${x.id}"><div><h3>${esc(x.code)} · ${esc(x.model||'')}</h3><p>${locationMarkup(currentLocation('hardware',x.id))}</p>${smartNote(x.notes)}</div><span>›</span></button>`;
   const st=licenseStatus(x),kind=x.category==='avid'?x.avid_type:x.plugin_type;
   const loc=currentLocation(x.category==='plugin'?'plugin':'license',x.id);
   const sid=x.category==='avid'&&x.system_id?`System ID ${esc(x.system_id)}`:'';
@@ -1205,6 +1205,7 @@ function rooms(){
       return `<button type="button" class="unassigned-asset-card" data-item="hardware:${item.id}">
         <strong>${esc(item.code)}</strong>
         <span>${esc(item.model||'Disponibile')}</span>
+        ${smartNote(item.notes)}
       </button>`;
     }
 
@@ -1276,6 +1277,7 @@ function rooms(){
                         <small>HARDWARE</small>
                         <strong>${hardware?esc(hardware.code):'—'}</strong>
                         <span>${hardware?esc(hardware.model||''):'Non assegnato'}</span>
+                        ${hardware?smartNote(hardware.notes):''}
                         <i class="summary-edit-hint">Modifica</i>
                       </button>
 

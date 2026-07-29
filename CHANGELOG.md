@@ -219,3 +219,11 @@
 - Backup condiviso V12 mantenuto senza modifiche.
 - Versione, Informazioni, cache offline e documentazione aggiornate alla V13.
 - Archivio di distribuzione ripulito esclusivamente dai residui non applicativi.
+
+## DVS Workspace 14.0
+
+- Estesa la visualizzazione delle note intelligenti blu all’Hardware.
+- Le note Hardware sono ora visibili nelle schede della sezione Hardware.
+- Le note Hardware assegnate sono ora visibili dentro le relative postazioni della sezione Sale.
+- Le note Hardware non assegnate sono visibili anche nell’elenco in fondo alla sezione Sale.
+- Nessuna modifica al database: viene utilizzato il campo `notes` Hardware già esistente.
