@@ -243,3 +243,11 @@
 - Il tab viene mostrato soltanto quando la risorsa contiene una nota.
 - Colori, disponibilità e comportamento delle assegnazioni restano invariati.
 - Nessuna migrazione SQL richiesta.
+
+## DVS Workspace 17.0
+
+- Corretto il farfallio del titolo della testata sticky durante il fondo corsa dello scroll.
+- Rimossa la trasformazione di scala applicata al titolo dalla modalità header compatto.
+- Stabilizzato il livello grafico della testata con isolamento e backface nascosta.
+- Aspetto, contenuti e comportamento della Dashboard restano invariati.
+- Nessuna migrazione SQL richiesta.

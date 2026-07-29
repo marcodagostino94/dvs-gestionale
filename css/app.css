@@ -934,6 +934,20 @@ body.header-compact h1{
   transform-origin:left center;
 }
 
+/* ===== V17 — stabilizzazione titolo testata sticky ===== */
+.topbar h1,
+body.header-compact .topbar h1{
+  transform:none!important;
+  transition:none!important;
+  -webkit-font-smoothing:antialiased;
+  backface-visibility:hidden;
+}
+.topbar{
+  isolation:isolate;
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
+}
+
 /* Pulse definitivo più marcato */
 @keyframes dvsTabPulseWarningFinal{
   0%,100%{background:linear-gradient(145deg,rgba(255,202,58,.14),rgba(103,75,0,.09));border-color:rgba(255,202,58,.65);box-shadow:0 8px 20px rgba(0,0,0,.14)}
