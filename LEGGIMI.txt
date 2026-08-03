@@ -1,5 +1,11 @@
-DVS WORKSPACE — VERSIONE 17.0
-Release · Luglio 2026
+DVS WORKSPACE — VERSIONE 18.1
+Release · Agosto 2026
+
+CORREZIONI V18.1
+- Versione mostrata in Settings > Informazioni aggiornata a 18.1.
+- Cache dell'app e del service worker rinnovata per evitare la permanenza della V17.
+- Icona iPhone collegata all'asset con il bagliore blu più visibile.
+- Nessuna modifica a database, notifiche push, Edge Function o cron già configurati.
 
 NOVITÀ
 - Generatore Etichetta Sala nella pagina Sale
@@ -243,6 +249,15 @@ DVS WORKSPACE V12
 - La migrazione rende condivisi fra Mac, iPad e iPhone nome e data dell’ultimo backup.
 - L’annullamento dell’esportazione non aggiorna lo stato.
 - Nessun file backup JSON esistente viene modificato.
+
+
+DVS WORKSPACE V18 — NOTIFICHE AD APP CHIUSA
+- Eseguire una sola volta: sql/migrate_v18_push_reliability.sql
+- Ridistribuire: supabase/functions/send-expiry-notifications/index.ts
+- Rieseguire: sql/configure_push_cron.sql
+- Aprire una volta la V18 su ogni dispositivo con notifiche attive.
+- Verificare da Settings → Notifiche → Prova dal server.
+- Per la diagnosi usare sql/diagnose_push_v18.sql (sola lettura).
 
 
 HOTFIX BUILD 6.0.1

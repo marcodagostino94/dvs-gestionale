@@ -251,3 +251,13 @@
 - Stabilizzato il livello grafico della testata con isolamento e backface nascosta.
 - Aspetto, contenuti e comportamento della Dashboard restano invariati.
 - Nessuna migrazione SQL richiesta.
+
+## DVS Workspace 18.0
+
+- Notifiche convertite al formato Declarative Web Push per maggiore affidabilità ad app chiusa.
+- Mantenuta la compatibilità con i browser precedenti tramite Service Worker.
+- Salvato l’URL assoluto dell’app per ogni sottoscrizione push.
+- Rinnovo automatico della registrazione push quando l’app viene aperta.
+- Il pulsante di prova usa ora la Edge Function e verifica il percorso server reale.
+- Pianificazione corretta alle 09:00 Europe/Rome in ora solare e legale.
+- Richiede migrazione SQL V18, nuova pubblicazione della Edge Function e aggiornamento del cron.

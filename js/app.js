@@ -3,8 +3,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='17.0';
-const APP_RELEASE='Workspace v17.0 · 07/2026';
+const APP_VERSION='18.1';
+const APP_RELEASE='Workspace v18.1 · 08/2026';
 const DATABASE_SCHEMA='4.3.1 + V12 backup metadata';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -2475,7 +2475,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=11-0-1';
+const SERVICE_WORKER_URL='./sw.js?v=18-1';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');
@@ -2541,10 +2541,17 @@ async function savePushSubscription(subscription){
     auth:json.keys?.auth||'',
     user_agent:navigator.userAgent,
     device_label:[navigator.platform||'',isStandaloneApp()?'App installata':'Browser'].filter(Boolean).join(' · '),
+    app_url:new URL('./',window.location.href).href,
     enabled:true,
     updated_at:new Date().toISOString()
   },{onConflict:'endpoint'});
   if(error)throw error;
+}
+async function refreshPushRegistration(){
+  if(!state.session||Notification.permission!=='granted')return null;
+  const subscription=await currentPushSubscription();
+  if(subscription)await savePushSubscription(subscription);
+  return subscription;
 }
 async function enablePushNotifications(){
   if(!pushSupported())throw new Error('Le notifiche push non sono supportate su questo dispositivo o browser.');
@@ -2586,6 +2593,17 @@ async function showLocalPushTest(){
     tag:'dvs-local-test'
   });
 }
+async function showServerPushTest(){
+  const subscription=await currentPushSubscription();
+  if(!subscription)throw new Error('Prima attiva o aggiorna le notifiche su questo dispositivo.');
+  await savePushSubscription(subscription);
+  const {data,error}=await supabase.functions.invoke('send-expiry-notifications',{
+    body:{test:true,endpoint:subscription.endpoint}
+  });
+  if(error)throw error;
+  if(!data?.ok)throw new Error(data?.error||'Il server non ha confermato l\u2019invio.');
+  return data;
+}
 async function openNotificationsSetting(){
   const supported=pushSupported();
   const rawSubscription=supported?await rawPushSubscription():null;
@@ -2617,7 +2635,7 @@ async function openNotificationsSetting(){
 
       <div class="actions">
         ${subscription
-          ? '<button class="secondary" id="test-notifications">Prova notifica</button><button class="danger" id="disable-notifications">Disattiva</button>'
+          ? '<button class="secondary" id="test-notifications">Prova dal server</button><button class="danger" id="disable-notifications">Disattiva</button>'
           : '<button class="primary" id="enable-notifications" '+(!supported?'disabled':'')+'>'+(needsUpdate?'Aggiorna notifiche':'Attiva notifiche')+'</button>'}
       </div>
     </section>`);
@@ -2640,7 +2658,10 @@ async function openNotificationsSetting(){
     }catch(error){alert(error.message)}
   });
   document.getElementById('test-notifications')?.addEventListener('click',async()=>{
-    try{await showLocalPushTest()}catch(error){alert(error.message)}
+    try{
+      await showServerPushTest();
+      showToast('Test Web Push inviato dal server');
+    }catch(error){alert(`Test server non riuscito: ${error.message}`)}
   });
 }
 
@@ -2822,6 +2843,7 @@ async function handleSession(session){
 
   try{
     await refresh();
+    refreshPushRegistration().catch(error=>console.warn('[DVS] Rinnovo registrazione push:',error.message));
     startRealtime();
   }catch(e){
     stopRealtime();

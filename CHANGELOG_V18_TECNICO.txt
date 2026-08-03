@@ -1,4 +1,4 @@
-DVS WORKSPACE V15 — CHANGELOG TECNICO
+DVS WORKSPACE V18 — CHANGELOG TECNICO
 
 MENU IPHONE
 - Nuova navigazione Liquid Glass attiva esclusivamente fino a 600 px.
@@ -30,3 +30,22 @@ SELETTORE AVID NELLE SALE
 - La label delle scelte Avid include ora `code`, `avid_type` e `system_id`.
 - Il fallback visuale per un System ID non compilato è `—`.
 - Nessuna modifica alla logica di assegnazione o allo schema dati.
+
+NOTE NEI SELETTORI DELLE SALE
+- `smartNote(x.notes)` applicato a ogni risorsa generata da `assignmentSheet`.
+- La copertura comprende Computer, Hardware, Avid e Plugin.
+- Il componente mantiene escaping HTML e rendering condizionale già utilizzati nel resto dell’app.
+
+STABILIZZAZIONE TESTATA
+- Neutralizzata la scala di `body.header-compact .topbar h1`.
+- Disabilitata la transizione del titolo sticky per evitare ridisegni sub-pixel.
+- Aggiunti isolamento compositivo e backface nascosta alla topbar.
+- Nessuna modifica alla logica di scroll o ai dati.
+
+AFFIDABILITÀ NOTIFICHE
+- Payload server nel formato Declarative Web Push (`web_push: 8030`).
+- Fallback imperativo mantenuto nel Service Worker per browser precedenti.
+- Aggiunto `app_url` alle sottoscrizioni e rinnovo automatico all’avvio.
+- Test notifiche spostato dal dispositivo alla Edge Function.
+- Cron eseguito alle 07:00/08:00 UTC con guardia sulle 09:00 Europe/Rome.
+- Eseguire `sql/migrate_v18_push_reliability.sql`, ridistribuire la funzione e rieseguire `sql/configure_push_cron.sql`.

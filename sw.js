@@ -1,10 +1,10 @@
-const CACHE='dvs-workspace-v17-0';
+const CACHE='dvs-workspace-v18-1';
 const ASSETS=[
   './',
   './index.html',
-  './css/app.css?v=17-0',
-  './js/app.js?v=17-0',
-  './js/pdf-lib.min.js?v=17-0',
+  './css/app.css?v=18-1',
+  './js/app.js?v=18-1',
+  './js/pdf-lib.min.js?v=18-1',
   './js/api.js',
   './js/config.js',
   './js/supabase.js',
@@ -15,7 +15,7 @@ const ASSETS=[
   './assets/apple-touch-icon.png',
   './assets/workspace-icon-192.png',
   './assets/workspace-icon-512.png',
-  './manifest.webmanifest?v=17-0',
+  './manifest.webmanifest?v=18-1',
   './manifest.json'
 ];
 
@@ -62,16 +62,21 @@ self.addEventListener('fetch',event=>{
 self.addEventListener('push',event=>{
   let payload={title:'DVS Workspace',body:'È disponibile un nuovo avviso.',url:'./'};
   try{
-    if(event.data)payload={...payload,...event.data.json()};
+    if(event.data){
+      const incoming=event.data.json();
+      payload=incoming?.web_push===8030?{...payload,...incoming.notification}: {...payload,...incoming};
+    }
   }catch{
     if(event.data)payload.body=event.data.text();
   }
-  event.waitUntil(self.registration.showNotification(payload.title,{
+  const {title,navigate,...incomingOptions}=payload;
+  event.waitUntil(self.registration.showNotification(title,{
+    ...incomingOptions,
     body:payload.body,
-    icon:'./assets/workspace-icon-192.png',
-    badge:'./assets/workspace-icon-192.png',
+    icon:payload.icon||'./assets/workspace-icon-192.png',
+    badge:payload.badge||'./assets/workspace-icon-192.png',
     tag:payload.tag||'dvs-expiry',
-    data:{url:payload.url||'./',licenseId:payload.licenseId||null},
+    data:{...(payload.data||{}),url:navigate||payload.data?.url||payload.url||'./',licenseId:payload.data?.licenseId||payload.licenseId||null},
     renotify:true
   }));
 });

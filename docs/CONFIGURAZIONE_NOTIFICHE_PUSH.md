@@ -1,10 +1,11 @@
-# DVS Gestionale v4.2 — Configurazione notifiche push
+# DVS Workspace V18 — Configurazione notifiche push affidabili
 
 ## File da usare
 
 1. `sql/migrate_v4_2_push.sql`
 2. `supabase/functions/send-expiry-notifications/index.ts`
 3. `sql/configure_push_cron.sql`
+4. `sql/migrate_v18_push_reliability.sql`
 
 La chiave pubblica VAPID è già inclusa nell'app:
 
@@ -61,6 +62,21 @@ Ripetere l'attivazione separatamente su ogni Mac, iPhone e iPad.
 Aprire `sql/configure_push_cron.sql`.
 
 Sostituire `YOUR_SERVICE_ROLE_KEY` con la chiave `service_role` del progetto Supabase, eseguire la query e non salvare la chiave nel repository Git.
+
+## Aggiornamento obbligatorio per la V18
+
+Per un database già configurato:
+
+1. eseguire una sola volta `sql/migrate_v18_push_reliability.sql`;
+2. ridistribuire `supabase/functions/send-expiry-notifications/index.ts` nella Edge Function esistente;
+3. rieseguire `sql/configure_push_cron.sql` per impostare correttamente le 09:00 Europe/Rome;
+4. pubblicare la V18 dell’app;
+5. aprire una volta la V18 su ciascun dispositivo con notifiche attive, così viene registrato l’URL necessario al Web Push dichiarativo;
+6. in Settings → Notifiche premere `Prova dal server`.
+
+La prova V18 non è una notifica locale: chiama la stessa Edge Function utilizzata dal cron. Se arriva, sottoscrizione, chiavi VAPID, server e consegna Web Push sono operativi.
+
+Il nuovo formato Declarative Web Push consente ai dispositivi Apple compatibili di mostrare l’avviso direttamente dal messaggio ricevuto, senza dipendere dall’esecuzione JavaScript dell’app o del Service Worker. I browser precedenti continuano a usare il Service Worker.
 
 ## Frequenza degli avvisi
 

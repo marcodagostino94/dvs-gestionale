@@ -12,8 +12,18 @@ type License = {
   archived_at: string | null;
 };
 
+type PushSubscriptionRow = {
+  id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  app_url: string | null;
+};
+
 const corsHeaders = {
   "content-type": "application/json",
+  "access-control-allow-origin": "*",
+  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
 };
 
 function daysUntil(dateValue: string): number {
@@ -36,11 +46,49 @@ function expiryText(days: number): string {
   return `Scaduta da ${Math.abs(days)} ${Math.abs(days) === 1 ? "giorno" : "giorni"}`;
 }
 
+function romeHour(): number {
+  return Number(new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Rome",
+    hour: "2-digit",
+    hour12: false,
+  }).format(new Date()));
+}
+
+function pushPayload(title: string, body: string, appUrl: string | null, tag: string, licenseId: string | null) {
+  if (!appUrl) return JSON.stringify({ title, body, tag, licenseId, url: "./" });
+  const baseUrl = appUrl.endsWith("/") ? appUrl : `${appUrl}/`;
+  return JSON.stringify({
+    web_push: 8030,
+    notification: {
+      title,
+      lang: "it-IT",
+      dir: "ltr",
+      body,
+      navigate: baseUrl,
+      tag,
+      silent: false,
+      icon: new URL("assets/workspace-icon-192.png", baseUrl).href,
+      data: { url: baseUrl, licenseId },
+    },
+  });
+}
+
 export default {
   async fetch(request: Request): Promise<Response> {
+    if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
     if (request.method !== "POST") {
       return new Response(JSON.stringify({ error: "Metodo non consentito" }), {
         status: 405,
+        headers: corsHeaders,
+      });
+    }
+
+    let requestBody: { scheduled?: boolean; test?: boolean; endpoint?: string } = {};
+    try { requestBody = await request.json(); } catch { /* body facoltativo */ }
+
+    if (requestBody.scheduled && romeHour() !== 9) {
+      return new Response(JSON.stringify({ ok: true, skipped: true, reason: "Fuori dalla finestra delle 09:00 Europe/Rome" }), {
+        status: 200,
         headers: corsHeaders,
       });
     }
@@ -68,7 +116,7 @@ export default {
           .is("archived_at", null)
           .not("expiry_date", "is", null),
         supabase.from("push_subscriptions")
-          .select("id,endpoint,p256dh,auth")
+          .select("id,endpoint,p256dh,auth,app_url")
           .eq("enabled", true),
       ]);
 
@@ -76,6 +124,24 @@ export default {
       return new Response(JSON.stringify({
         error: licenseError?.message || subscriptionError?.message,
       }), { status: 500, headers: corsHeaders });
+    }
+
+    const activeSubscriptions = (subscriptions || []) as PushSubscriptionRow[];
+
+    if (requestBody.test) {
+      const subscription = activeSubscriptions.find(item => item.endpoint === requestBody.endpoint);
+      if (!subscription) {
+        return new Response(JSON.stringify({ error: "Sottoscrizione non trovata o non attiva" }), { status: 404, headers: corsHeaders });
+      }
+      try {
+        await webpush.sendNotification({
+          endpoint: subscription.endpoint,
+          keys: { p256dh: subscription.p256dh, auth: subscription.auth },
+        }, pushPayload("DVS Workspace", "Test server completato: il Web Push funziona anche senza app in primo piano.", subscription.app_url, "dvs-server-test", null));
+        return new Response(JSON.stringify({ ok: true, sent: 1, declarative: !!subscription.app_url }), { status: 200, headers: corsHeaders });
+      } catch (error) {
+        return new Response(JSON.stringify({ error: (error as Error).message }), { status: 502, headers: corsHeaders });
+      }
     }
 
     const { data: stations } = await supabase.from("stations")
@@ -102,7 +168,7 @@ export default {
       const key = eventKey(days);
       if (!key) continue;
 
-      for (const subscription of subscriptions || []) {
+      for (const subscription of activeSubscriptions) {
         const { data: existing } = await supabase.from("notification_deliveries")
           .select("id")
           .eq("subscription_id", subscription.id)
@@ -118,13 +184,13 @@ export default {
           .filter(Boolean)
           .join(" • ");
 
-        const payload = JSON.stringify({
-          title: `${days <= 0 ? "🔴" : "🔔"} ${license.code}`,
-          body: `${expiryText(days)}${details ? `\n${details}` : ""}`,
-          tag: `license-${license.id}-${key}`,
-          licenseId: license.id,
-          url: "./",
-        });
+        const payload = pushPayload(
+          `${days <= 0 ? "🔴" : "🔔"} ${license.code}`,
+          `${expiryText(days)}${details ? `\n${details}` : ""}`,
+          subscription.app_url,
+          `license-${license.id}-${key}`,
+          license.id,
+        );
 
         try {
           await webpush.sendNotification({
