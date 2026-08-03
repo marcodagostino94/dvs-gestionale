@@ -1,5 +1,11 @@
-DVS WORKSPACE — VERSIONE 18.1
+DVS WORKSPACE — VERSIONE 18.2
 Release · Agosto 2026
+
+CORREZIONI V18.2
+- Nuova icona iPhone con bagliore blu più forte e spostato all'interno
+  dell'area sicura, così non viene eliminato dalla maschera applicata da iOS.
+- Ricostruite tutte le dimensioni dell'icona: 180, 192, 512 e 1024 px.
+- Cache aggiornata nuovamente per obbligare Safari a scaricare il nuovo asset.
 
 CORREZIONI V18.1
 - Versione mostrata in Settings > Informazioni aggiornata a 18.1.

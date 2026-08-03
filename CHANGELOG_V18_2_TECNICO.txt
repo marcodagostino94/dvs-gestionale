@@ -1,0 +1,11 @@
+DVS WORKSPACE V18.2 — ICONA HOME CON BAGLIORE BLU
+Release: agosto 2026
+
+- Ridisegnato esclusivamente il trattamento luminoso dell'icona Workspace.
+- Logo centrale, palette rossa/grigia e dicitura WORKSPACE conservati.
+- Bagliore blu inferiore rafforzato e collocato dentro la safe area iOS.
+- Rigenerate le varianti 180, 192, 512 e 1024 px.
+- apple-touch-icon usa ora la variante nativa 180 x 180 px.
+- Cache dell'app, service worker e URL delle icone portati a v18-2.
+- Versione mostrata in Settings > Informazioni portata a 18.2.
+- Nessuna modifica a SQL, Edge Function, cron o notifiche push.
