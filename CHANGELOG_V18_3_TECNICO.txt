@@ -1,0 +1,10 @@
+DVS WORKSPACE V18.3 — ICONA IOS FULL-BLEED
+Release: agosto 2026
+
+- Rimossa la seconda sagoma interna introdotta nella V18.2.
+- Ripristinata la grafica originale a pieno formato, senza margini aggiunti.
+- Nessun pre-ritaglio: la squircle finale viene applicata direttamente da iOS.
+- Inserito un bagliore blu interno lungo il bordo inferiore, dentro la safe area.
+- Rigenerate le varianti 180, 192, 512 e 1024 px.
+- Versione applicazione, service worker e cache portati a 18.3.
+- Nessuna modifica a database, SQL, Edge Function, cron o notifiche push.
