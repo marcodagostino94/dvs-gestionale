@@ -1,4 +1,4 @@
-const CACHE='dvs-workspace-v18-5';
+const CACHE='dvs-workspace-v18-5-identity-fix';
 const ASSETS=[
   './',
   './index.html',
@@ -15,7 +15,7 @@ const ASSETS=[
   './assets/apple-touch-icon.png',
   './assets/workspace-icon-192.png',
   './assets/workspace-icon-512.png',
-  './manifest.webmanifest?v=18-5',
+  './manifest.webmanifest?v=18-5-identity-fix',
   './manifest.json'
 ];
 

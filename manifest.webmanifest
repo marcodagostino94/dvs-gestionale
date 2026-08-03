@@ -1,8 +1,9 @@
 {
   "name": "DVS Workspace",
   "short_name": "Workspace",
-  "id": "./",
-  "start_url": "./",
+  "id": "/dvs-gestionale/",
+  "start_url": "/dvs-gestionale/",
+  "scope": "/dvs-gestionale/",
   "display": "standalone",
   "background_color": "#0e0e10",
   "theme_color": "#171719",
