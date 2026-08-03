@@ -1,5 +1,15 @@
-DVS WORKSPACE — VERSIONE 18.3
+DVS WORKSPACE — VERSIONE 18.5
 Release · Agosto 2026
+
+CORREZIONI V18.5
+- Ridotto lo spazio nero esterno sul lato sinistro dell'icona.
+- Lato destro mantenuto nella posizione già corretta.
+- Bagliore perimetrale reso leggermente più presente per resistere al taglio iOS.
+
+CORREZIONI V18.4
+- Bagliore blu reso più sottile e uniforme.
+- Luce estesa lungo tutto il perimetro dell'icona, dentro la maschera iOS.
+- Nessun margine nero e nessuna seconda cornice interna.
 
 CORREZIONI V18.3
 - Icona iOS nuovamente full-bleed: nessun margine e nessuna doppia cornice.
