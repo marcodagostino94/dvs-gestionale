@@ -18,14 +18,16 @@ create table if not exists public.computers (
   model text not null default '', variant text not null default '', cpu text not null default '',
   ram text not null default '', gpu text not null default '', storage text not null default '',
   serial text not null default '', os_name text not null default '', os_version text not null default '',
-  formatted_at date, notes text not null default '', attachments_count integer not null default 0,
+  formatted_at date, purchase_date_text text not null default '', purchase_vendor text not null default '',
+  notes text not null default '', attachments_count integer not null default 0,
   archived_at timestamptz, created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
 
 create table if not exists public.hardware (
   id uuid primary key default gen_random_uuid(), code text not null unique,
   category text not null default '', model text not null default '', serial text not null default '',
-  driver_version text not null default '', notes text not null default '', attachments_count integer not null default 0,
+  driver_version text not null default '', purchase_date_text text not null default '',
+  purchase_vendor text not null default '', notes text not null default '', attachments_count integer not null default 0,
   archived_at timestamptz, created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
 

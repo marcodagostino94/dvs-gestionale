@@ -1,5 +1,13 @@
-DVS WORKSPACE — VERSIONE 18.5
+DVS WORKSPACE — VERSIONE 19.0
 Release · Agosto 2026
+
+NOVITÀ V19.0
+- Campi testuali "Data di acquisto" e "Acquistato presso" nei moduli di
+  inserimento e modifica di Computer e Hardware.
+- Le informazioni di acquisto restano riservate ai moduli e non vengono
+  mostrate nelle pagine, nelle schede, nella ricerca o nelle stampe.
+- Prima della pubblicazione eseguire sql/migrate_v19_purchase_info.sql
+  nel SQL Editor di Supabase.
 
 CORREZIONI V18.5
 - Ridotto lo spazio nero esterno sul lato sinistro dell'icona.
