@@ -1,0 +1,17 @@
+DVS WORKSPACE V19.1 — ALLEGATI MULTIPLI
+Release: agosto 2026
+
+- Aggiunta tabella privata asset_attachments con RLS per utenti autenticati.
+- Aggiunto bucket privato Supabase Storage dvs-asset-attachments.
+- Limite Storage e interfaccia: 10 MB per singolo file.
+- Formati accettati: PDF, JPG, PNG, HEIC, HEIF, DOC, DOCX, XLS, XLSX,
+  TXT e ZIP.
+- Caricamento multiplo, apertura con URL firmato temporaneo, download ed
+  eliminazione definitiva.
+- Allegati disponibili esclusivamente nel modulo di modifica di Computer e
+  Hardware. Durante la creazione viene richiesto di salvare prima l'elemento.
+- Contatore attachments_count mantenuto automaticamente da un trigger SQL.
+- Gli allegati restano fuori da liste, Sale, Dashboard, ricerca, dettagli e stampe.
+- I file binari presenti in Supabase Storage non vengono incorporati nel backup
+  JSON del Gestionale.
+- Identità PWA /dvs-gestionale/ e sistema notifiche invariati.

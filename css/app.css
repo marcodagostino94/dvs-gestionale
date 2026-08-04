@@ -1499,3 +1499,12 @@ input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,2
   .room-label-preview{height:42vh;min-height:270px}
   .room-label-button{padding:6px 9px;font-size:10px}
 }
+
+/* ===== V19.1 — Allegati Computer e Hardware ===== */
+.attachment-editor{border:1px solid var(--line);background:rgba(255,255,255,.035);border-radius:18px;padding:14px;display:grid;gap:12px}
+.attachment-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.attachment-head>div{display:grid;gap:4px}.attachment-head strong{color:var(--text);font-size:14px}.attachment-head small,.attachment-row small{color:var(--muted);font-size:10px}
+.attachment-add{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;padding:9px 12px;background:rgba(85,185,243,.15);border:1px solid rgba(85,185,243,.3);color:#ccecff;font-weight:800;font-size:11px;cursor:pointer;white-space:nowrap}.attachment-add input{position:absolute;inset:0;opacity:0;cursor:pointer}.attachment-add:has(input:disabled){opacity:.5;cursor:wait}
+.attachment-list{display:grid;gap:8px}.attachment-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:10px;min-width:0}.attachment-row>div:first-child{display:grid;gap:4px;min-width:0}.attachment-row strong{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.attachment-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}.attachment-actions button{border:1px solid var(--line);background:rgba(255,255,255,.07);color:var(--text);border-radius:9px;padding:7px 9px;font-size:9px;font-weight:800;cursor:pointer}.attachment-actions button.delete{color:#ffabb0;background:rgba(189,38,49,.12)}.attachment-actions button:disabled{opacity:.5;cursor:wait}
+.attachment-empty,.attachment-error{color:var(--muted);font-size:11px;line-height:1.45}.attachment-error{color:#ffabb0}
+@media(max-width:600px){.attachment-head,.attachment-row{align-items:stretch;flex-direction:column}.attachment-add{width:100%}.attachment-actions{justify-content:flex-start}.attachment-actions button{flex:1}}

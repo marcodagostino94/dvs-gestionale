@@ -1,0 +1,20 @@
+INSTALLAZIONE DVS WORKSPACE V19.1
+
+1. Apri Supabase > SQL Editor.
+2. Se non hai ancora eseguito la migrazione della V19.0, esegui prima:
+   sql/migrate_v19_purchase_info.sql
+3. Esegui:
+   sql/migrate_v19_1_asset_attachments.sql
+4. Il comando crea automaticamente:
+   - la tabella asset_attachments;
+   - il bucket privato dvs-asset-attachments;
+   - le regole di sicurezza per utenti autenticati;
+   - il limite di 10 MB per file;
+   - il contatore automatico degli allegati.
+5. Pubblica tutti i file della V19.1 nel repository dvs-gestionale.
+6. Attendi la pubblicazione GitHub Pages e apri il Gestionale.
+7. Verifica in Settings > Informazioni che compaia Versione 19.1.
+8. Apri un Computer o Hardware esistente > Modifica > Allegati.
+9. Prova caricamento, apertura, download ed eliminazione.
+
+Non occorre creare manualmente alcun bucket dal menu Storage: lo fa la migrazione SQL.

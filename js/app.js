@@ -1,11 +1,11 @@
 import { supabase } from './supabase.js';
-import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, addAudit } from './api.js';
+import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, addAudit, listAssetAttachments, uploadAssetAttachment, openAssetAttachment, downloadAssetAttachment, deleteAssetAttachment } from './api.js';
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='19.0';
-const APP_RELEASE='Workspace v19.0 · 08/2026';
-const DATABASE_SCHEMA='4.3.1 + V12 backup metadata';
+const APP_VERSION='19.1';
+const APP_RELEASE='Workspace v19.1 · 08/2026';
+const DATABASE_SCHEMA='4.3.1 + V19.1 asset attachments';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
 
@@ -2128,19 +2128,79 @@ function bindSegments(root=document){
 }
 function val(id){return document.getElementById(id)?.value?.trim()||''}
 function checked(id){return document.getElementById(id)?.checked||false}
+const ATTACHMENT_MAX_BYTES=10*1024*1024;
+const ATTACHMENT_ACCEPT='.pdf,.jpg,.jpeg,.png,.heic,.heif,.doc,.docx,.xls,.xlsx,.txt,.zip';
+const ATTACHMENT_EXTENSIONS=new Set(ATTACHMENT_ACCEPT.split(','));
+function fileSizeLabel(bytes){
+  if(!Number.isFinite(Number(bytes)))return '—';
+  if(bytes>=1024*1024)return `${(bytes/(1024*1024)).toFixed(bytes>=10*1024*1024?0:1)} MB`;
+  if(bytes>=1024)return `${Math.round(bytes/1024)} KB`;
+  return `${bytes} B`;
+}
+function attachmentEditorHTML(isNew){
+  return `<section class="attachment-editor" id="attachment-editor">${isNew
+    ? '<div class="attachment-empty">Salva prima l\'elemento per aggiungere gli allegati.</div>'
+    : '<div class="attachment-empty">Caricamento allegati…</div>'}</section>`;
+}
+async function renderAssetAttachments(assetType,assetId,isNew=false){
+  const root=document.getElementById('attachment-editor');
+  if(!root||isNew)return;
+  root.dataset.assetId=assetId;
+  try{
+    const items=await listAssetAttachments(assetType,assetId);
+    if(!root.isConnected||root.dataset.assetId!==assetId)return;
+    root.innerHTML=`<div class="attachment-head"><div><strong>Allegati</strong><small>PDF, immagini e documenti · massimo 10 MB per file</small></div><label class="attachment-add">＋ Aggiungi<input id="attachment-input" type="file" multiple accept="${ATTACHMENT_ACCEPT}"></label></div>
+      <div class="attachment-list">${items.length?items.map(item=>`<div class="attachment-row" data-attachment="${item.id}"><div><strong title="${esc(item.file_name)}">${esc(item.file_name)}</strong><small>${fileSizeLabel(item.size_bytes)} · ${new Date(item.created_at).toLocaleString('it-IT')}</small></div><div class="attachment-actions"><button type="button" data-attachment-open="${item.id}">Apri</button><button type="button" data-attachment-download="${item.id}">Scarica</button><button type="button" class="delete" data-attachment-delete="${item.id}">Elimina</button></div></div>`).join(''):'<div class="attachment-empty">Nessun allegato.</div>'}</div>`;
+    const byId=id=>items.find(item=>item.id===id);
+    const input=document.getElementById('attachment-input');
+    input.onchange=async()=>{
+      const files=[...input.files];
+      if(!files.length)return;
+      const tooLarge=files.find(file=>file.size>ATTACHMENT_MAX_BYTES);
+      if(tooLarge){alert(`${tooLarge.name} supera il limite di 10 MB.`);input.value='';return;}
+      const unsupported=files.find(file=>!ATTACHMENT_EXTENSIONS.has(`.${file.name.split('.').pop()?.toLowerCase()}`));
+      if(unsupported){alert(`${unsupported.name} non è un formato supportato.`);input.value='';return;}
+      input.disabled=true;
+      try{
+        for(const file of files)await uploadAssetAttachment(assetType,assetId,file);
+        await addAudit('upload_attachments',assetType,assetId,{files:files.map(file=>file.name)});
+        showToast(files.length===1?'Allegato caricato':`${files.length} allegati caricati`);
+        await renderAssetAttachments(assetType,assetId,false);
+      }catch(error){alert(`Caricamento non riuscito: ${error.message}`);input.disabled=false;}
+    };
+    root.querySelectorAll('[data-attachment-open]').forEach(button=>button.onclick=async()=>{
+      const item=byId(button.dataset.attachmentOpen);if(!item)return;
+      const target=window.open('about:blank','_blank');
+      try{const url=await openAssetAttachment(item);if(target)target.location=url;else window.open(url,'_blank','noopener');}
+      catch(error){if(target)target.close();alert(`Apertura non riuscita: ${error.message}`);}
+    });
+    root.querySelectorAll('[data-attachment-download]').forEach(button=>button.onclick=async()=>{
+      const item=byId(button.dataset.attachmentDownload);if(!item)return;
+      try{const blob=await downloadAssetAttachment(item);const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=item.file_name;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+      catch(error){alert(`Download non riuscito: ${error.message}`);}
+    });
+    root.querySelectorAll('[data-attachment-delete]').forEach(button=>button.onclick=async()=>{
+      const item=byId(button.dataset.attachmentDelete);if(!item||!confirm(`Eliminare definitivamente ${item.file_name}?`))return;
+      button.disabled=true;
+      try{await deleteAssetAttachment(item);await addAudit('delete_attachment',assetType,assetId,{file:item.file_name});showToast('Allegato eliminato');await renderAssetAttachments(assetType,assetId,false);}
+      catch(error){button.disabled=false;alert(`Eliminazione non riuscita: ${error.message}`);}
+    });
+  }catch(error){root.innerHTML=`<div class="attachment-error">Impossibile caricare gli allegati: ${esc(error.message)}</div>`;}
+}
 function editItem(type,x={_new:true,id:uuid()}){
   const isNew=x._new;
   if(isNew&&type==='computers')x.code=nextComputerCode();
   if(isNew&&type==='hardware')x.code=nextHardwareCode();
   if(isNew&&type==='licenses'&&!x.category){x.category='avid';x.avid_type='Ultimate';x.code=nextAvidCode('Ultimate');}
-  if(type==='computers')openModal(`<div class="modal-head"><h2>${isNew?'Nuovo computer':esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${field('code','ID',x.code)}${field('model','Modello',x.model)}${field('variant','Anno / Variante',x.variant)}${field('cpu','Processore / Chip',x.cpu)}${field('ram','RAM',x.ram)}${field('gpu','Scheda grafica',x.gpu)}${field('storage','Archiviazione',x.storage)}${field('serial','Numero seriale',x.serial)}${segmented('os','Sistema operativo',[['Mojave','MOJAVE'],['Monterey','MONTEREY'],['Ventura','VENTURA'],['Sonoma','SONOMA'],['Sequoia','SEQUOIA'],['Tahoe','TAHOE']],x.os_name||'Monterey')}${field('osv','Versione macOS',x.os_version)}${field('formatted','Data formattazione',x.formatted_at,'date')}${field('purchase-date','Data di acquisto',x.purchase_date_text)}${field('purchase-vendor','Acquistato presso',x.purchase_vendor)}${stationSelectHTML('assignment','Assegnazione',stationOf('computer',x.id)?.id||'')}${field('notes','Note',x.notes)}</div><div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);
-  else if(type==='hardware')openModal(`<div class="modal-head"><h2>${isNew?'Nuovo hardware':esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${field('code','ID',x.code)}${field('category','Categoria / Tipo',x.category)}${field('model','Modello',x.model)}${field('serial','Numero seriale',x.serial)}${field('driver','Driver / Firmware',x.driver_version)}${field('purchase-date','Data di acquisto',x.purchase_date_text)}${field('purchase-vendor','Acquistato presso',x.purchase_vendor)}${stationSelectHTML('assignment','Assegnazione',stationOf('hardware',x.id)?.id||'')}${field('notes','Note',x.notes)}</div><div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);
+  if(type==='computers')openModal(`<div class="modal-head"><h2>${isNew?'Nuovo computer':esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${field('code','ID',x.code)}${field('model','Modello',x.model)}${field('variant','Anno / Variante',x.variant)}${field('cpu','Processore / Chip',x.cpu)}${field('ram','RAM',x.ram)}${field('gpu','Scheda grafica',x.gpu)}${field('storage','Archiviazione',x.storage)}${field('serial','Numero seriale',x.serial)}${segmented('os','Sistema operativo',[['Mojave','MOJAVE'],['Monterey','MONTEREY'],['Ventura','VENTURA'],['Sonoma','SONOMA'],['Sequoia','SEQUOIA'],['Tahoe','TAHOE']],x.os_name||'Monterey')}${field('osv','Versione macOS',x.os_version)}${field('formatted','Data formattazione',x.formatted_at,'date')}${field('purchase-date','Data di acquisto',x.purchase_date_text)}${field('purchase-vendor','Acquistato presso',x.purchase_vendor)}${stationSelectHTML('assignment','Assegnazione',stationOf('computer',x.id)?.id||'')}${field('notes','Note',x.notes)}${attachmentEditorHTML(isNew)}</div><div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);
+  else if(type==='hardware')openModal(`<div class="modal-head"><h2>${isNew?'Nuovo hardware':esc(x.code)}</h2><button class="close" data-close>×</button></div><div class="fields">${field('code','ID',x.code)}${field('category','Categoria / Tipo',x.category)}${field('model','Modello',x.model)}${field('serial','Numero seriale',x.serial)}${field('driver','Driver / Firmware',x.driver_version)}${field('purchase-date','Data di acquisto',x.purchase_date_text)}${field('purchase-vendor','Acquistato presso',x.purchase_vendor)}${stationSelectHTML('assignment','Assegnazione',stationOf('hardware',x.id)?.id||'')}${field('notes','Note',x.notes)}${attachmentEditorHTML(isNew)}</div><div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);
   else licenseEditor(x,isNew);
   bindSegments(modalBody);
   if(isNew&&type!=='licenses'){
     const code=document.getElementById('code');
     if(code)code.readOnly=false;
   }
+  if(type==='computers'||type==='hardware')renderAssetAttachments(type,x.id,isNew);
   document.getElementById('save')?.addEventListener('click',()=>saveEditor(type,x,isNew));
 }
 function stationSelectHTML(id,label,value){
@@ -2209,9 +2269,9 @@ async function saveEditor(type,x,isNew){
   try{
     let row={id:x.id};let assignment=val('assignment');
     if(type==='computers'){
-      Object.assign(row,{code:validateAssetCode(type,val('code'),x.id),model:val('model'),variant:val('variant'),cpu:val('cpu'),ram:val('ram'),gpu:val('gpu'),storage:val('storage'),serial:val('serial'),os_name:val('os'),os_version:val('osv'),formatted_at:val('formatted')||null,purchase_date_text:val('purchase-date'),purchase_vendor:val('purchase-vendor'),notes:val('notes'),attachments_count:x.attachments_count||0});
+      Object.assign(row,{code:validateAssetCode(type,val('code'),x.id),model:val('model'),variant:val('variant'),cpu:val('cpu'),ram:val('ram'),gpu:val('gpu'),storage:val('storage'),serial:val('serial'),os_name:val('os'),os_version:val('osv'),formatted_at:val('formatted')||null,purchase_date_text:val('purchase-date'),purchase_vendor:val('purchase-vendor'),notes:val('notes')});
     }else if(type==='hardware'){
-      Object.assign(row,{code:validateAssetCode(type,val('code'),x.id),category:val('category'),model:val('model'),serial:val('serial'),driver_version:val('driver'),purchase_date_text:val('purchase-date'),purchase_vendor:val('purchase-vendor'),notes:val('notes'),attachments_count:x.attachments_count||0});
+      Object.assign(row,{code:validateAssetCode(type,val('code'),x.id),category:val('category'),model:val('model'),serial:val('serial'),driver_version:val('driver'),purchase_date_text:val('purchase-date'),purchase_vendor:val('purchase-vendor'),notes:val('notes')});
     }else{
       const category=val('category'),avidType=category==='avid'?val('avid-type'):null;
       Object.assign(row,{code:validateAssetCode(type,val('code'),x.id,{category,avid_type:avidType}),category,avid_type:avidType,plugin_type:category==='plugin'?val('plugin-type'):null,system_id:val('system')||null,activation_code:val('activation-code')||null,plugin_serial:val('plugin-serial')||null,version:val('version')||null,billing_cycle:val('cycle'),is_trial:false,activation_date:val('activation')||null,expiry_date:val('expiry')||null,deactivation_requested:checked('deactivation'),notes:val('notes'),attachments_count:x.attachments_count||0});
@@ -2475,7 +2535,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=19-0';
+const SERVICE_WORKER_URL='./sw.js?v=19-1';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');

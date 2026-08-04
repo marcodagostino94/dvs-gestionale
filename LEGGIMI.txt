@@ -1,5 +1,16 @@
-DVS WORKSPACE — VERSIONE 19.0
+DVS WORKSPACE — VERSIONE 19.1
 Release · Agosto 2026
+
+NOVITÀ V19.1
+- Allegati multipli per Computer e Hardware nel solo modulo di modifica.
+- Caricamento di PDF, immagini, documenti Office, testo e ZIP.
+- Limite massimo di 10 MB per singolo file.
+- Apertura, download ed eliminazione degli allegati.
+- File conservati nel bucket privato Supabase Storage dvs-asset-attachments.
+- Accesso consentito esclusivamente agli utenti autenticati.
+- Prima della pubblicazione eseguire, nell'ordine:
+  1. sql/migrate_v19_purchase_info.sql (se non già eseguito)
+  2. sql/migrate_v19_1_asset_attachments.sql
 
 NOVITÀ V19.0
 - Campi testuali "Data di acquisto" e "Acquistato presso" nei moduli di
