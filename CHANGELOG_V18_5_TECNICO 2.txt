@@ -1,0 +1,10 @@
+DVS WORKSPACE V18.5 — CENTRAGGIO ICONA IOS
+Release: agosto 2026
+
+- Grafica estesa di circa l'1,6% verso sinistra, con il lato destro ancorato.
+- Eliminata l'asimmetria dello spazio esterno nero tra sinistra e destra.
+- Bagliore blu perimetrale leggermente rafforzato e diffuso.
+- Composizione sempre full-bleed, senza seconda cornice o padding aggiunto.
+- Rigenerate le varianti 180, 192, 512 e 1024 px.
+- Versione applicazione, cache e service worker portati a 18.5.
+- Nessuna modifica a database, SQL, notifiche push, Edge Function o cron.
