@@ -3,8 +3,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='20.0';
-const APP_RELEASE='Workspace v20.0 · 08/2026';
+const APP_VERSION='20.1';
+const APP_RELEASE='Workspace v20.1 · 08/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 asset attachments';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -227,14 +227,22 @@ async function createRoomLabelPdf(room,values){
 }
 
 async function saveRoomLabelPdf(room,values){
-  const bytes=await createRoomLabelPdf(room,values);
   const filename=`Sala ${labelRoomNumber(room)}.pdf`;
-  const blob=new Blob([bytes],{type:'application/pdf'});
-  if('showSaveFilePicker' in window){
-    const handle=await window.showSaveFilePicker({
+  let handle=null;
+
+  // Il selettore deve aprirsi mentre è ancora attiva l'autorizzazione del
+  // clic. Se lo apriamo dopo la generazione asincrona del PDF, Chrome e le
+  // PWA possono bloccarlo senza mostrare la finestra di salvataggio.
+  if(typeof window.showSaveFilePicker==='function'){
+    handle=await window.showSaveFilePicker({
       suggestedName:filename,
       types:[{description:'Documento PDF',accept:{'application/pdf':['.pdf']}}]
     });
+  }
+
+  const bytes=await createRoomLabelPdf(room,values);
+  const blob=new Blob([bytes],{type:'application/pdf'});
+  if(handle){
     const writable=await handle.createWritable();
     await writable.write(blob);
     await writable.close();
@@ -2557,7 +2565,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=20-0';
+const SERVICE_WORKER_URL='./sw.js?v=20-1';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');

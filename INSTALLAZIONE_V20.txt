@@ -1,4 +1,4 @@
-INSTALLAZIONE DVS WORKSPACE V20.0
+INSTALLAZIONE DVS WORKSPACE V20.1
 
 1. Sostituisci nel repository dvs-gestionale i file della versione precedente
    con tutto il contenuto della cartella DVS_Gestionale_V20_0.
@@ -7,7 +7,7 @@ INSTALLAZIONE DVS WORKSPACE V20.0
    Service Worker.
 4. In Settings > Informazioni verifica che compaia Versione 20.0.
 5. Apri Sale > Etichetta e verifica i campi Dicitura e Contenuto per tutti
-   e tre i riquadri.
+   e tre i riquadri, quindi prova Esporta PDF.
 
 Per la personalizzazione delle diciture non serve eseguire alcuna migrazione
 SQL. Le correzioni delle notifiche già configurate su Supabase restano attive.

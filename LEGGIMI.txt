@@ -1,5 +1,10 @@
-DVS WORKSPACE — VERSIONE 20.0
+DVS WORKSPACE — VERSIONE 20.1
 Release · Agosto 2026
+
+CORREZIONE V20.1
+- Ripristinata l'esportazione PDF delle Etichette Sala su browser e PWA.
+- Il selettore di destinazione viene ora aperto direttamente dal clic prima
+  della generazione asincrona, evitando il blocco di sicurezza del browser.
 
 NOVITÀ V20.0
 - Le tre diciture del generatore Etichetta Sala sono ora modificabili.
