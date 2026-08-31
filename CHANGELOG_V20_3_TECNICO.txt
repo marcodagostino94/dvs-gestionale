@@ -1,0 +1,9 @@
+DVS WORKSPACE V20.3 — DOWNLOAD NATIVO ETICHETTA
+
+- Esporta PDF è ora un collegamento HTML nativo con attributo download.
+- Il collegamento punta allo stesso Blob PDF già caricato nell'anteprima.
+- Nessuna chiamata asincrona viene avviata durante il clic di esportazione.
+- Sui browser che ignorano download per gli URL Blob, il PDF viene aperto nel
+  visualizzatore nativo in una nuova schermata, pronto per Salva o Condividi.
+- Rimossi File System Access API e stato persistente "Generazione…" dal
+  flusso Etichetta Sala.

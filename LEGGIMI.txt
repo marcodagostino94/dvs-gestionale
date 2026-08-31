@@ -1,5 +1,10 @@
-DVS WORKSPACE — VERSIONE 20.2
+DVS WORKSPACE — VERSIONE 20.3
 Release · Agosto 2026
+
+CORREZIONE V20.3
+- Esportazione convertita in download nativo tramite collegamento diretto
+  al PDF già visualizzato nell'anteprima.
+- Rimossi selettori programmati, rigenerazioni al clic e stato Generazione.
 
 CORREZIONE V20.2
 - L'esportazione riutilizza il PDF già pronto nell'anteprima.

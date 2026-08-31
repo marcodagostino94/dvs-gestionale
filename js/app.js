@@ -3,8 +3,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='20.2';
-const APP_RELEASE='Workspace v20.2 · 08/2026';
+const APP_VERSION='20.3';
+const APP_RELEASE='Workspace v20.3 · 08/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 asset attachments';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -279,7 +279,7 @@ function openRoomLabel(room){
         <p class="room-label-help">Diciture e contenuti sono modificabili e facoltativi. Il numero della sala viene inserito automaticamente.</p>
         <div class="actions room-label-actions">
           <button class="secondary" data-close>Annulla</button>
-          <button class="primary" id="export-room-label">Esporta PDF</button>
+          <a class="primary room-label-export disabled" id="export-room-label" aria-disabled="true" target="_blank" rel="noopener">Esporta PDF</a>
         </div>
       </div>
       <div class="room-label-preview-wrap">
@@ -315,6 +315,11 @@ function openRoomLabel(room){
         if(previewUrl)URL.revokeObjectURL(previewUrl);
         previewUrl=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
         preview.src=previewUrl;
+        const exportLink=document.getElementById('export-room-label');
+        exportLink.href=previewUrl;
+        exportLink.download=`Sala ${labelRoomNumber(room)}.pdf`;
+        exportLink.classList.remove('disabled');
+        exportLink.setAttribute('aria-disabled','false');
         status.classList.add('hidden');
         return bytes;
       }catch(error){
@@ -329,45 +334,27 @@ function openRoomLabel(room){
     document.getElementById(id).addEventListener('input',()=>{
       previewBytes=null;
       previewKey='';
+      const exportLink=document.getElementById('export-room-label');
+      exportLink.removeAttribute('href');
+      exportLink.classList.add('disabled');
+      exportLink.setAttribute('aria-disabled','true');
       clearTimeout(previewTimer);
       previewTimer=setTimeout(updatePreview,120);
     });
   });
-  document.getElementById('export-room-label').onclick=async event=>{
-    const button=event.currentTarget;
+  document.getElementById('export-room-label').onclick=event=>{
+    const link=event.currentTarget;
     readValues();
-    clearTimeout(previewTimer);
-    button.disabled=true;
-    button.textContent='Generazione…';
-    try{
-      // Il selettore viene invocato direttamente dal clic, prima di qualsiasi
-      // attesa asincrona, per conservare l'autorizzazione del browser/PWA.
-      const saveHandle=typeof window.showSaveFilePicker==='function'
-        ? await window.showSaveFilePicker({
-            suggestedName:`Sala ${labelRoomNumber(room)}.pdf`,
-            types:[{description:'Documento PDF',accept:{'application/pdf':['.pdf']}}]
-          })
-        : null;
-      const currentKey=valuesKey();
-      let bytes=previewKey===currentKey?previewBytes:null;
-      if(!bytes){
-        bytes=await Promise.race([
-          updatePreview(),
-          new Promise((_,reject)=>setTimeout(()=>reject(new Error('Tempo massimo generazione PDF superato')),20000))
-        ]);
-      }
-      if(!bytes)throw new Error('PDF non disponibile');
-      await saveRoomLabelPdf(room,{...values},bytes,saveHandle);
-      showToast(`PDF pronto · Sala ${labelRoomNumber(room)}`);
-    }catch(error){
-      if(error?.name!=='AbortError'){
+    if(!previewBytes||previewKey!==valuesKey()||!link.href){
+      event.preventDefault();
+      clearTimeout(previewTimer);
+      updatePreview().then(()=>showToast('PDF pronto: premi nuovamente Esporta PDF')).catch(error=>{
         console.error(error);
         showToast(`Esportazione non riuscita: ${error?.message||'errore sconosciuto'}`);
-      }
-    }finally{
-      button.disabled=false;
-      button.textContent='Esporta PDF';
+      });
+      return;
     }
+    showToast(`Download avviato · Sala ${labelRoomNumber(room)}`);
   };
   modal.addEventListener('close',()=>{
     clearTimeout(previewTimer);
@@ -2585,7 +2572,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=20-2';
+const SERVICE_WORKER_URL='./sw.js?v=20-3';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');
