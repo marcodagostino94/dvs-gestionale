@@ -1,0 +1,9 @@
+DVS WORKSPACE V18.4 — BLUE GLOW PERIMETRALE
+Release: agosto 2026
+
+- Bagliore blu inferiore della V18.3 assottigliato.
+- Bagliore esteso uniformemente lungo l'intero perimetro dell'icona.
+- Composizione full-bleed mantenuta, senza padding o doppia sagoma.
+- Varianti 180, 192, 512 e 1024 px rigenerate.
+- Versione applicazione, cache e service worker portati a 18.4.
+- Nessuna modifica a database, SQL, notifiche push, Edge Function o cron.

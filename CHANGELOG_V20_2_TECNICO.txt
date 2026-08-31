@@ -1,0 +1,9 @@
+DVS WORKSPACE V20.2 — EXPORT PDF DA ANTEPRIMA
+
+- Il PDF generato per l'anteprima viene conservato in memoria e riutilizzato
+  direttamente durante l'esportazione.
+- Evitata una seconda elaborazione canvas/PDF al clic su Esporta PDF.
+- Il selettore di salvataggio viene aperto direttamente nel gesto utente.
+- Se l'anteprima non è aggiornata, viene rigenerata con timeout di 20 secondi.
+- In caso di errore il pulsante viene sempre ripristinato e viene mostrata la
+  causa, senza restare indefinitamente su "Generazione…".
