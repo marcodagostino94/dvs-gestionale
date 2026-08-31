@@ -1,5 +1,9 @@
-DVS WORKSPACE — VERSIONE 20.3
+DVS WORKSPACE — VERSIONE 20.4
 Release · Agosto 2026
+
+CORREZIONE V20.4
+- Ripristinato integralmente il flusso di esportazione della V19.1.
+- La V20.4 modifica esclusivamente diciture e contenuti del modulo Etichetta.
 
 CORREZIONE V20.3
 - Esportazione convertita in download nativo tramite collegamento diretto

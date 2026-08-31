@@ -1,4 +1,4 @@
-INSTALLAZIONE DVS WORKSPACE V20.3
+INSTALLAZIONE DVS WORKSPACE V20.4
 
 1. Sostituisci nel repository dvs-gestionale i file della versione precedente
    con tutto il contenuto della cartella DVS_Gestionale_V20_0.

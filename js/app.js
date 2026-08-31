@@ -3,8 +3,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='20.3';
-const APP_RELEASE='Workspace v20.3 · 08/2026';
+const APP_VERSION='20.4';
+const APP_RELEASE='Workspace v20.4 · 08/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 asset attachments';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -226,12 +226,16 @@ async function createRoomLabelPdf(room,values){
   return pdf.save({useObjectStreams:true});
 }
 
-async function saveRoomLabelPdf(room,values,readyBytes=null,readyHandle=null){
+async function saveRoomLabelPdf(room,values){
+  const bytes=await createRoomLabelPdf(room,values);
   const filename=`Sala ${labelRoomNumber(room)}.pdf`;
-  const bytes=readyBytes||await createRoomLabelPdf(room,values);
   const blob=new Blob([bytes],{type:'application/pdf'});
-  if(readyHandle){
-    const writable=await readyHandle.createWritable();
+  if('showSaveFilePicker' in window){
+    const handle=await window.showSaveFilePicker({
+      suggestedName:filename,
+      types:[{description:'Documento PDF',accept:{'application/pdf':['.pdf']}}]
+    });
+    const writable=await handle.createWritable();
     await writable.write(blob);
     await writable.close();
     return;
@@ -250,11 +254,8 @@ function openRoomLabel(room){
     productionLabel:'Produzione',production:''
   };
   let previewUrl='';
-  let previewBytes=null;
-  let previewKey='';
   let previewGeneration=0;
   let previewTimer=null;
-  let previewPromise=null;
 
   openModal(`<div class="modal-head"><div><h2>🏷️ Etichetta · ${esc(room.name)}</h2><p class="label-modal-subtitle">A4 orizzontale · stampa A5</p></div><button class="close" data-close>×</button></div>
     <div class="room-label-layout">
@@ -279,7 +280,7 @@ function openRoomLabel(room){
         <p class="room-label-help">Diciture e contenuti sono modificabili e facoltativi. Il numero della sala viene inserito automaticamente.</p>
         <div class="actions room-label-actions">
           <button class="secondary" data-close>Annulla</button>
-          <a class="primary room-label-export disabled" id="export-room-label" aria-disabled="true" target="_blank" rel="noopener">Esporta PDF</a>
+          <button class="primary" id="export-room-label">Esporta PDF</button>
         </div>
       </div>
       <div class="room-label-preview-wrap">
@@ -299,62 +300,46 @@ function openRoomLabel(room){
     values.productionLabel=val('label-production-title');
     values.production=val('label-production');
   };
-  const valuesKey=()=>JSON.stringify(values);
-  const updatePreview=()=>{
+  const updatePreview=async()=>{
     const generation=++previewGeneration;
     readValues();
-    const requestedKey=valuesKey();
     status.textContent='Aggiornamento anteprima…';
     status.classList.remove('hidden');
-    previewPromise=(async()=>{
-      try{
-        const bytes=await createRoomLabelPdf(room,{...values});
-        if(generation!==previewGeneration)return null;
-        previewBytes=bytes;
-        previewKey=requestedKey;
-        if(previewUrl)URL.revokeObjectURL(previewUrl);
-        previewUrl=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
-        preview.src=previewUrl;
-        const exportLink=document.getElementById('export-room-label');
-        exportLink.href=previewUrl;
-        exportLink.download=`Sala ${labelRoomNumber(room)}.pdf`;
-        exportLink.classList.remove('disabled');
-        exportLink.setAttribute('aria-disabled','false');
-        status.classList.add('hidden');
-        return bytes;
-      }catch(error){
-        status.textContent='Anteprima non disponibile';
-        console.error(error);
-        throw error;
-      }
-    })();
-    return previewPromise;
+    try{
+      const bytes=await createRoomLabelPdf(room,{...values});
+      if(generation!==previewGeneration)return;
+      if(previewUrl)URL.revokeObjectURL(previewUrl);
+      previewUrl=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+      preview.src=previewUrl;
+      status.classList.add('hidden');
+    }catch(error){
+      status.textContent='Anteprima non disponibile';
+      console.error(error);
+    }
   };
   ['label-project-title','label-project','label-direction-title','label-direction','label-production-title','label-production'].forEach(id=>{
     document.getElementById(id).addEventListener('input',()=>{
-      previewBytes=null;
-      previewKey='';
-      const exportLink=document.getElementById('export-room-label');
-      exportLink.removeAttribute('href');
-      exportLink.classList.add('disabled');
-      exportLink.setAttribute('aria-disabled','true');
       clearTimeout(previewTimer);
       previewTimer=setTimeout(updatePreview,120);
     });
   });
-  document.getElementById('export-room-label').onclick=event=>{
-    const link=event.currentTarget;
+  document.getElementById('export-room-label').onclick=async event=>{
+    const button=event.currentTarget;
     readValues();
-    if(!previewBytes||previewKey!==valuesKey()||!link.href){
-      event.preventDefault();
-      clearTimeout(previewTimer);
-      updatePreview().then(()=>showToast('PDF pronto: premi nuovamente Esporta PDF')).catch(error=>{
+    button.disabled=true;
+    button.textContent='Generazione…';
+    try{
+      await saveRoomLabelPdf(room,{...values});
+      showToast(`PDF pronto · Sala ${labelRoomNumber(room)}`);
+    }catch(error){
+      if(error?.name!=='AbortError'){
         console.error(error);
-        showToast(`Esportazione non riuscita: ${error?.message||'errore sconosciuto'}`);
-      });
-      return;
+        showToast('Impossibile esportare il PDF');
+      }
+    }finally{
+      button.disabled=false;
+      button.textContent='Esporta PDF';
     }
-    showToast(`Download avviato · Sala ${labelRoomNumber(room)}`);
   };
   modal.addEventListener('close',()=>{
     clearTimeout(previewTimer);
@@ -2572,7 +2557,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=20-3';
+const SERVICE_WORKER_URL='./sw.js?v=20-4';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');

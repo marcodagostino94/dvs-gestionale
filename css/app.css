@@ -1491,13 +1491,12 @@ input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,2
 .room-label-field-group label{margin:0}
 .room-label-help{color:var(--muted);font-size:11px;line-height:1.5;margin:0}
 .room-label-actions{flex-wrap:wrap}
-.room-label-actions>*{flex:1;text-align:center;text-decoration:none}
+.room-label-actions button{flex:1}
 .room-label-preview-wrap{position:relative;min-width:0}
 .room-label-preview-wrap>span{display:block;color:var(--muted);font-size:11px;margin:0 0 7px}
 .room-label-preview{display:block;width:100%;height:min(64vh,610px);border:1px solid var(--line);border-radius:17px;background:#191b20}
 .room-label-preview-status{position:absolute;inset:31px 0 0;display:grid;place-items:center;border-radius:17px;background:rgba(11,13,17,.8);color:var(--muted);font-size:12px;pointer-events:none}
 .room-label-actions button:disabled{opacity:.55;cursor:wait}
-.room-label-export.disabled{opacity:.48;cursor:wait;pointer-events:auto}
 @media(max-width:780px){
   #modal:has(.room-label-layout){width:96vw}
   .room-label-layout{grid-template-columns:1fr}

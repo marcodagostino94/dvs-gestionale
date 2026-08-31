@@ -1,0 +1,7 @@
+DVS WORKSPACE V20.4 — RIPRISTINO EXPORT V19.1
+
+- saveRoomLabelPdf ripristinata riga per riga dalla V19.1.
+- Pulsante Esporta PDF ripristinato dalla V19.1.
+- Handler di esportazione, selettore file e fallback download ripristinati.
+- Nessun riutilizzo Blob, nessun link di download e nessun nuovo flusso PWA.
+- Restano nuove esclusivamente le tre diciture personalizzabili.
