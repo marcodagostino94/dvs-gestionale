@@ -1,5 +1,10 @@
-DVS WORKSPACE — VERSIONE 20.1
+DVS WORKSPACE — VERSIONE 20.2
 Release · Agosto 2026
+
+CORREZIONE V20.2
+- L'esportazione riutilizza il PDF già pronto nell'anteprima.
+- Eliminata la seconda generazione completa che poteva restare bloccata.
+- Aggiunto un limite massimo di 20 secondi con messaggio di errore visibile.
 
 CORREZIONE V20.1
 - Ripristinata l'esportazione PDF delle Etichette Sala su browser e PWA.

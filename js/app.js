@@ -3,8 +3,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='20.1';
-const APP_RELEASE='Workspace v20.1 · 08/2026';
+const APP_VERSION='20.2';
+const APP_RELEASE='Workspace v20.2 · 08/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 asset attachments';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -226,24 +226,12 @@ async function createRoomLabelPdf(room,values){
   return pdf.save({useObjectStreams:true});
 }
 
-async function saveRoomLabelPdf(room,values){
+async function saveRoomLabelPdf(room,values,readyBytes=null,readyHandle=null){
   const filename=`Sala ${labelRoomNumber(room)}.pdf`;
-  let handle=null;
-
-  // Il selettore deve aprirsi mentre è ancora attiva l'autorizzazione del
-  // clic. Se lo apriamo dopo la generazione asincrona del PDF, Chrome e le
-  // PWA possono bloccarlo senza mostrare la finestra di salvataggio.
-  if(typeof window.showSaveFilePicker==='function'){
-    handle=await window.showSaveFilePicker({
-      suggestedName:filename,
-      types:[{description:'Documento PDF',accept:{'application/pdf':['.pdf']}}]
-    });
-  }
-
-  const bytes=await createRoomLabelPdf(room,values);
+  const bytes=readyBytes||await createRoomLabelPdf(room,values);
   const blob=new Blob([bytes],{type:'application/pdf'});
-  if(handle){
-    const writable=await handle.createWritable();
+  if(readyHandle){
+    const writable=await readyHandle.createWritable();
     await writable.write(blob);
     await writable.close();
     return;
@@ -262,8 +250,11 @@ function openRoomLabel(room){
     productionLabel:'Produzione',production:''
   };
   let previewUrl='';
+  let previewBytes=null;
+  let previewKey='';
   let previewGeneration=0;
   let previewTimer=null;
+  let previewPromise=null;
 
   openModal(`<div class="modal-head"><div><h2>🏷️ Etichetta · ${esc(room.name)}</h2><p class="label-modal-subtitle">A4 orizzontale · stampa A5</p></div><button class="close" data-close>×</button></div>
     <div class="room-label-layout">
@@ -308,25 +299,36 @@ function openRoomLabel(room){
     values.productionLabel=val('label-production-title');
     values.production=val('label-production');
   };
-  const updatePreview=async()=>{
+  const valuesKey=()=>JSON.stringify(values);
+  const updatePreview=()=>{
     const generation=++previewGeneration;
     readValues();
+    const requestedKey=valuesKey();
     status.textContent='Aggiornamento anteprima…';
     status.classList.remove('hidden');
-    try{
-      const bytes=await createRoomLabelPdf(room,{...values});
-      if(generation!==previewGeneration)return;
-      if(previewUrl)URL.revokeObjectURL(previewUrl);
-      previewUrl=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
-      preview.src=previewUrl;
-      status.classList.add('hidden');
-    }catch(error){
-      status.textContent='Anteprima non disponibile';
-      console.error(error);
-    }
+    previewPromise=(async()=>{
+      try{
+        const bytes=await createRoomLabelPdf(room,{...values});
+        if(generation!==previewGeneration)return null;
+        previewBytes=bytes;
+        previewKey=requestedKey;
+        if(previewUrl)URL.revokeObjectURL(previewUrl);
+        previewUrl=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+        preview.src=previewUrl;
+        status.classList.add('hidden');
+        return bytes;
+      }catch(error){
+        status.textContent='Anteprima non disponibile';
+        console.error(error);
+        throw error;
+      }
+    })();
+    return previewPromise;
   };
   ['label-project-title','label-project','label-direction-title','label-direction','label-production-title','label-production'].forEach(id=>{
     document.getElementById(id).addEventListener('input',()=>{
+      previewBytes=null;
+      previewKey='';
       clearTimeout(previewTimer);
       previewTimer=setTimeout(updatePreview,120);
     });
@@ -334,15 +336,33 @@ function openRoomLabel(room){
   document.getElementById('export-room-label').onclick=async event=>{
     const button=event.currentTarget;
     readValues();
+    clearTimeout(previewTimer);
     button.disabled=true;
     button.textContent='Generazione…';
     try{
-      await saveRoomLabelPdf(room,{...values});
+      // Il selettore viene invocato direttamente dal clic, prima di qualsiasi
+      // attesa asincrona, per conservare l'autorizzazione del browser/PWA.
+      const saveHandle=typeof window.showSaveFilePicker==='function'
+        ? await window.showSaveFilePicker({
+            suggestedName:`Sala ${labelRoomNumber(room)}.pdf`,
+            types:[{description:'Documento PDF',accept:{'application/pdf':['.pdf']}}]
+          })
+        : null;
+      const currentKey=valuesKey();
+      let bytes=previewKey===currentKey?previewBytes:null;
+      if(!bytes){
+        bytes=await Promise.race([
+          updatePreview(),
+          new Promise((_,reject)=>setTimeout(()=>reject(new Error('Tempo massimo generazione PDF superato')),20000))
+        ]);
+      }
+      if(!bytes)throw new Error('PDF non disponibile');
+      await saveRoomLabelPdf(room,{...values},bytes,saveHandle);
       showToast(`PDF pronto · Sala ${labelRoomNumber(room)}`);
     }catch(error){
       if(error?.name!=='AbortError'){
         console.error(error);
-        showToast('Impossibile esportare il PDF');
+        showToast(`Esportazione non riuscita: ${error?.message||'errore sconosciuto'}`);
       }
     }finally{
       button.disabled=false;
@@ -2565,7 +2585,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=20-1';
+const SERVICE_WORKER_URL='./sw.js?v=20-2';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');
