@@ -1,0 +1,13 @@
+INSTALLAZIONE DVS WORKSPACE V20.0
+
+1. Sostituisci nel repository dvs-gestionale i file della versione precedente
+   con tutto il contenuto della cartella DVS_Gestionale_V20_0.
+2. Pubblica normalmente tramite GitHub Pages.
+3. Chiudi e riapri l'app installata, oppure attendi il caricamento del nuovo
+   Service Worker.
+4. In Settings > Informazioni verifica che compaia Versione 20.0.
+5. Apri Sale > Etichetta e verifica i campi Dicitura e Contenuto per tutti
+   e tre i riquadri.
+
+Per la personalizzazione delle diciture non serve eseguire alcuna migrazione
+SQL. Le correzioni delle notifiche già configurate su Supabase restano attive.

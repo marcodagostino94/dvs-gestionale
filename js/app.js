@@ -3,8 +3,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='19.1';
-const APP_RELEASE='Workspace v19.1 · 08/2026';
+const APP_VERSION='20.0';
+const APP_RELEASE='Workspace v20.0 · 08/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 asset attachments';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -183,9 +183,9 @@ async function renderRoomLabelCanvas(room,values){
   ctx.fillText(roomText,1228,126);
 
   const rows=[
-    {label:'PROGETTO',value:values.project,y:272,labelY:319,valueY:405,start:64},
-    {label:'REGIA',value:values.direction,y:540,labelY:587,valueY:673,start:60},
-    {label:'PRODUZIONE',value:values.production,y:807,labelY:854,valueY:940,start:67}
+    {label:values.projectLabel,value:values.project,y:272,labelY:319,valueY:405,start:64},
+    {label:values.directionLabel,value:values.direction,y:540,labelY:587,valueY:673,start:60},
+    {label:values.productionLabel,value:values.production,y:807,labelY:854,valueY:940,start:67}
   ];
 
   rows.forEach(row=>{
@@ -198,9 +198,12 @@ async function renderRoomLabelCanvas(room,values){
     ctx.fillStyle='#b00018';
     ctx.fillRect(205,row.y+24,7,149);
 
-    ctx.fillStyle='#ff2848';
-    ctx.font='700 32px Futura, "Arial Black", Arial, sans-serif';
-    ctx.fillText(row.label,800,row.labelY);
+    const label=String(row.label||'').trim().toUpperCase();
+    if(label){
+      ctx.fillStyle='#ff2848';
+      labelFitText(ctx,label,1050,32,22);
+      ctx.fillText(label,800,row.labelY);
+    }
 
     const text=String(row.value||'').trim().toUpperCase();
     if(text){
@@ -245,7 +248,11 @@ async function saveRoomLabelPdf(room,values){
 }
 
 function openRoomLabel(room){
-  const values={project:'',direction:'',production:''};
+  const values={
+    projectLabel:'Progetto',project:'',
+    directionLabel:'Regia',direction:'',
+    productionLabel:'Produzione',production:''
+  };
   let previewUrl='';
   let previewGeneration=0;
   let previewTimer=null;
@@ -253,12 +260,24 @@ function openRoomLabel(room){
   openModal(`<div class="modal-head"><div><h2>🏷️ Etichetta · ${esc(room.name)}</h2><p class="label-modal-subtitle">A4 orizzontale · stampa A5</p></div><button class="close" data-close>×</button></div>
     <div class="room-label-layout">
       <div class="room-label-form">
-        <div class="fields">
-          ${field('label-project','Progetto','')}
-          ${field('label-direction','Regia','')}
-          ${field('label-production','Produzione','')}
+        <div class="fields room-label-fields">
+          <section class="room-label-field-group">
+            <strong>Riquadro 1</strong>
+            ${field('label-project-title','Dicitura','Progetto')}
+            ${field('label-project','Contenuto','')}
+          </section>
+          <section class="room-label-field-group">
+            <strong>Riquadro 2</strong>
+            ${field('label-direction-title','Dicitura','Regia')}
+            ${field('label-direction','Contenuto','')}
+          </section>
+          <section class="room-label-field-group">
+            <strong>Riquadro 3</strong>
+            ${field('label-production-title','Dicitura','Produzione')}
+            ${field('label-production','Contenuto','')}
+          </section>
         </div>
-        <p class="room-label-help">Tutti i campi sono facoltativi. Il numero della sala viene inserito automaticamente.</p>
+        <p class="room-label-help">Diciture e contenuti sono modificabili e facoltativi. Il numero della sala viene inserito automaticamente.</p>
         <div class="actions room-label-actions">
           <button class="secondary" data-close>Annulla</button>
           <button class="primary" id="export-room-label">Esporta PDF</button>
@@ -274,8 +293,11 @@ function openRoomLabel(room){
   const preview=document.getElementById('room-label-preview');
   const status=document.getElementById('room-label-preview-status');
   const readValues=()=>{
+    values.projectLabel=val('label-project-title');
     values.project=val('label-project');
+    values.directionLabel=val('label-direction-title');
     values.direction=val('label-direction');
+    values.productionLabel=val('label-production-title');
     values.production=val('label-production');
   };
   const updatePreview=async()=>{
@@ -295,7 +317,7 @@ function openRoomLabel(room){
       console.error(error);
     }
   };
-  ['label-project','label-direction','label-production'].forEach(id=>{
+  ['label-project-title','label-project','label-direction-title','label-direction','label-production-title','label-production'].forEach(id=>{
     document.getElementById(id).addEventListener('input',()=>{
       clearTimeout(previewTimer);
       previewTimer=setTimeout(updatePreview,120);
@@ -2535,7 +2557,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=19-1';
+const SERVICE_WORKER_URL='./sw.js?v=20-0';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');
@@ -2820,6 +2842,7 @@ Plugin: ${activePlugins}`;
         <div class="about-section">
           <h4>Novità di questa versione</h4>
           <ul class="changelog-list">
+            <li>Diciture personalizzabili nelle Etichette Sala</li>
             <li>Generatore Etichetta Sala</li>
             <li>Anteprima PDF in tempo reale</li>
             <li>Esportazione PDF in formato A4 orizzontale</li>

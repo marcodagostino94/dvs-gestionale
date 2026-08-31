@@ -1,5 +1,13 @@
-DVS WORKSPACE — VERSIONE 19.1
+DVS WORKSPACE — VERSIONE 20.0
 Release · Agosto 2026
+
+NOVITÀ V20.0
+- Le tre diciture del generatore Etichetta Sala sono ora modificabili.
+- I valori predefiniti restano Progetto, Regia e Produzione.
+- Ogni dicitura può essere sostituita o lasciata vuota.
+- Anteprima PDF aggiornata in tempo reale sia per le diciture sia per i contenuti.
+- Nessuna migrazione SQL necessaria per questa funzione.
+- Integrate nel pacchetto le correzioni di affidabilità delle notifiche push.
 
 NOVITÀ V19.1
 - Allegati multipli per Computer e Hardware nel solo modulo di modifica.
@@ -46,7 +54,7 @@ NOVITÀ
 - Generatore Etichetta Sala nella pagina Sale
 - Anteprima PDF in tempo reale
 - Esportazione PDF A4 orizzontale con nome Sala XX.pdf
-- Campi Progetto, Regia e Produzione sempre facoltativi
+- Diciture e contenuti dei tre riquadri sempre modificabili e facoltativi
 - Nessun dato salvato e nessuna modifica richiesta a Supabase
 
 DVS WORKSPACE — V_10_GOLD_MASTER_07_2026
