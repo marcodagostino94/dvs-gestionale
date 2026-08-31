@@ -1,32 +1,5 @@
-DVS WORKSPACE — VERSIONE 20.4
+DVS WORKSPACE — VERSIONE 19.1
 Release · Agosto 2026
-
-CORREZIONE V20.4
-- Ripristinato integralmente il flusso di esportazione della V19.1.
-- La V20.4 modifica esclusivamente diciture e contenuti del modulo Etichetta.
-
-CORREZIONE V20.3
-- Esportazione convertita in download nativo tramite collegamento diretto
-  al PDF già visualizzato nell'anteprima.
-- Rimossi selettori programmati, rigenerazioni al clic e stato Generazione.
-
-CORREZIONE V20.2
-- L'esportazione riutilizza il PDF già pronto nell'anteprima.
-- Eliminata la seconda generazione completa che poteva restare bloccata.
-- Aggiunto un limite massimo di 20 secondi con messaggio di errore visibile.
-
-CORREZIONE V20.1
-- Ripristinata l'esportazione PDF delle Etichette Sala su browser e PWA.
-- Il selettore di destinazione viene ora aperto direttamente dal clic prima
-  della generazione asincrona, evitando il blocco di sicurezza del browser.
-
-NOVITÀ V20.0
-- Le tre diciture del generatore Etichetta Sala sono ora modificabili.
-- I valori predefiniti restano Progetto, Regia e Produzione.
-- Ogni dicitura può essere sostituita o lasciata vuota.
-- Anteprima PDF aggiornata in tempo reale sia per le diciture sia per i contenuti.
-- Nessuna migrazione SQL necessaria per questa funzione.
-- Integrate nel pacchetto le correzioni di affidabilità delle notifiche push.
 
 NOVITÀ V19.1
 - Allegati multipli per Computer e Hardware nel solo modulo di modifica.
@@ -73,7 +46,7 @@ NOVITÀ
 - Generatore Etichetta Sala nella pagina Sale
 - Anteprima PDF in tempo reale
 - Esportazione PDF A4 orizzontale con nome Sala XX.pdf
-- Diciture e contenuti dei tre riquadri sempre modificabili e facoltativi
+- Campi Progetto, Regia e Produzione sempre facoltativi
 - Nessun dato salvato e nessuna modifica richiesta a Supabase
 
 DVS WORKSPACE — V_10_GOLD_MASTER_07_2026

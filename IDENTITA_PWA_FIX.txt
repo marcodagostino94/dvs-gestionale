@@ -1,6 +1,0 @@
-CORREZIONE IDENTITA PWA — DVS WORKSPACE V18.5
-
-- Identificatore esclusivo: /dvs-gestionale/
-- Indirizzo di avvio: /dvs-gestionale/
-- Ambito: /dvs-gestionale/
-- Nessuna modifica a codice, icona, database o notifiche.

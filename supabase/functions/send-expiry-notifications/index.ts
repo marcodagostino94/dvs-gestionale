@@ -83,7 +83,7 @@ export default {
       });
     }
 
-    let requestBody: { scheduled?: boolean; cron?: boolean; dryRun?: boolean; test?: boolean; endpoint?: string } = {};
+    let requestBody: { scheduled?: boolean; test?: boolean; endpoint?: string } = {};
     try { requestBody = await request.json(); } catch { /* body facoltativo */ }
 
     if (requestBody.scheduled && romeHour() !== 9) {
@@ -94,11 +94,7 @@ export default {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const authorization = request.headers.get("authorization") || "";
-    const cronBearer = authorization.replace(/^Bearer\s+/i, "").trim();
-    const serviceRoleKey = requestBody.cron && cronBearer
-      ? cronBearer
-      : Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const vapidPublic = Deno.env.get("VAPID_PUBLIC_KEY")?.trim();
     const vapidPrivate = Deno.env.get("VAPID_PRIVATE_KEY")?.trim();
     const vapidSubject = Deno.env.get("VAPID_SUBJECT")?.trim() || "mailto:admin@example.com";
@@ -132,15 +128,6 @@ export default {
 
     const activeSubscriptions = (subscriptions || []) as PushSubscriptionRow[];
 
-    if (requestBody.dryRun) {
-      return new Response(JSON.stringify({
-        ok: true,
-        dryRun: true,
-        licenses: (licenses || []).length,
-        subscriptions: activeSubscriptions.length,
-      }), { status: 200, headers: corsHeaders });
-    }
-
     if (requestBody.test) {
       const subscription = activeSubscriptions.find(item => item.endpoint === requestBody.endpoint);
       if (!subscription) {
@@ -150,10 +137,7 @@ export default {
         await webpush.sendNotification({
           endpoint: subscription.endpoint,
           keys: { p256dh: subscription.p256dh, auth: subscription.auth },
-        }, pushPayload("DVS Workspace", "Test server completato: il Web Push funziona anche senza app in primo piano.", subscription.app_url, "dvs-server-test", null), {
-          TTL: 172800,
-          urgency: "high",
-        });
+        }, pushPayload("DVS Workspace", "Test server completato: il Web Push funziona anche senza app in primo piano.", subscription.app_url, "dvs-server-test", null));
         return new Response(JSON.stringify({ ok: true, sent: 1, declarative: !!subscription.app_url }), { status: 200, headers: corsHeaders });
       } catch (error) {
         return new Response(JSON.stringify({ error: (error as Error).message }), { status: 502, headers: corsHeaders });
@@ -215,10 +199,7 @@ export default {
               p256dh: subscription.p256dh,
               auth: subscription.auth,
             },
-          }, payload, {
-            TTL: 172800,
-            urgency: "high",
-          });
+          }, payload);
 
           await supabase.from("notification_deliveries").insert({
             subscription_id: subscription.id,
