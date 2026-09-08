@@ -1,8 +1,0 @@
-DVS WORKSPACE V20.1 — FIX ESPORTAZIONE ETICHETTA
-
-- Corretto il flusso File System Access API.
-- showSaveFilePicker viene invocato direttamente durante il gesto dell'utente,
-  prima delle operazioni asincrone di generazione canvas e PDF.
-- Conservato il download tramite link per Safari, iPhone e browser senza
-  supporto a showSaveFilePicker.
-- Cache PWA e riferimenti statici aggiornati alla V20.1.

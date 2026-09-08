@@ -3,8 +3,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='20.4';
-const APP_RELEASE='Workspace v20.4 · 08/2026';
+const APP_VERSION='21.0';
+const APP_RELEASE='Workspace v21.0 · 09/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 asset attachments';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -167,33 +167,26 @@ async function renderRoomLabelCanvas(room,values){
   canvas.width=1600;
   canvas.height=1131;
   const ctx=canvas.getContext('2d');
-  const sx=background.width*.10072;
-  const sw=background.width-sx*2;
-
-  ctx.drawImage(background,sx,0,sw,background.height,0,0,canvas.width,canvas.height);
-  ctx.fillStyle='rgba(9,11,13,.46667)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(background,0,0,background.width,background.height,0,0,canvas.width,canvas.height);
   ctx.drawImage(logo,79,62,436,132);
 
   ctx.textAlign='center';
   ctx.textBaseline='middle';
-  ctx.fillStyle='#fff';
+  ctx.fillStyle='#08090a';
   const roomText=`SALA ${labelRoomNumber(room)}`;
   labelFitText(ctx,roomText,580,100,66);
   ctx.fillText(roomText,1228,126);
 
   const rows=[
-    {label:values.projectLabel,value:values.project,y:272,labelY:319,valueY:405,start:64},
-    {label:values.directionLabel,value:values.direction,y:540,labelY:587,valueY:673,start:60},
-    {label:values.productionLabel,value:values.production,y:807,labelY:854,valueY:940,start:67}
+    {label:values.projectLabel,value:values.project,y:272,labelY:319,valueY:405,start:72},
+    {label:values.directionLabel,value:values.direction,y:540,labelY:587,valueY:673,start:72},
+    {label:values.productionLabel,value:values.production,y:807,labelY:854,valueY:940,start:72}
   ];
 
   rows.forEach(row=>{
     labelRoundedRect(ctx,205,row.y,1190,198,19);
-    ctx.fillStyle='rgba(18,21,24,.86667)';
-    ctx.fill();
-    ctx.lineWidth=2;
-    ctx.strokeStyle='#a90016';
+    ctx.lineWidth=4;
+    ctx.strokeStyle='#b00018';
     ctx.stroke();
     ctx.fillStyle='#b00018';
     ctx.fillRect(205,row.y+24,7,149);
@@ -207,7 +200,7 @@ async function renderRoomLabelCanvas(room,values){
 
     const text=String(row.value||'').trim().toUpperCase();
     if(text){
-      ctx.fillStyle='#fff';
+      ctx.fillStyle='#08090a';
       labelFitText(ctx,text,1050,row.start,32);
       ctx.fillText(text,800,row.valueY);
     }
@@ -2557,7 +2550,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=20-4';
+const SERVICE_WORKER_URL='./sw.js?v=21-0';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');

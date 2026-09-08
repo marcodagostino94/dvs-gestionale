@@ -1,11 +1,11 @@
-INSTALLAZIONE DVS WORKSPACE V20.4
+INSTALLAZIONE DVS WORKSPACE V21.0
 
 1. Sostituisci nel repository dvs-gestionale i file della versione precedente
-   con tutto il contenuto della cartella DVS_Gestionale_V20_0.
+   con tutto il contenuto della cartella DVS_Gestionale_V21_0_ETICHETTE_CHIARE.
 2. Pubblica normalmente tramite GitHub Pages.
 3. Chiudi e riapri l'app installata, oppure attendi il caricamento del nuovo
    Service Worker.
-4. In Settings > Informazioni verifica che compaia Versione 20.0.
+4. In Settings > Informazioni verifica che compaia Versione 21.0.
 5. Apri Sale > Etichetta e verifica i campi Dicitura e Contenuto per tutti
    e tre i riquadri, quindi prova Esporta PDF.
 

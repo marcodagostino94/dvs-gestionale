@@ -1,0 +1,21 @@
+DVS WORKSPACE V21.0 — ETICHETTE SALE CHIARE
+================================================
+
+- Base di partenza: DVS Workspace V20.4 stabile.
+- Sostituito assets/etichetta-sala-background.png con il nuovo sfondo astratto
+  chiaro, pre-elaborato a 1600 x 1131 px con sfocatura gaussiana.
+- Sostituito assets/etichetta-sala-logo.png con il logo Digital Video fornito,
+  ritagliato senza payoff e convertito in PNG con fondo trasparente.
+- renderRoomLabelCanvas ora disegna lo sfondo direttamente sull'intero canvas,
+  senza ritaglio laterale e senza velo nero globale.
+- Numero della Sala e valori dei tre riquadri impostati in nero.
+- Riquadri privi di riempimento, con bordo rosso da 4 px.
+- Diciture dei riquadri mantenute rosse.
+- Dimensione iniziale dei contenuti portata a 72 px; labelFitText continua a
+  ridurre automaticamente i testi lunghi fino alla dimensione minima prevista.
+- Font mantenuto su Futura con fallback Arial per i sistemi che non lo espongono.
+- Versione applicazione, release, cache PWA, Service Worker, manifest e riferimenti
+  statici portati alla V21.0.
+
+Non sono state modificate la logica dei dati, le Sale, il backup, le notifiche,
+gli allegati o le altre sezioni del Gestionale.

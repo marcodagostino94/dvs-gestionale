@@ -1,5 +1,16 @@
-DVS WORKSPACE — VERSIONE 20.4
-Release · Agosto 2026
+DVS WORKSPACE — VERSIONE 21.0
+Release · Settembre 2026
+
+NOVITÀ V21.0
+- Nuovo sfondo astratto chiaro per le etichette delle Sale, salvato nel progetto
+  alla risoluzione nativa 1600 x 1131 px e con sfocatura gaussiana.
+- Nuovo logo Digital Video fornito dal cliente, privo di fondo bianco e payoff.
+- Rimosso il velo scuro applicato all'intera etichetta.
+- Numero Sala e contenuti personalizzati ora in nero e in Futura.
+- Contenuti personalizzati leggermente più grandi, con ridimensionamento automatico
+  per i testi lunghi.
+- Riquadri trasparenti con bordo rosso; diciture mantenute in rosso.
+- Flusso di anteprima ed esportazione PDF invariato rispetto alla V20.4 stabile.
 
 CORREZIONE V20.4
 - Ripristinato integralmente il flusso di esportazione della V19.1.
