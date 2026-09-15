@@ -1,0 +1,36 @@
+V23.0 — Base V22.0
+
+Database
+- licenses.computer_id: legame persistente con Computer, anche fuori dalle Sale.
+- computers.avid_trial_status / avid_trial_expiry: stato reale della Trial.
+- Backfill delle associazioni esistenti, controllo preventivo degli orfani,
+  migrazione transazionale e ripetibile, indice per una Avid attiva per Mac.
+- RPC assign_resource e assign_plugin aggiornate; assign_license_mac,
+  set_mac_trial e save_license_mac. Operazioni serializzate con advisory lock.
+- I campi Avid/Trial di stations e station_plugins conservano una proiezione
+  della posizione del computer per compatibilità con le viste esistenti.
+- Salvataggio dati della licenza e collegamento Mac nella stessa transazione.
+- Disattivazione remote conserva legami e Trial, dismissione libera i legami.
+- Controllo server per impedire Avid, plugin e Trial in postazioni senza Mac.
+
+Interfaccia
+- Postazione sostituisce Assegnazione nei moduli/dettagli delle risorse.
+- Licenze e plugin: Assegnazione Mac modificabile; Postazione derivata.
+- Badge delle licenze senza postazione: Associata a MAC XX oppure Libera.
+- Trial visibile sul Mac in magazzino e rimozione dalla modifica Computer.
+- Conferme per spostamento licenza tra Mac, sostituzione Avid/Trial e Mac occupato.
+- Eliminazione postazione e disattivazione remota mantengono i legami sul Mac.
+- Versione/Informazioni/cache/manifest aggiornati a 23.0.
+
+Verifica
+- Test SQL con PostgreSQL incorporato PGlite e schema pertinente originale.
+- Migrazione orfani: errore e rollback; backfill Avid/plugin/Trial; ripetibilità.
+- Spostamento Sala 5–6, magazzino, riassegnazione, sostituzione Mac occupato,
+  sgancio singola licenza, rifiuto assegnazione senza Mac.
+- Trial attiva: scadenza conservata in sala e magazzino; Trial pending;
+  rimozione Trial senza creazione di licenze; sostituzione Trial con Avid.
+- Remote e dismissione; salvataggio licenza atomico e rollback su Mac invalido.
+- Funzioni UI reali eseguite con fixture: badge, posizione derivata e Sale.
+- Sintassi JS, riferimenti cache, confronto motore PDF/asset, integrità ZIP.
+- L'anteprima nel browser di verifica non è stata accessibile: non è stato
+  effettuato un collaudo grafico su browser né su Mac/iPhone reali.

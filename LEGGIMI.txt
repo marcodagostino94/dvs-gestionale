@@ -1,29 +1,47 @@
-DVS WORKSPACE V22.0 — POSTAZIONI REMOTE
+DVS WORKSPACE V23.0 — LICENZE E TRIAL COLLEGATE AL MAC
 
-Base: V21.0 Etichette chiare PULITA.
+AGGIORNAMENTO DALLA V22
+1. Chiudi il Gestionale sugli altri dispositivi durante l'aggiornamento.
+2. In Supabase > SQL Editor esegui tutto sql/migrate_v23_mac_licenses.sql.
+3. Pubblica il contenuto della cartella DVS_Gestionale_V23_0_MAC_LICENZE
+   nel repository dvs-gestionale.
+4. Riapri l'app su tutti i dispositivi e verifica 23.0 in Settings > Informazioni.
 
-AGGIORNAMENTO DALLA V21
-1. In Supabase > SQL Editor esegui tutto sql/migrate_v22_remote_rooms.sql.
-2. Pubblica il contenuto di questa cartella nel repository dvs-gestionale.
-3. Chiudi e riapri il Gestionale su ciascun dispositivo. In Settings >
-   Informazioni deve comparire 22.0 prima di usare le nuove sale.
-4. Apri Settings > Postazioni remote: Remoto 1–5 sono inizialmente disattivate.
+Se non hai ancora eseguito la migrazione V22, esegui prima
+sql/migrate_v22_remote_rooms.sql e poi quella V23. Per aggiornare dalla V22
+già installata serve soltanto la SQL V23. Non rieseguire setup.sql, reset o
+vecchie migrazioni dopo la V23.
 
-USO
-Attiva soltanto le remote necessarie. Compariranno dopo Sala 15 e nei menu
-Assegnazione di Computer, Hardware, Avid e Plugin. Sono incluse anche nella
-ricerca, nelle statistiche delle sale attive e nelle stampe.
-Produzione, configurazione, note, postazioni ed etichetta funzionano come prima.
-La disattivazione richiede conferma: libera tutte le risorse e i plugin,
-azzera la Trial della postazione e nasconde la sala. Produzione, note,
-configurazione e postazioni restano conservate per la riattivazione.
-L'attivazione si sincronizza tramite lo stesso database del Gestionale.
+DATI GIÀ PRESENTI
+La SQL collega ogni licenza Avid e plugin al Mac già presente nella sua
+postazione. Trasferisce al Mac anche stato e scadenza della Trial.
+Se trova licenze o Trial in postazioni senza Mac, interrompe tutta la
+migrazione senza salvare modifiche e indica le postazioni da sistemare.
+Nella V22 assegna un Mac o rimuovi quelle assegnazioni, poi ripeti la SQL.
 
-Non occorrono interventi su notifiche, cron, Edge Function o Planning.
-La migrazione può essere ripetuta senza disattivare le remote già attive.
-I backup includono le nuove colonne delle sale. Dopo il ripristino di un
-backup precedente alla V22, riesegui la migrazione per ricreare le remote.
-Il normale backup JSON non incorpora i file allegati in Supabase Storage.
+COMPORTAMENTO
+- Avid, plugin e Trial seguono il Mac quando cambia sala o torna Non assegnato.
+- L'hardware resta indipendente nella sua postazione.
+- Scollegare soltanto la licenza la rende libera e non sposta il Mac.
+- Rimuovere la Trial cancella stato/scadenza; non crea una licenza in magazzino.
+- Senza Mac non è possibile assegnare Avid, plugin o Trial alla postazione.
+- Un Mac può avere una licenza Avid oppure una Trial, oltre ai propri plugin.
+- Il Mac sostituito in una sala conserva le sue licenze/Trial in magazzino.
+- La disattivazione di una remota mantiene i collegamenti e le scadenze sul Mac.
 
-Il pacchetto conserva gli script SQL precedenti: per questo aggiornamento
-esegui soltanto migrate_v22_remote_rooms.sql, non setup.sql o reset_test_data.sql.
+INTERFACCIA
+- Campo Postazione nei moduli di Computer, Hardware, Avid e Plugin.
+- Avid e Plugin: nuovo campo Assegnazione Mac; Postazione derivata e sola lettura.
+- Postazione mostra Non assegnata sia per licenza libera sia per Mac in magazzino.
+- Riquadri licenze in magazzino: Associata a MAC XX oppure Libera, in basso a destra.
+- Trial visibile anche sul computer in magazzino; rimovibile dalla modifica Mac.
+
+Etichette, asset grafici e notifiche conservati. Nessuna nuova configurazione
+di cron, Edge Function, Storage o Planning.
+I nuovi backup JSON comprendono legami licenze–Mac e Trial dei computer.
+I file degli allegati restano su Supabase Storage e non sono inclusi nel JSON.
+Per ripristinare un backup precedente alla V23 occorre riallineare i legami
+eseguendo nuovamente la migrazione V23 dopo il ripristino.
+
+Verifiche locali completate; il pacchetto non è stato pubblicato e la SQL non
+è stata eseguita sul database di produzione.

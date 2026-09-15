@@ -1,7 +1,14 @@
 import { supabase } from './supabase.js';
 const tables=['rooms','stations','computers','hardware','licenses','station_plugins','reminders','audit_log'];
 export async function loadAll(){const out={};for(const t of tables){let q=supabase.from(t).select('*');if(t==='rooms'||t==='stations')q=q.order('position');else if(['computers','hardware','licenses'].includes(t))q=q.order('code');else q=q.order('created_at',{ascending:false});const {data,error}=await q;if(error)throw error;out[t]=data||[]}return out}
-export async function saveRow(table,row){const payload={...row};delete payload._new;let query;if(table==='rooms'){delete payload.is_active;delete payload.remote_index;delete payload.id;query=supabase.from(table).update(payload).eq('id',row.id);}else query=supabase.from(table).upsert(payload);const {data,error}=await query.select().single();if(error)throw error;return data}
+export async function saveRow(table,row){const payload={...row};delete payload._new;let query;if(table==='rooms'){delete payload.is_active;delete payload.remote_index;delete payload.id;query=supabase.from(table).update(payload).eq('id',row.id);}else if(table==='computers'||table==='licenses'){
+  if(table==='computers'){delete payload.avid_trial_status;delete payload.avid_trial_expiry;}else delete payload.computer_id;
+  const {data:existing,error:lookupError}=await supabase.from(table).select('id').eq('id',row.id).maybeSingle();if(lookupError)throw lookupError;
+  if(existing){delete payload.id;query=supabase.from(table).update(payload).eq('id',row.id);}else query=supabase.from(table).insert(payload);
+}else query=supabase.from(table).upsert(payload);const {data,error}=await query.select().single();if(error)throw error;return data}
+export async function assignLicenseMac(licenseId,computerId){const {error}=await supabase.rpc('assign_license_mac',{p_license_id:licenseId,p_computer_id:computerId||null});if(error)throw error;}
+export async function saveLicenseMac(payload,computerId){const {data,error}=await supabase.rpc('save_license_mac',{p_payload:payload,p_computer_id:computerId||null});if(error)throw error;return data;}
+export async function setMacTrial(computerId,status,expiry=null){const {error}=await supabase.rpc('set_mac_trial',{p_computer_id:computerId,p_status:status,p_expiry:expiry});if(error)throw error;}
 export async function removeRow(table,id){const {error}=await supabase.from(table).delete().eq('id',id);if(error)throw error}
 export async function archiveRow(table,id){const {error}=await supabase.from(table).update({archived_at:new Date().toISOString()}).eq('id',id);if(error)throw error}
 export async function assignResource(kind,resourceId,stationId){const {data,error}=await supabase.rpc('assign_resource',{p_kind:kind,p_resource_id:resourceId||null,p_station_id:stationId||null});if(error)throw error;return data}
