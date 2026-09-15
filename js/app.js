@@ -1,11 +1,12 @@
 import { supabase } from './supabase.js';
+import { visibleRooms, visibleStations } from './remote-rooms.js';
 import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, addAudit, listAssetAttachments, uploadAssetAttachment, openAssetAttachment, downloadAssetAttachment, deleteAssetAttachment } from './api.js';
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='21.0';
-const APP_RELEASE='Workspace v21.0 · 09/2026';
-const DATABASE_SCHEMA='4.3.1 + V19.1 asset attachments';
+const APP_VERSION='22.0';
+const APP_RELEASE='Workspace v22.0 · 09/2026';
+const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V22 sale remote';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
 
@@ -516,7 +517,7 @@ function dashboardAttentionItems(){
       });
     });
 
-  state.data.stations.forEach(station=>{
+  visibleStations(state.data).forEach(station=>{
     const trial=trialInfo(station);
     if(trial.status!=='active')return;
 
@@ -796,7 +797,7 @@ function bindReminderInteractions(){
 
 function dashboard(){
   const d=state.data;
-  const rooms=[...d.rooms].sort((a,b)=>a.position-b.position);
+  const rooms=visibleRooms(d).sort((a,b)=>a.position-b.position);
   const computers=d.computers.filter(x=>!x.archived_at);
   const licenses=d.licenses.filter(x=>!x.archived_at);
   const avid=licenses.filter(x=>x.category==='avid');
@@ -886,10 +887,11 @@ function metric(name,n,sub){return `<div class="metric glass"><span>${name}</spa
 const officeGroups=[
   {title:'Ufficio 1 • Chinotto',start:1,end:5},
   {title:'Ufficio 2 • Chinotto',start:6,end:10},
-  {title:'Ufficio 3 • Carso',start:11,end:15}
+  {title:'Ufficio 3 • Carso',start:11,end:15},
+  {title:'Postazioni remote',remote:true}
 ];
 function roomsForOffice(rooms,group){
-  return rooms.filter(room=>room.position>=group.start&&room.position<=group.end);
+  return rooms.filter(room=>group.remote?!!room.remote_index:!room.remote_index&&room.position>=group.start&&room.position<=group.end);
 }
 
 
@@ -1200,7 +1202,7 @@ function summaryLevel(room){
 }
 
 function rooms(){
-  const allRooms=[...state.data.rooms].sort((a,b)=>a.position-b.position);
+  const allRooms=visibleRooms(state.data).sort((a,b)=>a.position-b.position);
   const counts=allRooms.reduce((acc,room)=>{acc[summaryLevel(room)]++;return acc},{ok:0,warning:0,expired:0});
 
   const unassignedComputers=state.data.computers.filter(x=>!x.archived_at&&!stationOf('computer',x.id)).sort(numSort);
@@ -1245,9 +1247,9 @@ function rooms(){
     </div>
 
     <div class="summary-final summary-interactive">
-      ${officeGroups.map((group,groupIndex)=>{
+      ${officeGroups.filter(group=>roomsForOffice(allRooms,group).length).map((group,groupIndex,groups)=>{
         const grouped=roomsForOffice(allRooms,group);
-        return `<section class="summary-office ${groupIndex<officeGroups.length-1?'print-page-break':''}">
+        return `<section class="summary-office ${groupIndex<groups.length-1?'print-page-break':''}">
           <div class="office-label summary-office-label"><span>${group.title}</span></div>
           <div class="summary-office-rooms">
             ${grouped.map(room=>{
@@ -1533,7 +1535,7 @@ function printItems(kind,excludeUnassigned=false){
 }
 
 function printSummaryDocument(excludeUnassigned=false){
-  const rooms=[...state.data.rooms].sort((a,b)=>a.position-b.position);
+  const rooms=visibleRooms(state.data).sort((a,b)=>a.position-b.position);
   const roomHtml=rooms.map(room=>{
     const stations=state.data.stations.filter(s=>s.room_id===room.id).sort((a,b)=>a.position-b.position);
     const stationHtml=stations.map((station,index)=>{
@@ -1643,6 +1645,11 @@ function settings(){
     : 'Mai eseguito';
 
   return `<div class="settings-grid">
+    <button class="setting-card" data-setting="remote-rooms">
+      <span class="setting-icon">${navIcon('computer')}</span>
+      <strong>Postazioni remote</strong>
+      <small>Attiva o disattiva fino a cinque sale remote.</small>
+    </button>
     <button class="setting-card" data-setting="print">
       <span class="setting-icon">${navIcon('summary')}</span>
       <strong>Stampa ed esportazione</strong>
@@ -2219,7 +2226,7 @@ function editItem(type,x={_new:true,id:uuid()}){
   document.getElementById('save')?.addEventListener('click',()=>saveEditor(type,x,isNew));
 }
 function stationSelectHTML(id,label,value){
-  const stations=[...state.data.stations].sort((a,b)=>{
+  const stations=visibleStations(state.data).sort((a,b)=>{
     const roomA=state.data.rooms.find(r=>r.id===a.room_id);
     const roomB=state.data.rooms.find(r=>r.id===b.room_id);
     return (roomA?.position||0)-(roomB?.position||0)||a.position-b.position;
@@ -2438,7 +2445,7 @@ function assignmentSheet(kind,stationId){
 function buildSearchIndex(){
   const results=[];
 
-  [...state.data.rooms].sort((a,b)=>a.position-b.position).forEach(room=>{
+  visibleRooms(state.data).sort((a,b)=>a.position-b.position).forEach(room=>{
     const stations=state.data.stations.filter(s=>s.room_id===room.id);
     const terms=[room.name,room.client_type,room.production_name];
     stations.forEach(station=>{
@@ -2550,7 +2557,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=21-0';
+const SERVICE_WORKER_URL='./sw.js?v=22-0';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');
@@ -2740,7 +2747,34 @@ async function openNotificationsSetting(){
   });
 }
 
+function openRemoteRoomsSetting(){
+  const remoteRooms=state.data.rooms.filter(r=>r.remote_index).sort((a,b)=>a.remote_index-b.remote_index);
+  openModal(`<div class="modal-head"><h2>Postazioni remote</h2><button class="close" data-close>×</button></div>
+    <p>Le sale attive compaiono in Sale e in tutti i menu di assegnazione. Produzione, note ed etichetta restano disponibili come nelle sale fisiche.</p>
+    ${remoteRooms.length===5?remoteRooms.map(room=>`<label class="option-check"><input type="checkbox" role="switch" data-remote-room="${room.id}" ${room.is_active?'checked':''}><span>${esc(room.name)} · ${room.is_active?'Attiva':'Disattivata'}</span></label>`).join(''):'<p class="attachment-error">Per configurare le cinque sale remote, esegui prima sql/migrate_v22_remote_rooms.sql in Supabase e ricarica il Gestionale.</p>'}`);
+  modalBody.querySelectorAll('[data-remote-room]').forEach(input=>input.onchange=async()=>{
+    const room=remoteRooms.find(r=>r.id===input.dataset.remoteRoom);
+    const active=input.checked;
+    if(!active&&!confirm(`Disattivare ${room.name}? Tutti i computer, hardware, licenze e plugin assegnati torneranno disponibili. Le Trial saranno rimosse dalla postazione. Produzione, note ed etichetta saranno conservate.`)){
+      input.checked=true;return;
+    }
+    modalBody.querySelectorAll('[data-remote-room]').forEach(el=>el.disabled=true);
+    try{
+      const {error}=await supabase.rpc('set_remote_room_active',{p_room_id:room.id,p_active:active,p_release:!active});
+      if(error)throw error;
+      await refresh();
+      if(modal.open)openRemoteRoomsSetting();
+      showToast(`${room.name} ${active?'attivata':'disattivata'}`);
+    }catch(error){
+      input.checked=room.is_active;
+      modalBody.querySelectorAll('[data-remote-room]').forEach(el=>el.disabled=false);
+      alert(`Operazione non riuscita: ${error.message}`);
+    }
+  });
+}
+
 function openSetting(k){
+  if(k==='remote-rooms'){openRemoteRoomsSetting();return;}
   if(k==='print'){
     openPrintCenter();
     return;
@@ -2814,7 +2848,7 @@ function openSetting(k){
 Versione: ${APP_VERSION}
 Release: ${APP_RELEASE}
 Database: Schema ${DATABASE_SCHEMA}
-Sale: ${state.data.rooms.length}
+Sale: ${visibleRooms(state.data).length}
 Computer: ${activeComputers}
 Hardware: ${activeHardware}
 Licenze Avid: ${activeAvid}
@@ -2839,14 +2873,14 @@ Plugin: ${activePlugins}`;
             <li>Generatore Etichetta Sala</li>
             <li>Anteprima PDF in tempo reale</li>
             <li>Esportazione PDF in formato A4 orizzontale</li>
-            <li>Ottimizzazioni generali</li>
+            <li>Cinque sale remote attivabili da Settings</li><li>Assegnazioni e disattivazione con conferma</li>
           </ul>
         </div>
 
         <div class="about-section">
           <h4>Statistiche</h4>
           <div class="about-stats">
-            <div><strong>${state.data.rooms.length}</strong><span>Sale</span></div>
+            <div><strong>${visibleRooms(state.data).length}</strong><span>Sale</span></div>
             <div><strong>${activeComputers}</strong><span>Computer</span></div>
             <div><strong>${activeHardware}</strong><span>Hardware</span></div>
             <div><strong>${activeAvid}</strong><span>Avid</span></div>
