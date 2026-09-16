@@ -5,16 +5,16 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='23.2';
-const APP_RELEASE='Workspace v23.2 · 09/2026';
+const APP_VERSION='23.3';
+const APP_RELEASE='Workspace v23.3 · 09/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
 
 const splash=document.getElementById('splash'),login=document.getElementById('login'),shell=document.getElementById('shell'),app=document.getElementById('app'),title=document.getElementById('title'),greeting=document.getElementById('greeting'),modal=document.getElementById('modal'),modalBody=document.getElementById('modal-body'),sheet=document.getElementById('sheet'),sheetBody=document.getElementById('sheet-body'),toast=document.getElementById('toast');
-const views=[['dashboard','dashboard','Dashboard'],['rooms','chair','Sale'],['computers','computer','Computer'],['hardware','rec','Hardware'],['licenses','key','Licenze'],['settings','settings','Settings']];
+const views=[['dashboard','dashboard','Dashboard'],['rooms','chair','Sale'],['computers','computer','Computer'],['hardware','rec','Hardware'],['licenses','key','Licenze'],['settings','settings','Impostazioni']];
 const state={view:'dashboard',data:null,filter:'all',session:null,backup:null};
-const labels={dashboard:'Dashboard',rooms:'Sale',computers:'Computer',hardware:'Hardware',licenses:'Licenze',settings:'Settings'};
+const labels={dashboard:'Dashboard',rooms:'Sale',computers:'Computer',hardware:'Hardware',licenses:'Licenze',settings:'Impostazioni'};
 
 function navIcon(name){
   const icons={
@@ -29,7 +29,12 @@ function navIcon(name){
     logout:`<svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M14 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"/></svg>`
   };return icons[name]||''
 }
-function navHTML(){return views.map(([id,icon,label])=>`<button class="nav-btn ${state.view===id?'active':''}" data-view="${id}">${icon==='rec'?`<span class="rec-nav-icon"><i></i></span>`:`<span class="nav-svg">${navIcon(icon)}</span>`}<small>${label}</small></button>`).join('')}
+function navHTML(items=views){return items.map(([id,icon,label])=>`<button class="nav-btn ${state.view===id?'active':''}" data-view="${id}">${icon==='rec'?`<span class="rec-nav-icon"><i></i></span>`:`<span class="nav-svg">${navIcon(icon)}</span>`}<small>${label}</small></button>`).join('')}
+function renderDesktopNav(){
+  document.getElementById('desktop-nav').innerHTML=navHTML(views.filter(([id])=>id!=='settings'));
+  document.getElementById('desktop-settings').innerHTML=navHTML(views.filter(([id])=>id==='settings'));
+  document.getElementById('sidebar-version').textContent=`Workspace v${APP_VERSION}`;
+}
 function setupMobileLiquidNav(){
   const nav=document.getElementById('mobile-nav');
   if(!nav||!matchMedia('(max-width:600px)').matches)return;
@@ -116,7 +121,7 @@ function bindNav(){
   });
   setupMobileLiquidNav();
 }
-function setView(v){state.view=v;state.filter='all';title.textContent=labels[v];document.getElementById('desktop-nav').innerHTML=navHTML();document.getElementById('mobile-nav').innerHTML=navHTML();bindNav();render()}
+function setView(v){state.view=v;state.filter='all';title.textContent=labels[v];renderDesktopNav();document.getElementById('mobile-nav').innerHTML=navHTML();bindNav();render()}
 function showToast(t){toast.textContent=t;toast.classList.remove('hidden');setTimeout(()=>toast.classList.add('hidden'),2200)}
 function openModal(html){modalBody.innerHTML=html;modal.showModal();modalBody.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>modal.close())}
 function openSheet(html){sheetBody.innerHTML=html;sheet.showModal();sheetBody.querySelectorAll('[data-close-sheet]').forEach(b=>b.onclick=()=>sheet.close())}
@@ -471,7 +476,7 @@ function dashboardNavigate(view,filter='all'){
   state.view=view;
   state.filter=filter;
   title.textContent=labels[view];
-  document.getElementById('desktop-nav').innerHTML=navHTML();
+  renderDesktopNav();
   document.getElementById('mobile-nav').innerHTML=navHTML();
   bindNav();
   render();
@@ -2942,7 +2947,7 @@ Plugin: ${activePlugins}`;
 function addAction(){if(state.view==='computers')editItem('computers');else if(state.view==='hardware')editItem('hardware');else if(state.view==='licenses')editItem('licenses',{_new:true,id:uuid(),category:'avid'});else if(state.view==='rooms')openSheet(`<div class="modal-head"><h2>Aggiungi</h2><button class="close" data-close-sheet>×</button></div><button class="choice" id="a-comp">Nuovo computer</button><button class="choice" id="a-hw">Nuovo hardware</button><button class="choice" id="a-license">Nuova licenza</button>`),setTimeout(()=>{document.getElementById('a-comp').onclick=()=>{sheet.close();editItem('computers')};document.getElementById('a-hw').onclick=()=>{sheet.close();editItem('hardware')};document.getElementById('a-license').onclick=()=>{sheet.close();editItem('licenses',{_new:true,id:uuid(),category:'avid'})}},0);else showToast('Apri Computer, Hardware, Licenze o Sale')}
 
 async function boot(){
-  document.getElementById('desktop-nav').innerHTML=navHTML();
+  renderDesktopNav();
   document.getElementById('mobile-nav').innerHTML=navHTML();
   bindNav();
   document.getElementById('remember-login').checked=localStorage.getItem('dvs_remember_login')!=='0';

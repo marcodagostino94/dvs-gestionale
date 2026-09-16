@@ -1,0 +1,6 @@
+Workspace V23.3
+
+Barra laterale desktop con sfondo, larghezza, margini e ombra del Planning v35.4.
+Impostazioni spostate in basso; versione Workspace subito sotto, derivata dalla versione dell’app.
+Pulsanti blu mantenuti. Menù mobile mantiene posizione e funzioni; etichetta rinominata Impostazioni.
+Aggiornamento dalla V23.2: sostituire i file. Nessun SQL da eseguire.
