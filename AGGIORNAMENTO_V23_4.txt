@@ -1,0 +1,6 @@
+Workspace V23.4
+
+Dashboard desktop fissa: metriche sopra; Attenzione richiesta e Promemoria affiancati al 50%. Liste lunghe scorrono internamente senza muovere la pagina.
+Backup spostato sopra Impostazioni, riquadro Planning con accenti blu e apertura al clic. Semaforo: verde entro 7 giorni, giallo oltre 7 giorni, rosso mai eseguito.
+Su mobile resta la disposizione verticale; backup accessibile da Impostazioni.
+Aggiornamento dalla V23.3: sostituire file sito, nessun SQL.

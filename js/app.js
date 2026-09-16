@@ -5,8 +5,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='23.3';
-const APP_RELEASE='Workspace v23.3 · 09/2026';
+const APP_VERSION='23.4';
+const APP_RELEASE='Workspace v23.4 · 09/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -30,7 +30,23 @@ function navIcon(name){
   };return icons[name]||''
 }
 function navHTML(items=views){return items.map(([id,icon,label])=>`<button class="nav-btn ${state.view===id?'active':''}" data-view="${id}">${icon==='rec'?`<span class="rec-nav-icon"><i></i></span>`:`<span class="nav-svg">${navIcon(icon)}</span>`}<small>${label}</small></button>`).join('')}
+function renderSidebarBackup(){
+  const host=document.getElementById('sidebar-backup');
+  if(!host)return;
+  const last=lastBackupInfo();
+  const age=last?Math.floor((Date.now()-new Date(last.date).getTime())/86400000):null;
+  const level=last?(Number.isFinite(age)&&age<=7?'green':'yellow'):'red';
+  const status=level==='green'?'Backup recente':level==='yellow'?'Backup da aggiornare':'Backup mai eseguito';
+  const date=last?new Date(last.date).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'}):'Nessun backup registrato';
+  host.innerHTML=`<button id="sidebar-backup-button" class="workspace-backup-card" type="button" aria-label="Backup: ${status}. ${esc(date)}">
+    <span class="workspace-backup-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5H6a4 4 0 0 1-.6-8A6.5 6.5 0 0 1 18 9a4.8 4.8 0 0 1 0 9.5h-1"/><path d="M12 19V10M8.5 13.5 12 10l3.5 3.5"/></svg></span>
+    <span class="workspace-backup-copy"><strong><i class="workspace-backup-light is-${level}" aria-hidden="true"></i>Backup</strong><span>${esc(date)}</span></span>
+    <span class="workspace-backup-chevron" aria-hidden="true">›</span>
+  </button>`;
+  document.getElementById('sidebar-backup-button').onclick=()=>openSetting('backup');
+}
 function renderDesktopNav(){
+  renderSidebarBackup();
   document.getElementById('desktop-nav').innerHTML=navHTML(views.filter(([id])=>id!=='settings'));
   document.getElementById('desktop-settings').innerHTML=navHTML(views.filter(([id])=>id==='settings'));
   document.getElementById('sidebar-version').textContent=`Workspace v${APP_VERSION}`;
@@ -815,9 +831,6 @@ function dashboard(){
 
   const attention=dashboardAttentionItems();
   const reminders=[...(d.reminders||[])].sort(reminderSort);
-  const last=lastBackupInfo();
-  const backupAge=last?Math.floor((Date.now()-new Date(last.date).getTime())/86400000):null;
-  const backupLevel=last&&backupAge<=7?'ok':'warning';
 
   return `<div class="dashboard-v7">
     <section class="dashboard-metrics">
@@ -846,6 +859,7 @@ function dashboard(){
       </button>
     </section>
 
+    <div class="dashboard-work-grid">
     <section class="dashboard-panel dashboard-attention glass">
       <div class="dashboard-panel-head">
         <div><small>CONTROLLO AUTOMATICO</small><h2>Attenzione richiesta</h2></div>
@@ -860,7 +874,6 @@ function dashboard(){
       </div>`:'<div class="dashboard-empty-good"><strong>Tutto sotto controllo</strong><span>Nessuna scadenza o Trial attiva richiede attenzione.</span></div>'}
     </section>
 
-    <section class="dashboard-lower-grid">
       <div class="dashboard-panel reminders-panel glass" id="reminders-box">
         <div class="dashboard-panel-head">
           <div><small>PERSONALI</small><h2>Promemoria</h2></div>
@@ -872,19 +885,7 @@ function dashboard(){
         <div class="reminder-empty-line">Tocca uno spazio libero per scrivere</div>
       </div>
 
-      <div class="dashboard-panel backup-dashboard glass">
-        <div class="dashboard-panel-head">
-          <div><small>SICUREZZA DATI</small><h2>Ultimo backup</h2></div>
-          <span class="backup-state ${backupLevel}"></span>
-        </div>
-        <div class="backup-dashboard-main">
-          <strong>${last?esc(last.fileName):'Mai eseguito'}</strong>
-          <span>${last?new Date(last.date).toLocaleString('it-IT',{dateStyle:'short',timeStyle:'short'}):'Non è ancora stato esportato alcun backup.'}</span>
-          ${last&&backupAge>7?`<em>Backup non eseguito da ${backupAge} giorni</em>`:''}
-        </div>
-        <button type="button" class="secondary" id="dashboard-backup">Apri Backup</button>
-      </div>
-    </section>
+    </div>
   </div>`;
 }
 function metric(name,n,sub){return `<div class="metric glass"><span>${name}</span><strong>${n}</strong><small class="subtle">${sub}</small></div>`}
@@ -1717,6 +1718,8 @@ function settings(){
 
 function render(){
   if(!state.data)return;
+  document.body.classList.toggle("dashboard-fixed",state.view==='dashboard');
+  renderSidebarBackup();
   const add=document.getElementById('add-btn');
   if(add)add.hidden=state.view==='dashboard'||state.view==='rooms'||state.view==='settings';
   app.innerHTML=state.view==='dashboard'
@@ -1934,7 +1937,6 @@ function bindContent(){
     dashboardNavigate(button.dataset.dashboardNav,button.dataset.dashboardFilter||'all');
   });
   bindDashboardAttentionInteractions();
-  document.getElementById('dashboard-backup')?.addEventListener('click',()=>openSetting('backup'));
   document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter;render()});
   document.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>{const [t,id]=b.dataset.item.split(':');openDetail(t,id)});
   document.querySelectorAll('[data-room]').forEach(b=>b.onclick=()=>openRoom(b.dataset.room));

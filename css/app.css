@@ -1561,3 +1561,36 @@ input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,2
  .sidebar .build-pill{justify-self:start;padding:5px 8px;border:1px solid rgba(255,255,255,.1);border-radius:999px;color:rgba(255,255,255,.48);font-size:10px;font-weight:700}
 }
 @media(min-width:900px) and (max-width:1100px){.sidebar{padding-left:10px;padding-right:10px}}
+
+/* V23.4: backup nel footer e dashboard desktop fissa. */
+.workspace-backup-card { position:relative; min-height:78px; display:grid; grid-template-columns:42px minmax(0,1fr) auto; align-items:center; gap:10px; padding:12px; overflow:hidden; border:1px solid rgba(255,255,255,.12); border-radius:18px; color:#fff; background:radial-gradient(circle at 18% 8%,rgba(45,133,221,.20),transparent 34%),linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.025)); box-shadow:inset 0 1px rgba(255,255,255,.12),0 12px 30px rgba(0,0,0,.20); backdrop-filter:blur(22px) saturate(150%); -webkit-backdrop-filter:blur(22px) saturate(150%); }
+.workspace-backup-card::after { content:""; position:absolute; left:12px; right:12px; bottom:0; height:1px; background:linear-gradient(90deg,transparent,#52a9ff 35%,#78bbff 65%,transparent); box-shadow:0 0 13px rgba(64,160,255,.8); }
+.workspace-backup-icon { width:40px;height:40px;display:grid;place-items:center;border:1px solid rgba(101,178,255,.38);border-radius:50%;background:linear-gradient(145deg,rgba(34,113,193,.44),rgba(18,55,93,.25));box-shadow:inset 0 1px rgba(255,255,255,.14),0 0 18px rgba(31,111,192,.18);font-weight:800; }
+.workspace-backup-copy { min-width:0; display:grid; gap:4px; }
+.workspace-backup-copy strong { font-size:13px; }
+.workspace-backup-copy span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:rgba(255,255,255,.52); font-size:9px; }
+.workspace-backup-chevron { color:#64b0ff; font-size:22px; }
+.workspace-backup-card{width:100%;text-align:left;font:inherit;cursor:pointer}
+.workspace-backup-card:hover{border-color:rgba(255,255,255,.2)}
+.workspace-backup-icon{color:#68b3ff}
+.workspace-backup-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.workspace-backup-copy strong{display:flex;align-items:center;gap:6px}
+.workspace-backup-light{width:9px;height:9px;display:inline-block;border-radius:50%;flex:none}
+.workspace-backup-light.is-green{background:#34c759;box-shadow:0 0 10px rgba(52,199,89,.8)}
+.workspace-backup-light.is-yellow{background:#f2b84b;box-shadow:0 0 10px rgba(242,184,75,.72)}
+.workspace-backup-light.is-red{background:#ff453a;box-shadow:0 0 10px rgba(255,69,58,.72)}
+.dashboard-work-grid{display:grid;gap:16px;min-width:0}
+@media(min-width:900px){
+ body.dashboard-fixed{height:100dvh;overflow:hidden}
+ .dashboard-fixed .shell{height:100dvh;min-height:0;overflow:hidden}
+ .dashboard-fixed .workspace{height:100%;min-height:0;min-width:0;display:flex;flex-direction:column;padding-bottom:22px;overflow:hidden}
+ .dashboard-fixed .topbar{position:relative;top:auto;flex-shrink:0}
+ .dashboard-fixed #app{flex:1;min-height:0;overflow:hidden}
+ .dashboard-fixed .dashboard-v7{height:100%;min-height:0;grid-template-rows:auto minmax(0,1fr)}
+ .dashboard-fixed .dashboard-work-grid{grid-template-columns:repeat(2,minmax(0,1fr));min-height:0;overflow:hidden}
+ .dashboard-fixed .dashboard-work-grid>.dashboard-panel{min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+ .dashboard-fixed .dashboard-panel-head,.dashboard-fixed .reminder-empty-line{flex-shrink:0}
+ .dashboard-fixed .dashboard-attention-list,.dashboard-fixed .reminders-list{min-height:0;overflow-y:auto;overflow-x:hidden;align-content:start;overscroll-behavior:contain;scrollbar-gutter:stable}
+ .dashboard-fixed .reminders-list{flex:1}
+ .dashboard-fixed .dashboard-alert{flex-shrink:0}
+}
