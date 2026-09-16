@@ -1,0 +1,5 @@
+Workspace V23.2 – Menu desktop blu
+
+Stili dei pulsanti ripresi dal Planning v35.4: fondo vetro, bordo selezionato, linea luminosa inferiore e stato hover. Accenti blu coordinati con icona Workspace.
+Voci e azioni del menu conservate. Logo V23.1 conservato.
+Sostituire i file del sito: nessuna operazione SQL richiesta dalla V23.1.
