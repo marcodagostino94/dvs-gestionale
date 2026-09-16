@@ -5,8 +5,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='23.4';
-const APP_RELEASE='Workspace v23.4 · 09/2026';
+const APP_VERSION='23.5';
+const APP_RELEASE='Workspace v23.5 · 09/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -1085,6 +1085,15 @@ async function confirmMacLicense(license,macId){
   return true;
 }
 
+function computerAvidBadge(mac){
+  const license=state.data.licenses.find(l=>l.category==='avid'&&l.computer_id===mac.id&&!l.archived_at);
+  if(license){
+    const ultimate=license.avid_type==='Ultimate';
+    return `<span class="computer-avid-summary"><span class="computer-avid-code">${esc(license.code)}</span><span class="badge ${ultimate?'ultimate':'singolo'}">${ultimate?'ULTIMATE':'SINGOLA'}</span></span>`;
+  }
+  return mac.avid_trial_status&&mac.avid_trial_status!=='none'
+    ?'<span class="computer-avid-summary"><span class="badge trial">TRIAL</span></span>':'';
+}
 function inventoryCard(type,x){
   if(x.archived_at){
     return `<button class="list-card historic-item" data-item="${type}:${x.id}">
@@ -1095,7 +1104,14 @@ function inventoryCard(type,x){
       </div><span>›</span>
     </button>`;
   }
-  if(type==='computers')return `<button class="list-card" data-item="computers:${x.id}"><div><h3>${esc(x.code)} · ${esc([x.model,x.variant].filter(Boolean).join(' · '))}</h3><div class="badges">${x.os_name?`<span class="badge os os-${esc(x.os_name.toLowerCase())}">${esc(x.os_name.toUpperCase())}</span>`:''}</div><p>${locationMarkup(currentLocation('computer',x.id))} · Formattazione ${fmtDate(x.formatted_at)}</p>${smartNote(x.notes)}${computerTrialMarkup(x)}</div><span>›</span></button>`;
+  if(type==='computers')return `<button class="list-card computer-card" data-item="computers:${x.id}">
+    <div class="computer-card-content">
+      <div class="computer-card-top"><h3>${esc(x.code)} · ${esc([x.model,x.variant].filter(Boolean).join(' · '))}</h3>${computerAvidBadge(x)}</div>
+      <div class="badges">${x.os_name?`<span class="badge os os-${esc(x.os_name.toLowerCase())}">${esc(x.os_name.toUpperCase())}</span>`:''}</div>
+      <div class="computer-card-location">${locationMarkup(currentLocation('computer',x.id))}</div>
+      ${smartNote(x.notes)}
+    </div><span class="card-chevron">›</span>
+  </button>`;
   if(type==='hardware')return `<button class="list-card" data-item="hardware:${x.id}"><div><h3>${esc(x.code)} · ${esc(x.model||'')}</h3><p>${locationMarkup(currentLocation('hardware',x.id))}</p>${smartNote(x.notes)}</div><span>›</span></button>`;
   const st=licenseStatus(x),kind=x.category==='avid'?x.avid_type:x.plugin_type;
   const loc=currentLocation(x.category==='plugin'?'plugin':'license',x.id);

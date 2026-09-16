@@ -1,0 +1,5 @@
+Workspace V23.5
+
+Schede della sezione Computer: postazione a sinistra; in alto a destra TRIAL oppure codice licenza Avid collegata con badge ULTIMATE/SINGOLA. Nessuna indicazione se il Mac non ha licenza o Trial.
+Data formattazione e dettagli Trial restano consultabili nelle schede di dettaglio/modifica.
+Collegamenti Mac/licenze, archivio e database invariati. Nessun SQL richiesto.

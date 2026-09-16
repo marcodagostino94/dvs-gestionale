@@ -1594,3 +1594,13 @@ input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,2
  .dashboard-fixed .reminders-list{flex:1}
  .dashboard-fixed .dashboard-alert{flex-shrink:0}
 }
+
+/* V23.5: schede Computer, postazione a sinistra e Avid in alto a destra. */
+.computer-card{align-items:stretch}
+.computer-card-content{min-width:0;flex:1;display:grid;gap:11px}
+.computer-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.computer-card-top h3{margin:0;min-width:0;overflow-wrap:anywhere}
+.computer-avid-summary{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap;flex-shrink:0;text-align:right;max-width:48%}
+.computer-avid-code{font-size:12px;color:var(--muted);white-space:nowrap}
+.computer-card-location{font-size:13px;text-align:left}
+@media(max-width:600px){.computer-card-top{gap:10px}.computer-avid-code{font-size:10px}.computer-card-location{font-size:11px}.computer-avid-summary{gap:5px}}
