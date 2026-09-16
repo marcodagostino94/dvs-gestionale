@@ -1516,3 +1516,10 @@ input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,2
 .license-free-card{display:flex;flex-direction:column}
 .license-free-card .license-mac-status{margin-top:auto;padding-top:10px}
 .mac-trial-info{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+
+/* V23.1: intestazione coordinata con DVS Utility. */
+.workspace-brand{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;position:relative;width:100%;min-height:86px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:7px;border:0;color:#fff;background:transparent;margin:0 0 18px;flex-shrink:0}
+.workspace-brand img{position:relative;z-index:1;width:160px;height:auto;object-fit:contain;border:0;border-radius:0;background:transparent;box-shadow:none}
+.workspace-brand-glow{position:absolute;top:24px;left:50%;width:130px;height:42px;transform:translateX(-50%);border-radius:50%;background:rgba(177,17,34,.24);filter:blur(24px);pointer-events:none}
+.workspace-product-name{position:relative;z-index:1;color:rgba(255,255,255,.84);font-size:10px;font-weight:750;letter-spacing:.35em;text-indent:.35em}
+@media(min-width:900px) and (max-width:980px){.workspace-brand img{width:145px}}

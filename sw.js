@@ -1,22 +1,23 @@
-const CACHE='dvs-workspace-v23-0';
+const CACHE='dvs-workspace-v23-1';
 const ASSETS=[
   './',
   './index.html',
-  './css/app.css?v=23-0',
-  './js/app.js?v=23-0',
-  './js/pdf-lib.min.js?v=23-0',
+  './css/app.css?v=23-1',
+  './js/app.js?v=23-1',
+  './js/pdf-lib.min.js?v=23-1',
   './js/api.js',
   './js/config.js',
   './js/supabase.js',
   './js/utils.js',
   './js/remote-rooms.js',
   './assets/logo-dvs.png',
+  './assets/digital-video-full.png',
   './assets/etichetta-sala-background.png',
   './assets/etichetta-sala-logo.png',
   './assets/apple-touch-icon.png',
   './assets/workspace-icon-192.png',
   './assets/workspace-icon-512.png',
-  './manifest.webmanifest?v=23-0',
+  './manifest.webmanifest?v=23-1',
   './manifest.json'
 ];
 

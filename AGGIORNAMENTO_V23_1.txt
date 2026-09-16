@@ -1,0 +1,6 @@
+DVS Workspace V23.1
+
+Logo intestazione desktop identico a Utility, con scritta WORKSPACE e lieve alone rosso.
+Aggiornata cache PWA. Icone installate, login e stampa invariati.
+Per aggiornare dalla V23 gia funzionante: sostituire i file sul sito. Non serve eseguire SQL.
+Il file della migrazione V23 include la correzione dello spostamento Mac gia applicata.

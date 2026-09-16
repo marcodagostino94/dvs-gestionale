@@ -48,10 +48,17 @@ end $$;
 create or replace function public.dvs_sync_mac_licenses()
 returns void language plpgsql security invoker set search_path=public as $$
 begin
- update stations set avid_license_id=null where avid_license_id is not null;
- update stations s set avid_license_id=(select l.id from licenses l where l.computer_id=s.computer_id and l.category='avid' and l.archived_at is null),
- avid_trial_status=coalesce((select c.avid_trial_status from computers c where c.id=s.computer_id),'none'),
- avid_trial_expiry=(select c.avid_trial_expiry from computers c where c.id=s.computer_id);
+ update stations s set avid_license_id=null
+ where s.avid_license_id is not null and not exists (
+ select 1 from licenses l where l.id=s.avid_license_id and l.computer_id=s.computer_id
+ and l.category='avid' and l.archived_at is null);
+ with desired as (
+ select s.id,l.id as license_id,coalesce(c.avid_trial_status,'none') as trial_status,c.avid_trial_expiry as trial_expiry
+ from stations s left join computers c on c.id=s.computer_id
+ left join licenses l on l.computer_id=s.computer_id and l.category='avid' and l.archived_at is null)
+ update stations s set avid_license_id=d.license_id,avid_trial_status=d.trial_status,avid_trial_expiry=d.trial_expiry
+ from desired d where s.id=d.id and (s.avid_license_id,s.avid_trial_status,s.avid_trial_expiry)
+ is distinct from (d.license_id,d.trial_status,d.trial_expiry);
  delete from station_plugins p where not exists(select 1 from stations s join licenses l on l.computer_id=s.computer_id
  where s.id=p.station_id and l.id=p.license_id and l.category='plugin' and l.archived_at is null);
  insert into station_plugins(station_id,license_id)
