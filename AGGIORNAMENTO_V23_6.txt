@@ -1,0 +1,6 @@
+Workspace V23.6 — Sale compatte su iPhone
+
+Quattro riquadri affiancati: Mac, hardware, Avid, plugin. Etichette di categoria nascoste solo su iPhone.
+Mac: ID, modello, anno e sistema operativo. Avid: ID, UL/SI e AN/ME, System ID senza intestazione, giorni alla scadenza. Plugin: ID e giorni oppure VUOTO.
+Scadenze: −N giorni restanti, 0 oggi, +N giorni trascorsi. Colori/avvisi invariati.
+I quattro pulsanti originali e tutti i relativi gesti, assegnazioni e dettagli restano invariati. Mac/iPad e stampe mantengono il layout esteso. Nessun SQL.

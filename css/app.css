@@ -1604,3 +1604,33 @@ input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,2
 .computer-avid-code{font-size:12px;color:var(--muted);white-space:nowrap}
 .computer-card-location{font-size:13px;text-align:left}
 @media(max-width:600px){.computer-card-top{gap:10px}.computer-avid-code{font-size:10px}.computer-card-location{font-size:11px}.computer-avid-summary{gap:5px}}
+
+/* V23.6 — four compact resource tiles, iPhone only; desktop markup retained. */
+.iphone-room-compact{display:none!important}
+@media screen{
+ html.dvs-iphone .summary-interactive .summary-station{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:8px}
+ html.dvs-iphone .summary-interactive .summary-resource{min-height:108px;padding:7px 5px;border-radius:12px;gap:0}
+ html.dvs-iphone .summary-interactive .summary-resource>:not(.iphone-room-compact){display:none!important}
+ html.dvs-iphone .summary-interactive .summary-resource>.iphone-room-compact{display:flex!important;flex-direction:column;align-items:flex-start;gap:5px;width:100%;min-width:0;color:var(--text);font-size:10px;line-height:1.2}
+ html.dvs-iphone .summary-interactive .compact-code{font-size:12px;line-height:1.15;white-space:normal;overflow-wrap:anywhere}
+ html.dvs-iphone .summary-interactive .compact-model{font-size:9px;line-height:1.25;color:var(--muted);overflow-wrap:anywhere}
+ html.dvs-iphone .summary-interactive .compact-year{font-size:9px;color:var(--muted)}
+ html.dvs-iphone .summary-interactive .iphone-room-compact .badge{padding:3px 4px;font-size:7px;letter-spacing:0;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+ html.dvs-iphone .summary-interactive .iphone-room-compact .badges{gap:3px;flex-wrap:wrap}
+ html.dvs-iphone .summary-interactive .compact-system-id{font-size:clamp(7px,1.95vw,9px);font-weight:650;letter-spacing:-.2px;max-width:100%;overflow-wrap:anywhere}
+ html.dvs-iphone .summary-interactive .compact-expiry{font-size:10px;font-weight:800;font-variant-numeric:tabular-nums}
+ html.dvs-iphone .summary-interactive .compact-empty{color:var(--muted);font-size:9px}
+ html.dvs-iphone .summary-interactive .compact-plugin{display:flex;flex-direction:column;gap:3px;width:100%}
+ html.dvs-iphone .summary-interactive .compact-plugin+.compact-plugin{border-top:1px solid var(--line);padding-top:5px}
+ html.dvs-iphone .summary-interactive .summary-production-card{border-radius:16px}
+ html.dvs-iphone .summary-interactive .summary-production-head.summary-room-action{padding:10px 10px 6px!important;gap:6px!important;min-height:42px}
+ html.dvs-iphone .summary-interactive .summary-room-title-line{gap:4px;flex-wrap:wrap}
+ html.dvs-iphone .summary-interactive .summary-room-title-line h3{font-size:17px}
+ html.dvs-iphone .summary-interactive .room-label-button{padding:5px 6px;font-size:8px;min-height:28px}
+ html.dvs-iphone .summary-interactive .summary-server-config{font-size:8px;max-width:100%;overflow-wrap:anywhere}
+ html.dvs-iphone .summary-interactive .summary-production-name{font-size:8px!important;max-width:40%;overflow-wrap:anywhere}
+ html.dvs-iphone .summary-interactive .summary-office-rooms{gap:10px}
+ html.dvs-iphone .summary-interactive .summary-office{gap:9px}
+ html.dvs-iphone .summary-interactive.summary-final{gap:16px}
+ html.dvs-iphone .summary-interactive .summary-station-label{font-size:8px;margin-bottom:0}
+}

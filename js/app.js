@@ -5,8 +5,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='23.5';
-const APP_RELEASE='Workspace v23.5 · 09/2026';
+const APP_VERSION='23.6';
+const APP_RELEASE='Workspace v23.6 · 09/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -1245,6 +1245,36 @@ function summaryLevel(room){
   return roomStatusDetails(room);
 }
 
+// V23.6: display-only summaries inside the existing room resource buttons.
+function compactExpiryDays(date){
+  if(!date)return '';
+  const match=String(date).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!match)return '';
+  const now=new Date();
+  const today=Date.UTC(now.getFullYear(),now.getMonth(),now.getDate());
+  const expiry=Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3]));
+  const days=Math.round((expiry-today)/86400000);
+  return days>0?`−${days}`:days<0?`+${Math.abs(days)}`:'0';
+}
+function compactRoomResource(kind,item,station=null){
+  const wrap=body=>`<span class="iphone-room-compact">${body}</span>`;
+  const id=text=>`<strong class="compact-code">${esc(text||'—')}</strong>`;
+  const expiry=date=>{const text=compactExpiryDays(date);return text?`<span class="compact-expiry">${text}</span>`:''};
+  if(kind==='computer')return wrap(item?`${id(item.code)}<span class="compact-model">${esc(item.model||'')}</span><span class="compact-year">${esc(item.variant||'')}</span>${item.os_name?`<span class="badge os os-${esc(item.os_name.toLowerCase())}">${esc(item.os_name.toUpperCase())}</span>`:''}`:'<span class="compact-empty">VUOTO</span>');
+  if(kind==='hardware')return wrap(item?`${id(item.code)}<span class="compact-model">${esc(item.model||'')}</span>`:'<span class="compact-empty">VUOTO</span>');
+  if(kind==='avid'){
+    if(item){
+      const ultimate=item.avid_type==='Ultimate';
+      const cycle={annual:'AN',monthly:'ME',perpetual:'PER'}[item.billing_cycle]||cycleLabel(item.billing_cycle);
+      return wrap(`${id(item.code)}${expiry(item.expiry_date)}<span class="badges"><span class="badge ${ultimate?'ultimate':'singolo'}">${ultimate?'UL':'SI'}</span><span class="badge ${esc(item.billing_cycle||'')}">${esc(cycle)}</span></span><span class="compact-system-id">${esc(item.system_id||'—')}</span>`);
+    }
+    if(station?.avid_trial_status&&station.avid_trial_status!=='none')return wrap(`${id('TRIAL')}${expiry(station.avid_trial_expiry)}${station.avid_trial_status==='pending'?'<span class="badge trial-pending">DA ATT.</span>':''}`);
+    return wrap('<span class="compact-empty">VUOTO</span>');
+  }
+  if(kind==='plugins')return wrap(item.length?item.map(plugin=>`<span class="compact-plugin">${id(plugin.code||plugin.plugin_type)}${expiry(plugin.expiry_date)}</span>`).join(''):'<span class="compact-empty">VUOTO</span>');
+  return '';
+}
+
 function rooms(){
   const allRooms=visibleRooms(state.data).sort((a,b)=>a.position-b.position);
   const counts=allRooms.reduce((acc,room)=>{acc[summaryLevel(room)]++;return acc},{ok:0,warning:0,expired:0});
@@ -1326,6 +1356,7 @@ function rooms(){
                       ${stations.length>1?`<div class="summary-station-label">POSTAZIONE ${index+1}</div>`:''}
 
                       <button type="button" class="summary-resource summary-computer summary-assignable" data-room-action="computer" data-summary-assign="computer" data-station="${station.id}" data-resource-type="computers" data-resource-id="${computer?.id||''}">
+                        ${compactRoomResource('computer',computer,station)}
                         <small>COMPUTER</small>
                         <strong>${computer?esc(computer.code):'—'}</strong>
                         <span>${computer?esc([computer.model,computer.variant].filter(Boolean).join(' · ')):'Non assegnato'}</span>
@@ -1335,6 +1366,7 @@ function rooms(){
                       </button>
 
                       <button type="button" class="summary-resource summary-hardware summary-assignable" data-room-action="hardware" data-summary-assign="hardware" data-station="${station.id}" data-resource-type="hardware" data-resource-id="${hardware?.id||''}">
+                        ${compactRoomResource('hardware',hardware,station)}
                         <small>HARDWARE</small>
                         <strong>${hardware?esc(hardware.code):'—'}</strong>
                         <span>${hardware?esc(hardware.model||''):'Non assegnato'}</span>
@@ -1343,6 +1375,7 @@ function rooms(){
                       </button>
 
                       <button type="button" class="summary-resource summary-avid summary-assignable ${avidLevel} ${avidLevel!=='ok'?'pulse-critical':''}" data-room-action="license" data-summary-assign="license" data-station="${station.id}" data-resource-type="licenses" data-resource-id="${avid?.id||''}">
+                        ${compactRoomResource('avid',avid,station)}
                         <div class="resource-title-row"><small>AVID</small><span class="resource-expiry ${avidLevel}">${avidState.kind==='license'?esc(expiryLabel(avid)):avidState.kind==='trial'?esc(avidState.status.text):''}</span></div>
                         <strong>${avidState.kind==='license'?esc(avid.code):avidState.kind.startsWith('trial')?'TRIAL':'—'}</strong>
                         ${avidState.kind==='license'
@@ -1355,7 +1388,8 @@ function rooms(){
                         <i class="summary-edit-hint">Modifica</i>
                       </button>
 
-                      <button type="button" class="summary-resource summary-plugins summary-assignable ${pluginLevel} ${pluginLevel!=='ok'?'pulse-critical':''}" data-room-action="plugin" data-summary-assign="plugin" data-station="${station.id}" data-resource-type="licenses" data-resource-id="${plugins.length===1?plugins[0].id:''}" data-plugin-ids="${plugins.map(p=>p.id).join(',')}">
+                      <button type="button" class="summary-resource summary-plugins summary-assignable ${pluginLevel} ${pluginLevel!=='ok'?'pulse-critical':''}" data-room-action="plugin" data-summary-assign="plugin" data-station="${station.id}" data-resource-type="licenses" data-resource-id="${plugins.length===1?plugins[0].id:''}" data-plugin-ids="${plugins.map(p=>
+                        ${compactRoomResource('plugins',plugins,station)}p.id).join(',')}">
                         <div class="resource-title-row"><small>PLUGIN</small><span></span></div>
                         ${plugins.length?plugins.map(plugin=>{
                           const status=licenseStatus(plugin);
