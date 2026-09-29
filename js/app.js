@@ -5,8 +5,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='24.0';
-const APP_RELEASE='Workspace v24.0 · 09/2026';
+const APP_VERSION='24.1';
+const APP_RELEASE='Workspace v24.1 · 09/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -1260,8 +1260,8 @@ function compactRoomResource(kind,item,station=null){
   const wrap=body=>`<span class="iphone-room-compact">${body}</span>`;
   const id=text=>`<strong class="compact-code">${esc(text||'—')}</strong>`;
   const expiry=(date,withDays=false)=>{const text=compactExpiryDays(date);return text?`<span class="compact-expiry">${text}${withDays?' giorni':''}</span>`:''};
-  if(kind==='computer')return wrap(item?`${id(item.code)}<span class="compact-model">${esc(item.model||'')}</span><span class="compact-year">${esc(item.variant||'')}</span>${item.os_name?`<span class="badge os os-${esc(item.os_name.toLowerCase())}">${esc(item.os_name.toUpperCase())}</span>`:''}`:'<span class="compact-empty">VUOTO</span>');
-  if(kind==='hardware')return wrap(item?`${id(item.code)}<span class="compact-model">${esc(item.model||'')}</span>`:'<span class="compact-empty">VUOTO</span>');
+  if(kind==='computer')return wrap(item?`${id(item.code)}<span class="compact-model">${esc(item.model||'')}</span><span class="compact-year">${esc(item.variant||'')}</span>${item.os_name?`<span class="badge os os-${esc(item.os_name.toLowerCase())}">${esc(item.os_name.toUpperCase())}</span>`:''}`:'<span class="compact-empty">Non assegnato</span>');
+  if(kind==='hardware')return wrap(item?`${id(item.code)}<span class="compact-model">${esc(item.model||'')}</span>`:'<span class="compact-empty">Non assegnato</span>');
   if(kind==='avid'){
     if(item){
       const ultimate=item.avid_type==='Ultimate';
@@ -1269,7 +1269,7 @@ function compactRoomResource(kind,item,station=null){
       return wrap(`${id(item.code)}<span class="badges compact-avid-badges"><span class="badge ${ultimate?'ultimate':'singolo'}">${ultimate?'ULTIMATE':'SINGOLO'}</span><span class="badge ${esc(item.billing_cycle||'')}">${esc(cycle)}</span></span><span class="compact-system-id">${esc(item.system_id||'—')}</span>${expiry(item.expiry_date,true)}`);
     }
     if(station?.avid_trial_status&&station.avid_trial_status!=='none')return wrap(`${id('TRIAL')}${expiry(station.avid_trial_expiry,true)}${station.avid_trial_status==='pending'?'<span class="badge trial-pending">DA ATT.</span>':''}`);
-    return wrap('<span class="compact-empty">VUOTO</span>');
+    return wrap('<span class="compact-empty">Non assegnato</span>');
   }
   if(kind==='plugins')return wrap(item.length?item.map(plugin=>`<span class="compact-plugin">${id(plugin.code||plugin.plugin_type)}${expiry(plugin.expiry_date)}</span>`).join(''):'<span class="compact-empty">Non assegnato</span>');
   return '';
