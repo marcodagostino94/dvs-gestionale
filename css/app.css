@@ -1634,3 +1634,9 @@ input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,2
  html.dvs-iphone .summary-interactive.summary-final{gap:16px}
  html.dvs-iphone .summary-interactive .summary-station-label{font-size:8px;margin-bottom:0}
 }
+
+/* V24 — content refinements only: existing iPhone tile dimensions retained. */
+@media screen{
+ html.dvs-iphone .summary-interactive .compact-avid-badges{flex-direction:column;align-items:flex-start}
+ html.dvs-iphone .summary-interactive .summary-avid .compact-expiry{font-weight:400;font-style:italic}
+}

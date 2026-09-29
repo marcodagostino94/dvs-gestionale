@@ -5,8 +5,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='23.6.1';
-const APP_RELEASE='Workspace v23.6.1 · 09/2026';
+const APP_VERSION='24.0';
+const APP_RELEASE='Workspace v24.0 · 09/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -1259,19 +1259,19 @@ function compactExpiryDays(date){
 function compactRoomResource(kind,item,station=null){
   const wrap=body=>`<span class="iphone-room-compact">${body}</span>`;
   const id=text=>`<strong class="compact-code">${esc(text||'—')}</strong>`;
-  const expiry=date=>{const text=compactExpiryDays(date);return text?`<span class="compact-expiry">${text}</span>`:''};
+  const expiry=(date,withDays=false)=>{const text=compactExpiryDays(date);return text?`<span class="compact-expiry">${text}${withDays?' giorni':''}</span>`:''};
   if(kind==='computer')return wrap(item?`${id(item.code)}<span class="compact-model">${esc(item.model||'')}</span><span class="compact-year">${esc(item.variant||'')}</span>${item.os_name?`<span class="badge os os-${esc(item.os_name.toLowerCase())}">${esc(item.os_name.toUpperCase())}</span>`:''}`:'<span class="compact-empty">VUOTO</span>');
   if(kind==='hardware')return wrap(item?`${id(item.code)}<span class="compact-model">${esc(item.model||'')}</span>`:'<span class="compact-empty">VUOTO</span>');
   if(kind==='avid'){
     if(item){
       const ultimate=item.avid_type==='Ultimate';
-      const cycle={annual:'AN',monthly:'ME',perpetual:'PER'}[item.billing_cycle]||cycleLabel(item.billing_cycle);
-      return wrap(`${id(item.code)}${expiry(item.expiry_date)}<span class="badges"><span class="badge ${ultimate?'ultimate':'singolo'}">${ultimate?'UL':'SI'}</span><span class="badge ${esc(item.billing_cycle||'')}">${esc(cycle)}</span></span><span class="compact-system-id">${esc(item.system_id||'—')}</span>`);
+      const cycle={annual:'ANNUALE',monthly:'MENSILE',perpetual:'PERPETUA'}[item.billing_cycle]||cycleLabel(item.billing_cycle);
+      return wrap(`${id(item.code)}<span class="badges compact-avid-badges"><span class="badge ${ultimate?'ultimate':'singolo'}">${ultimate?'ULTIMATE':'SINGOLO'}</span><span class="badge ${esc(item.billing_cycle||'')}">${esc(cycle)}</span></span><span class="compact-system-id">${esc(item.system_id||'—')}</span>${expiry(item.expiry_date,true)}`);
     }
-    if(station?.avid_trial_status&&station.avid_trial_status!=='none')return wrap(`${id('TRIAL')}${expiry(station.avid_trial_expiry)}${station.avid_trial_status==='pending'?'<span class="badge trial-pending">DA ATT.</span>':''}`);
+    if(station?.avid_trial_status&&station.avid_trial_status!=='none')return wrap(`${id('TRIAL')}${expiry(station.avid_trial_expiry,true)}${station.avid_trial_status==='pending'?'<span class="badge trial-pending">DA ATT.</span>':''}`);
     return wrap('<span class="compact-empty">VUOTO</span>');
   }
-  if(kind==='plugins')return wrap(item.length?item.map(plugin=>`<span class="compact-plugin">${id(plugin.code||plugin.plugin_type)}${expiry(plugin.expiry_date)}</span>`).join(''):'<span class="compact-empty">VUOTO</span>');
+  if(kind==='plugins')return wrap(item.length?item.map(plugin=>`<span class="compact-plugin">${id(plugin.code||plugin.plugin_type)}${expiry(plugin.expiry_date)}</span>`).join(''):'<span class="compact-empty">Non assegnato</span>');
   return '';
 }
 
@@ -2953,11 +2953,11 @@ Plugin: ${activePlugins}`;
         <div class="about-section">
           <h4>Novità di questa versione</h4>
           <ul class="changelog-list">
-            <li>Diciture personalizzabili nelle Etichette Sala</li>
-            <li>Generatore Etichetta Sala</li>
-            <li>Anteprima PDF in tempo reale</li>
-            <li>Esportazione PDF in formato A4 orizzontale</li>
-            <li>Licenze, plugin e Trial collegati al Mac</li><li>Spostamento automatico con il computer</li><li>Postazione derivata e indicazione delle licenze in magazzino</li>
+            <li>Sale compatte su iPhone: quattro riquadri affiancati, con le stesse azioni e i dettagli completi.</li>
+            <li>Badge Avid completi in verticale, System ID e scadenza in giorni.</li>
+            <li>Dashboard desktop fissa con avvisi e promemoria affiancati.</li>
+            <li>Barra laterale coordinata, backup e Impostazioni in basso.</li>
+            <li>Schede Computer con licenza o Trial collegata in evidenza.</li>
           </ul>
         </div>
 
