@@ -5,8 +5,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='23.6';
-const APP_RELEASE='Workspace v23.6 · 09/2026';
+const APP_VERSION='23.6.1';
+const APP_RELEASE='Workspace v23.6.1 · 09/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -1388,8 +1388,8 @@ function rooms(){
                         <i class="summary-edit-hint">Modifica</i>
                       </button>
 
-                      <button type="button" class="summary-resource summary-plugins summary-assignable ${pluginLevel} ${pluginLevel!=='ok'?'pulse-critical':''}" data-room-action="plugin" data-summary-assign="plugin" data-station="${station.id}" data-resource-type="licenses" data-resource-id="${plugins.length===1?plugins[0].id:''}" data-plugin-ids="${plugins.map(p=>
-                        ${compactRoomResource('plugins',plugins,station)}p.id).join(',')}">
+                      <button type="button" class="summary-resource summary-plugins summary-assignable ${pluginLevel} ${pluginLevel!=='ok'?'pulse-critical':''}" data-room-action="plugin" data-summary-assign="plugin" data-station="${station.id}" data-resource-type="licenses" data-resource-id="${plugins.length===1?plugins[0].id:''}" data-plugin-ids="${plugins.map(p=>p.id).join(',')}">
+                        ${compactRoomResource('plugins',plugins,station)}
                         <div class="resource-title-row"><small>PLUGIN</small><span></span></div>
                         ${plugins.length?plugins.map(plugin=>{
                           const status=licenseStatus(plugin);

@@ -1,0 +1,1 @@
+V23.6.1: corretto errore JavaScript nel markup compatto dei plugin che impediva avvio. Sostituire i file del sito. Nessun SQL.
