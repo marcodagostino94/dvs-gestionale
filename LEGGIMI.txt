@@ -1,22 +1,16 @@
-DVS WORKSPACE — VERSIONE 24.1
+DVS WORKSPACE V25.0 — COMPATIBILITÀ
 
-AGGIORNAMENTO DALLA V23.6.1
-Pubblica il contenuto di DVS_Gestionale_V24_1 nel repository del Gestionale.
-Dopo la pubblicazione riapri l’app e verifica 24.1 in Impostazioni > Informazioni.
-NON occorre eseguire SQL per questo aggiornamento.
+AGGIORNAMENTO DALLA V24.1
+1. Supabase > SQL Editor: esegui tutto sql/migrate_v25_compatibility.sql.
+2. Pubblica il contenuto di DVS_Gestionale_V25_0 nel repository del Gestionale.
+3. Riapri e verifica la versione 25.0 in Impostazioni > Informazioni.
 
-NOVITÀ
-- Sale compatte solo su iPhone, con quattro riquadri affiancati.
-- Avid: ID, badge completi in verticale, System ID e scadenza in corsivo.
-- Giorni: −N prima della scadenza, 0 oggi, +N dopo la scadenza.
-- Plugin non assegnati indicati con “Non assegnato”.
-- Dimensioni dei riquadri conservate rispetto alla V23.6.1.
-- Grafica Mac, selezione, dettagli e assegnazioni conservati.
-
-CONTENUTO
-File dell’app, icone e risorse per etichette PDF, configurazione e SQL.
-Rimossi vecchi changelog/istruzioni duplicati e script SQL di reset test/diagnostica.
-Le migrazioni SQL sono conservate per documentare lo schema; non rieseguirle
-sul database già aggiornato alla V23. Conserva la tua configurazione Supabase.
-
-V24.1: tutti i riquadri vuoti su iPhone mostrano “Non assegnato”.
+Compatibilità compare sotto Licenze. Per Monterey, Ventura, Sonoma, Sequoia
+ e Tahoe trovi Avid Media Composer, Blackmagic, Server, Adobe, Da Vinci e Office.
+I testi partono vuoti: premi la matita della singola voce, scrivi, poi OK.
+Dopo il salvataggio il testo torna in sola lettura. Annulla scarta la modifica.
+I dati sono condivisi tra gli utenti autenticati, sincronizzati e inclusi nei backup.
+Se un altro dispositivo modifica la stessa voce nel frattempo, il salvataggio
+avvisa senza sovrascrivere il testo remoto. La bozza rimane disponibile da copiare.
+La migrazione può essere rieseguita senza cancellare i testi già inseriti.
+Backup precedenti alla V25 non alterano i testi Compatibilità durante il ripristino.

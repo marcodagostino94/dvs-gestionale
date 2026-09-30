@@ -1,3 +1,4 @@
+import { compatibilityHTML, bindCompatibility, isCompatibilityEditing, clearCompatibilityDrafts } from './compatibility.js';
 import { supabase } from './supabase.js';
 import { saveLicenseMac, setMacTrial } from './api.js';
 import { visibleRooms, visibleStations } from './remote-rooms.js';
@@ -5,19 +6,20 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='24.1';
-const APP_RELEASE='Workspace v24.1 · 09/2026';
-const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac';
+const APP_VERSION='25.0';
+const APP_RELEASE='Workspace v25.0 · 09/2026';
+const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac + V25 Compatibilità';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
 
 const splash=document.getElementById('splash'),login=document.getElementById('login'),shell=document.getElementById('shell'),app=document.getElementById('app'),title=document.getElementById('title'),greeting=document.getElementById('greeting'),modal=document.getElementById('modal'),modalBody=document.getElementById('modal-body'),sheet=document.getElementById('sheet'),sheetBody=document.getElementById('sheet-body'),toast=document.getElementById('toast');
-const views=[['dashboard','dashboard','Dashboard'],['rooms','chair','Sale'],['computers','computer','Computer'],['hardware','rec','Hardware'],['licenses','key','Licenze'],['settings','settings','Impostazioni']];
+const views=[['dashboard','dashboard','Dashboard'],['rooms','chair','Sale'],['computers','computer','Computer'],['hardware','rec','Hardware'],['licenses','key','Licenze'],['compatibility','compatibility','Compatibilità'],['settings','settings','Impostazioni']];
 const state={view:'dashboard',data:null,filter:'all',session:null,backup:null};
-const labels={dashboard:'Dashboard',rooms:'Sale',computers:'Computer',hardware:'Hardware',licenses:'Licenze',settings:'Impostazioni'};
+const labels={dashboard:'Dashboard',rooms:'Sale',computers:'Computer',hardware:'Hardware',licenses:'Licenze',compatibility:'Compatibilità',settings:'Impostazioni'};
 
 function navIcon(name){
   const icons={
+    compatibility:`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 8h8M8 12h4M8 16l2 2 6-6"/></svg>`,
     dashboard:`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>`,
     chair:`<svg viewBox="0 0 24 24"><path d="M7 11V7a5 5 0 0 1 10 0v4"/><path d="M5 11h14v5H5z"/><path d="M8 16v5M16 16v5M4 11V8M20 11V8"/></svg>`,
     computer:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
@@ -384,7 +386,8 @@ const REALTIME_TABLES=[
   'station_plugins',
   'reminders',
   'audit_log',
-  'app_settings'
+  'app_settings',
+  'compatibility_entries'
 ];
 
 let realtimeChannel=null;
@@ -1446,7 +1449,7 @@ function rooms(){
 
 const BACKUP_TABLES=[
   'rooms','stations','computers','hardware','licenses',
-  'station_plugins','reminders','audit_log'
+  'station_plugins','reminders','audit_log','compatibility_entries'
 ];
 
 function backupFileName(){
@@ -1540,6 +1543,10 @@ async function restoreBackupPayload(payload){
       const {error}=await supabase.from(table).insert(rows);
       if(error)throw error;
     }
+  }
+  if(Array.isArray(payload.tables.compatibility_entries)&&payload.tables.compatibility_entries.length){
+    const {error}=await supabase.from('compatibility_entries').upsert(payload.tables.compatibility_entries,{onConflict:'id'});
+    if(error)throw error;
   }
 }
 
@@ -1766,12 +1773,13 @@ function settings(){
   </div>`;
 }
 
-function render(){
+function render(force=false){
   if(!state.data)return;
+  if(!force&&state.view==='compatibility'&&isCompatibilityEditing()&&app.querySelector('.compatibility-grid'))return;
   document.body.classList.toggle("dashboard-fixed",state.view==='dashboard');
   renderSidebarBackup();
   const add=document.getElementById('add-btn');
-  if(add)add.hidden=state.view==='dashboard'||state.view==='rooms'||state.view==='settings';
+  if(add)add.hidden=state.view==='dashboard'||state.view==='rooms'||state.view==='settings'||state.view==='compatibility';
   app.innerHTML=state.view==='dashboard'
     ?dashboard()
     :state.view==='rooms'
@@ -1782,8 +1790,9 @@ function render(){
           ?inventory('hardware')
           :state.view==='licenses'
             ?inventory('licenses')
-            :settings();
+            :state.view==='compatibility'?compatibilityHTML(state.data):settings();
   bindContent();
+  if(state.view==='compatibility')bindCompatibility(app,()=>state.data,()=>render(true));
 }
 
 function bindCompactHeader(){
@@ -2953,11 +2962,10 @@ Plugin: ${activePlugins}`;
         <div class="about-section">
           <h4>Novità di questa versione</h4>
           <ul class="changelog-list">
-            <li>Sale compatte su iPhone: quattro riquadri affiancati, con le stesse azioni e i dettagli completi.</li>
-            <li>Badge Avid completi in verticale, System ID e scadenza in giorni.</li>
-            <li>Dashboard desktop fissa con avvisi e promemoria affiancati.</li>
-            <li>Barra laterale coordinata, backup e Impostazioni in basso.</li>
-            <li>Schede Computer con licenza o Trial collegata in evidenza.</li>
+            <li>Nuova sezione Compatibilità sotto Licenze.</li>
+            <li>Cinque sistemi operativi e sei software fissi per ciascuno.</li>
+            <li>Modifica individuale tramite matita, salvataggio con OK e ritorno in sola lettura.</li>
+            <li>Testi sincronizzati tra dispositivi e inclusi nei backup.</li>
           </ul>
         </div>
 
@@ -3025,6 +3033,7 @@ async function handleSession(session){
   state.session=session;
 
   if(!session){
+    clearCompatibilityDrafts();
     stopRealtime();
     shell.classList.add('hidden');
     login.classList.remove('hidden');
