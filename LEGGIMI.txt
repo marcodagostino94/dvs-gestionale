@@ -1,3 +1,11 @@
+DVS WORKSPACE — VERSIONE 25.1
+
+Animazione iniziale ripresa dal Planning 50.3: stessi tempi, logo e dissolvenze, scritta WORKSPACE e alone blu. Disponibile su desktop e iPhone, con supporto a Riduci movimento.
+
+AGGIORNAMENTO DA V25.0
+Pubblicare i file aggiornati. Non occorrono nuove migrazioni SQL.
+
+INFORMAZIONI DELLA VERSIONE 25.0
 DVS WORKSPACE V25.0 — COMPATIBILITÀ
 
 AGGIORNAMENTO DALLA V24.1

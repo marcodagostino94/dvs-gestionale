@@ -6,13 +6,13 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='25.0';
-const APP_RELEASE='Workspace v25.0 · 09/2026';
+const APP_VERSION='25.1';
+const APP_RELEASE='Workspace v25.1 · 11/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac + V25 Compatibilità';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
 
-const splash=document.getElementById('splash'),login=document.getElementById('login'),shell=document.getElementById('shell'),app=document.getElementById('app'),title=document.getElementById('title'),greeting=document.getElementById('greeting'),modal=document.getElementById('modal'),modalBody=document.getElementById('modal-body'),sheet=document.getElementById('sheet'),sheetBody=document.getElementById('sheet-body'),toast=document.getElementById('toast');
+const login=document.getElementById('login'),shell=document.getElementById('shell'),app=document.getElementById('app'),title=document.getElementById('title'),greeting=document.getElementById('greeting'),modal=document.getElementById('modal'),modalBody=document.getElementById('modal-body'),sheet=document.getElementById('sheet'),sheetBody=document.getElementById('sheet-body'),toast=document.getElementById('toast');
 const views=[['dashboard','dashboard','Dashboard'],['rooms','chair','Sale'],['computers','computer','Computer'],['hardware','rec','Hardware'],['licenses','key','Licenze'],['compatibility','compatibility','Compatibilità'],['settings','settings','Impostazioni']];
 const state={view:'dashboard',data:null,filter:'all',session:null,backup:null};
 const labels={dashboard:'Dashboard',rooms:'Sale',computers:'Computer',hardware:'Hardware',licenses:'Licenze',compatibility:'Compatibilità',settings:'Impostazioni'};
@@ -3011,7 +3011,6 @@ async function boot(){
   document.getElementById('mobile-nav').innerHTML=navHTML();
   bindNav();
   document.getElementById('remember-login').checked=localStorage.getItem('dvs_remember_login')!=='0';
-  setTimeout(()=>{splash.classList.add('hidden')},800);
 
   let {data:{session}}=await supabase.auth.getSession();
   const remember=localStorage.getItem('dvs_remember_login')!=='0';
