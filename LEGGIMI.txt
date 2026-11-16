@@ -1,3 +1,9 @@
+DVS WORKSPACE — VERSIONE 25.3
+
+Intestazione compatta unica, sempre visibile durante lo scorrimento, con titolo pagina, ricerca e aggiunta dove prevista. Utente sotto Impostazioni nella barra laterale. Rimosso il titolo Sale duplicato.
+Pulsanti Impostazioni nello stile Planning con icone, bordo e bagliore blu.
+Nessuna nuova migrazione SQL richiesta. Pubblicare i file aggiornati.
+
 DVS WORKSPACE — VERSIONE 25.2
 
 Dashboard con sfondo e riquadri nello stile del Planning: bagliore blu, linea luminosa inferiore e icone Sale, Computer, Avid e Plugin. Conteggi e collegamenti invariati.

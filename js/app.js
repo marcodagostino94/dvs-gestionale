@@ -6,8 +6,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='25.2';
-const APP_RELEASE='Workspace v25.2 · 11/2026';
+const APP_VERSION='25.3';
+const APP_RELEASE='Workspace v25.3 · 11/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac + V25 Compatibilità';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -1321,7 +1321,6 @@ function rooms(){
 
   return `<div class="summary-toolbar">
       <div>
-        <h2>Sale</h2>
         <p>Clicca sui riquadri per modificare le assegnazioni oppure sull’intestazione della Sala per produzione, configurazione e postazioni.</p>
       </div>
 
@@ -1799,12 +1798,7 @@ function render(force=false){
   if(state.view==='compatibility')bindCompatibility(app,()=>state.data,()=>render(true));
 }
 
-function bindCompactHeader(){
-  const update=()=>document.body.classList.toggle('header-compact',window.scrollY>36);
-  window.removeEventListener('scroll',update);
-  window.addEventListener('scroll',update,{passive:true});
-  update();
-}
+
 
 
 function bindRoomAssetInteractions(){
@@ -1993,7 +1987,6 @@ function bindRoomAssetInteractions(){
 }
 
 function bindContent(){
-  bindCompactHeader();
   if(state.view==='dashboard')bindReminderInteractions();
 
   document.querySelectorAll('[data-dashboard-nav]').forEach(button=>button.onclick=()=>{
@@ -3045,7 +3038,7 @@ async function handleSession(session){
 
   login.classList.add('hidden');
   shell.classList.remove('hidden');
-  greeting.textContent=`Digital Video Service · ${session.user.email}`;
+  greeting.textContent=session.user.email||'';
 
   try{
     await refresh();
