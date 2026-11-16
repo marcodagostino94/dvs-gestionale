@@ -1,3 +1,9 @@
+DVS WORKSPACE — VERSIONE 25.2
+
+Dashboard con sfondo e riquadri nello stile del Planning: bagliore blu, linea luminosa inferiore e icone Sale, Computer, Avid e Plugin. Conteggi e collegamenti invariati.
+
+AGGIORNAMENTO DA V25.1: pubblicare i file aggiornati. Nessuna nuova migrazione SQL.
+
 DVS WORKSPACE — VERSIONE 25.1
 
 Animazione iniziale ripresa dal Planning 50.3: stessi tempi, logo e dissolvenze, scritta WORKSPACE e alone blu. Disponibile su desktop e iPhone, con supporto a Riduci movimento.

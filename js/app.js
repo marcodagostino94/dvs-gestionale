@@ -6,8 +6,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='25.1';
-const APP_RELEASE='Workspace v25.1 · 11/2026';
+const APP_VERSION='25.2';
+const APP_RELEASE='Workspace v25.2 · 11/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac + V25 Compatibilità';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -838,25 +838,29 @@ function dashboard(){
   return `<div class="dashboard-v7">
     <section class="dashboard-metrics">
       <button class="dashboard-metric glass" data-dashboard-nav="rooms" data-dashboard-filter="all">
-        <span>Sale</span>
+        <span class="dashboard-metric-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="4" width="14" height="13" rx="4"/><path d="M8 18h16v5H8zM10 23v5m12-5v5M5 14v7h3m19-7v7h-3"/></svg></span>
+        <span class="dashboard-metric-label">Sale</span>
         <strong>${rooms.length}</strong>
         <em>${computersAssigned} Computer nelle Sale</em>
       </button>
 
       <button class="dashboard-metric glass" data-dashboard-nav="computers" data-dashboard-filter="warehouse">
-        <span>Computer</span>
+        <span class="dashboard-metric-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="26" height="19" rx="2"/><path d="M3 19h26M13 24l-1 4h8l-1-4M10 28h12"/><circle cx="16" cy="21.5" r=".7" fill="currentColor" stroke="none"/></svg></span>
+        <span class="dashboard-metric-label">Computer</span>
         <strong>${computers.length}</strong>
         <em>${computersAssigned} nelle Sale · ${computers.length-computersAssigned} liberi</em>
       </button>
 
       <button class="dashboard-metric glass" data-dashboard-nav="licenses" data-dashboard-filter="avid">
-        <span>Licenze Avid</span>
+        <span class="dashboard-metric-icon" aria-hidden="true"><svg viewBox="0 0 64 28" fill="currentColor"><path fill-rule="evenodd" d="M1 25 14 3l13 22H1zm8-5h10l-5-9-5 9z"/><path d="m23 3 10 22L43 3H23zm22 0h5v22h-5zM53 3v22l11-11z"/></svg></span>
+        <span class="dashboard-metric-label">Licenze Avid</span>
         <strong>${avid.length}</strong>
         <em>${avidAssigned} nelle Sale · ${avid.length-avidAssigned} libere</em>
       </button>
 
       <button class="dashboard-metric glass" data-dashboard-nav="licenses" data-dashboard-filter="plugin">
-        <span>Plugin</span>
+        <span class="dashboard-metric-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m17 5 3.2 9.8L30 18l-9.8 3.2L17 31l-3.2-9.8L4 18l9.8-3.2L17 5zM6 2v7M2.5 5.5h7M26 3v6m-3-3h6"/></svg></span>
+        <span class="dashboard-metric-label">Plugin</span>
         <strong>${plugins.length}</strong>
         <em>${pluginsAssigned} nelle Sale · ${plugins.length-pluginsAssigned} in magazzino</em>
       </button>

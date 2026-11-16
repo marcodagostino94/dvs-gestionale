@@ -1660,3 +1660,18 @@ input[readonly]{background:rgba(255,255,255,.025)!important;color:rgba(255,255,2
 @media(max-width:600px){.compatibility-grid{grid-template-columns:1fr}.compat-edit{width:34px;height:34px;flex-basis:34px}.compat-editor textarea{font-size:16px}.mobile-nav{grid-template-columns:repeat(7,minmax(0,1fr))}}
 .compat-editor textarea{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.07);color:var(--text);outline:none}
 .compat-editor textarea:focus{border-color:#68b3ff}
+
+/* V25.2 — dashboard: finiture del Planning in blu Workspace. */
+body.dashboard-fixed .workspace{background:radial-gradient(circle at 48% -15%,rgba(17,98,177,.18),transparent 34%),linear-gradient(160deg,#0d1014 0%,#171a1f 52%,#0c0e11 100%)}
+.dashboard-metric{position:relative;min-width:0;min-height:142px;grid-template-columns:56px minmax(0,1fr);grid-template-rows:auto 1fr auto;column-gap:14px;row-gap:8px;align-items:start;padding:22px;border:1px solid rgba(255,255,255,.13);border-radius:24px;background:radial-gradient(circle at 14% 5%,rgba(64,160,255,.20),transparent 32%),linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.025));box-shadow:inset 0 1px rgba(255,255,255,.12),0 18px 44px rgba(0,0,0,.22);backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%)}
+.dashboard-metric::after{content:"";position:absolute;left:15px;right:15px;bottom:0;height:1px;background:linear-gradient(90deg,transparent,#52a9ff 30%,#78bbff 70%,transparent);box-shadow:0 0 14px rgba(64,160,255,.75);pointer-events:none}
+.dashboard-metric .dashboard-metric-icon{grid-column:1;grid-row:1/4;width:56px;height:56px;display:grid;place-items:center;color:#d9ecff;border:1px solid rgba(96,175,255,.38);border-radius:50%;background:linear-gradient(145deg,rgba(17,98,177,.5),rgba(16,49,90,.28));box-shadow:inset 0 1px rgba(255,255,255,.14),0 0 22px rgba(64,160,255,.2)}
+.dashboard-metric-icon svg{display:block;width:30px;height:30px}
+.dashboard-metric-icon svg[viewBox="0 0 64 28"]{width:38px}
+.dashboard-metric .dashboard-metric-label{grid-column:2;color:rgba(255,255,255,.82);font-size:13px;font-weight:750;text-transform:none;letter-spacing:normal}
+.dashboard-metric strong{grid-column:2;font-size:42px;line-height:1;letter-spacing:-.045em}
+.dashboard-metric em{grid-column:2;line-height:1.4;overflow-wrap:anywhere}
+.dashboard-metric:hover{border-color:rgba(96,175,255,.42)}
+.dashboard-metric:focus-visible{outline:2px solid #78bbff;outline-offset:3px}
+@media(max-width:1100px){.dashboard-metric{padding:16px;grid-template-columns:40px minmax(0,1fr);column-gap:10px}.dashboard-metric .dashboard-metric-icon{width:40px;height:40px}.dashboard-metric-icon svg{width:24px;height:24px}.dashboard-metric-icon svg[viewBox="0 0 64 28"]{width:29px}}
+@media(max-width:480px){.dashboard-metric{padding:14px;grid-template-columns:32px minmax(0,1fr);column-gap:8px;min-height:134px}.dashboard-metric .dashboard-metric-icon{width:32px;height:32px}.dashboard-metric-icon svg{width:21px;height:21px}.dashboard-metric-icon svg[viewBox="0 0 64 28"]{width:25px}.dashboard-metric .dashboard-metric-label{font-size:11px}.dashboard-metric strong{font-size:34px}.dashboard-metric em{grid-column:1/-1}}
