@@ -1,3 +1,7 @@
+DVS WORKSPACE — VERSIONE 25.4
+
+Rimossa la frase introduttiva nelle Sale. Pulsante Esci delle Impostazioni riempito di rosso. Nessuna nuova migrazione SQL richiesta.
+
 DVS WORKSPACE — VERSIONE 25.3
 
 Intestazione compatta unica, sempre visibile durante lo scorrimento, con titolo pagina, ricerca e aggiunta dove prevista. Utente sotto Impostazioni nella barra laterale. Rimosso il titolo Sale duplicato.

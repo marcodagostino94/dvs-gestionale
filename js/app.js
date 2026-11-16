@@ -6,8 +6,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='25.3';
-const APP_RELEASE='Workspace v25.3 · 11/2026';
+const APP_VERSION='25.4';
+const APP_RELEASE='Workspace v25.4 · 11/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac + V25 Compatibilità';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -1319,12 +1319,7 @@ function rooms(){
     </button>`;
   };
 
-  return `<div class="summary-toolbar">
-      <div>
-        <p>Clicca sui riquadri per modificare le assegnazioni oppure sull’intestazione della Sala per produzione, configurazione e postazioni.</p>
-      </div>
-
-    </div>
+  return `
 
     <div class="summary-final summary-interactive">
       ${officeGroups.filter(group=>roomsForOffice(allRooms,group).length).map((group,groupIndex,groups)=>{

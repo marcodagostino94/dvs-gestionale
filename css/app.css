@@ -1708,3 +1708,12 @@ body.dashboard-fixed .workspace{background:radial-gradient(circle at 48% -15%,rg
 .settings-grid .setting-card small{grid-column:2;grid-row:2;align-self:start;color:rgba(255,255,255,.52);font-size:11px;line-height:1.4}
 @media(max-width:760px){.settings-grid .setting-card{grid-template-columns:56px minmax(0,1fr) 16px;padding:18px}.settings-grid .setting-icon{width:52px;height:52px}}
 @media(prefers-reduced-motion:reduce){.settings-grid .setting-card{transition:none}.settings-grid .setting-card:hover{transform:none}}
+
+/* V25.4 — Esci: pulsante pieno rosso. */
+.settings-grid .setting-card.danger-setting{background:linear-gradient(145deg,#c72d3b,#8e1825);border-color:#e35462;box-shadow:inset 0 1px rgba(255,255,255,.18),0 14px 34px rgba(110,12,24,.24)}
+.settings-grid .setting-card.danger-setting:hover{background:linear-gradient(145deg,#d53645,#a21e2d);border-color:#ff8290}
+.settings-grid .danger-setting::after{background:linear-gradient(90deg,transparent,#ff7181 30%,#ff9da8 70%,transparent);box-shadow:0 0 14px rgba(255,69,84,.65)}
+.settings-grid .danger-setting::before,.settings-grid .danger-setting strong{color:#fff}
+.settings-grid .danger-setting small{color:rgba(255,255,255,.78)}
+.settings-grid .danger-setting .setting-icon{color:#fff;border-color:rgba(255,255,255,.35);background:rgba(90,0,12,.24);box-shadow:inset 0 1px rgba(255,255,255,.14),0 0 22px rgba(255,60,80,.18)}
+.settings-grid .setting-card.danger-setting:focus-visible{outline-color:#ff9da8}
