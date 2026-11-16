@@ -1,3 +1,8 @@
+DVS WORKSPACE — VERSIONE 25.5
+
+Corretto lo sfondo generale: alone blu fin dal caricamento e in tutte le pagine, senza dipendere dall’attivazione della dashboard. Convertiti in blu anche i bagliori di sfondo della barra laterale. Esci rimane rosso.
+Nessuna nuova migrazione SQL richiesta.
+
 DVS WORKSPACE — VERSIONE 25.4
 
 Rimossa la frase introduttiva nelle Sale. Pulsante Esci delle Impostazioni riempito di rosso. Nessuna nuova migrazione SQL richiesta.

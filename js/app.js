@@ -6,8 +6,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='25.4';
-const APP_RELEASE='Workspace v25.4 · 11/2026';
+const APP_VERSION='25.5';
+const APP_RELEASE='Workspace v25.5 · 11/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac + V25 Compatibilità';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
