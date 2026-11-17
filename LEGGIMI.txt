@@ -1,3 +1,7 @@
+DVS WORKSPACE — VERSIONE 25.6
+
+Barra iPhone nello stile Planning 50.5 / Utility: vetro scuro, sole icone, selettore scorrevole e rispetto dell’area sicura inferiore. Sette sezioni invariate; nomi accessibili a VoiceOver. Nessuna nuova migrazione SQL.
+
 DVS WORKSPACE — VERSIONE 25.5
 
 Corretto lo sfondo generale: alone blu fin dal caricamento e in tutte le pagine, senza dipendere dall’attivazione della dashboard. Convertiti in blu anche i bagliori di sfondo della barra laterale. Esci rimane rosso.

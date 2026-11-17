@@ -6,8 +6,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='25.5';
-const APP_RELEASE='Workspace v25.5 · 11/2026';
+const APP_VERSION='25.6';
+const APP_RELEASE='Workspace v25.6 · 11/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac + V25 Compatibilità';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -31,7 +31,7 @@ function navIcon(name){
     logout:`<svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M14 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"/></svg>`
   };return icons[name]||''
 }
-function navHTML(items=views){return items.map(([id,icon,label])=>`<button class="nav-btn ${state.view===id?'active':''}" data-view="${id}">${icon==='rec'?`<span class="rec-nav-icon"><i></i></span>`:`<span class="nav-svg">${navIcon(icon)}</span>`}<small>${label}</small></button>`).join('')}
+function navHTML(items=views){return items.map(([id,icon,label])=>`<button class="nav-btn ${state.view===id?'active':''}" data-view="${id}" aria-label="${label}" title="${label}">${icon==='rec'?`<span class="rec-nav-icon"><i></i></span>`:`<span class="nav-svg">${navIcon(icon)}</span>`}<small>${label}</small></button>`).join('')}
 function renderSidebarBackup(){
   const host=document.getElementById('sidebar-backup');
   if(!host)return;
@@ -55,14 +55,14 @@ function renderDesktopNav(){
 }
 function setupMobileLiquidNav(){
   const nav=document.getElementById('mobile-nav');
-  if(!nav||!matchMedia('(max-width:600px)').matches)return;
+  if(!nav||!(matchMedia('(max-width:600px)').matches||document.documentElement.classList.contains('dvs-iphone')))return;
   const buttons=[...nav.querySelectorAll('.nav-btn')];
   const activeIndex=Math.max(0,views.findIndex(([id])=>id===state.view));
   const selectorMetrics=index=>{
     const button=buttons[index];
     return {
-      x:button.offsetLeft+3,
-      width:Math.max(0,button.offsetWidth-6)
+      x:button.offsetLeft+(document.documentElement.classList.contains('dvs-iphone')?0:3),
+      width:Math.max(0,button.offsetWidth-(document.documentElement.classList.contains('dvs-iphone')?0:6))
     };
   };
   const placeSelector=index=>{
