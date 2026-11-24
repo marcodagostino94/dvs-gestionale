@@ -1727,3 +1727,10 @@ html.dvs-iphone .mobile-nav .nav-btn small{display:none}
 html.dvs-iphone .mobile-nav .nav-svg,html.dvs-iphone .mobile-nav .nav-svg svg{width:23px;height:23px}
 html.dvs-iphone .mobile-nav.is-dragging::before{transition:none;filter:none}
 @media(prefers-reduced-motion:reduce){html.dvs-iphone .mobile-nav::before{transition:none}}
+
+/* V26.0 — Prevent page zoom while preserving scrolling and app gestures. */
+html, body, body * { touch-action: pan-x pan-y; }
+/* Prevent Safari's automatic zoom when focusing small form controls. */
+@media (hover: none) and (pointer: coarse) {
+  input, select, textarea { font-size: max(16px, 1em) !important; }
+}

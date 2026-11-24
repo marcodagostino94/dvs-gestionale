@@ -1,3 +1,13 @@
+DVS WORKSPACE — VERSIONE 26.0
+
+Blocco dello zoom della pagina: doppio tocco/clic, pizzico e scorciatoie di zoom.
+Protezione attiva anche su accesso, finestre di modifica e impostazioni.
+Scorrimento e azioni di doppio clic dell’app mantenuti.
+Grafica originale della versione 25.6, senza i pulsanti 3D sperimentali.
+Su dispositivi touch i campi mantengono almeno 16 px per evitare lo zoom al focus.
+Nessuna nuova migrazione SQL. Pubblicare tutti i file dello ZIP.
+I controlli di accessibilità e lo zoom imposti dal sistema/browser possono prevalere.
+
 DVS WORKSPACE — VERSIONE 25.6
 
 Barra iPhone nello stile Planning 50.5 / Utility: vetro scuro, sole icone, selettore scorrevole e rispetto dell’area sicura inferiore. Sette sezioni invariate; nomi accessibili a VoiceOver. Nessuna nuova migrazione SQL.
