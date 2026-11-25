@@ -55,7 +55,7 @@ async function renewDueLicenses(licenses){
     if(!next||next===license.expiry_date){result.push(license);continue;}
     const {data,error}=await supabase.from('licenses').update({expiry_date:next})
       .eq('id',license.id).eq('expiry_date',license.expiry_date)
-      .eq('category','avid').eq('billing_cycle',license.billing_cycle)
+      .eq('category',license.category).eq('billing_cycle',license.billing_cycle)
       .eq('deactivation_requested',false).eq('is_trial',false).is('archived_at',null)
       .select('*').maybeSingle();
     if(error)throw new Error(`Rinnovo ${license.code}: ${error.message}`);

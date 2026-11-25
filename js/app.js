@@ -6,8 +6,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, effectiveExpiry, autoRenews, renewalToday, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='26.2';
-const APP_RELEASE='Workspace v26.2 · 11/2026';
+const APP_VERSION='26.3';
+const APP_RELEASE='Workspace v26.3 · 11/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac + V25 Compatibilità';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -1273,7 +1273,7 @@ function compactRoomResource(kind,item,station=null){
     if(station?.avid_trial_status&&station.avid_trial_status!=='none')return wrap(`${id('TRIAL')}${expiry(station.avid_trial_expiry,true)}${station.avid_trial_status==='pending'?'<span class="badge trial-pending">DA ATT.</span>':''}`);
     return wrap('<span class="compact-empty">Non assegnato</span>');
   }
-  if(kind==='plugins')return wrap(item.length?item.map(plugin=>`<span class="compact-plugin">${id(plugin.code||plugin.plugin_type)}${expiry(plugin.expiry_date)}</span>`).join(''):'<span class="compact-empty">Non assegnato</span>');
+  if(kind==='plugins')return wrap(item.length?item.map(plugin=>`<span class="compact-plugin">${id(plugin.code||plugin.plugin_type)}${autoRenews(plugin)?`<span class="compact-expiry">${esc(expiryLabel(plugin))}</span>`:expiry(plugin.expiry_date)}</span>`).join(''):'<span class="compact-empty">Non assegnato</span>');
   return '';
 }
 
@@ -2320,7 +2320,7 @@ function licenseEditor(x,isNew){
     ${field('activation','Data attivazione',activation,'date')}
     ${field('expiry','Scadenza / prossimo rinnovo',expiry,'date')}
     <label class="option-check"><input id="deactivation" type="checkbox" ${x.deactivation_requested?'checked':''}><span>Disattivazione richiesta</span></label>
-    <small class="subtle">Avid: senza disattivazione richiesta, dopo la data indicata il rinnovo avanza di 30 giorni, anche per le annuali. Non modifica l’abbonamento sul portale Avid.</small>
+    <small class="subtle">Avid e plugin: senza disattivazione richiesta, dopo la data indicata il rinnovo avanza di 30 giorni, anche per le annuali. Non modifica l’abbonamento sul portale del produttore.</small>
     ${licenseMacFields(x)}
     ${field('notes','Note',x.notes)}
   </div><div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);
@@ -2639,7 +2639,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=26-2';
+const SERVICE_WORKER_URL='./sw.js?v=26-3';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');

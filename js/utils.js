@@ -9,7 +9,7 @@ const dayNumber=value=>{
   return date.toISOString().slice(0,10)===value?date.getTime()/86400000:NaN;
 };
 export const renewalToday=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-export const autoRenews=l=>l?.category==='avid'&&!l.is_trial&&!l.archived_at&&!l.deactivation_requested&&['annual','monthly'].includes(l.billing_cycle);
+export const autoRenews=l=>['avid','plugin'].includes(l?.category)&&!l.is_trial&&!l.archived_at&&!l.deactivation_requested&&['annual','monthly'].includes(l.billing_cycle);
 export const effectiveExpiry=(l,today=renewalToday())=>{
   const expiry=dayNumber(l?.expiry_date),now=dayNumber(today);
   if(!autoRenews(l)||!Number.isFinite(expiry)||!Number.isFinite(now)||expiry>=now)return l?.expiry_date||null;

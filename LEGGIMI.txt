@@ -1,3 +1,13 @@
+DVS WORKSPACE — VERSIONE 26.3
+
+Esteso ai plugin mensili e annuali il rinnovo automatico di 30 giorni.
+Senza Disattivazione richiesta: Si rinnova tra X giorni / domani / oggi.
+Con Disattivazione richiesta: Scade tra X giorni / Scade oggi / Scaduta da X giorni.
+Avviso giallo negli ultimi 10 giorni; Trial e licenze archiviate escluse.
+Date salvate al caricamento/aggiornamento dell’app e recupero dei cicli trascorsi
+alla riapertura. Notifiche push esterne invariate. Nessuna migrazione SQL.
+Queste regole sostituiscono l’esclusione dei plugin indicata nelle note V26.1.
+
 DVS WORKSPACE — VERSIONE 26.2
 
 Sale desktop: badge del sistema operativo a destra del codice Mac; badge Avid
