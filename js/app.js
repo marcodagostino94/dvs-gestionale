@@ -6,8 +6,8 @@ import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, 
 import { esc, fmtDate, numSort, licenseStatus, effectiveExpiry, autoRenews, renewalToday, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='26.1';
-const APP_RELEASE='Workspace v26.1 · 11/2026';
+const APP_VERSION='26.2';
+const APP_RELEASE='Workspace v26.2 · 11/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac + V25 Compatibilità';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -919,10 +919,10 @@ function parseAssetNumber(code){
 function formatAssetCode(prefix,number){
   return `${prefix} ${String(number).padStart(2,'0')}`;
 }
-function nextFreeNumber(type,{start=1,end=999,skip=[]}={}){
+function nextFreeNumber(type,{start=1,end=999,skip=[],category=null}={}){
   const used=new Set(
     state.data[type]
-      .filter(item=>!item.archived_at)
+      .filter(item=>!item.archived_at&&(!category||item.category===category))
       .map(item=>parseAssetNumber(item.code))
       .filter(Number.isInteger)
   );
@@ -942,8 +942,12 @@ function nextHardwareCode(){
 }
 function nextAvidCode(avidType='Ultimate'){
   const ultimate=avidType==='Ultimate';
-  const n=nextFreeNumber('licenses',{start:ultimate?1:20,end:ultimate?19:39});
+  const n=nextFreeNumber('licenses',{start:ultimate?1:20,end:ultimate?19:39,category:'avid'});
   return n?formatAssetCode('AVID',n):'';
+}
+function nextPluginCode(){
+  const n=nextFreeNumber('licenses',{category:'plugin'});
+  return n?formatAssetCode('PLUGIN',n):'';
 }
 function validateAssetCode(type,code,currentId=null,licenseData={}){
   const normalized=String(code||'').trim().toUpperCase();
@@ -1350,9 +1354,8 @@ function rooms(){
                       <button type="button" class="summary-resource summary-computer summary-assignable" data-room-action="computer" data-summary-assign="computer" data-station="${station.id}" data-resource-type="computers" data-resource-id="${computer?.id||''}">
                         ${compactRoomResource('computer',computer,station)}
                         <small>COMPUTER</small>
-                        <strong>${computer?esc(computer.code):'—'}</strong>
+                        <div class="resource-code-row"><strong>${computer?esc(computer.code):'—'}</strong>${computer?.os_name?`<span class="badge os os-${esc(computer.os_name.toLowerCase())}">${esc(computer.os_name.toUpperCase())}</span>`:''}</div>
                         <span>${computer?esc([computer.model,computer.variant].filter(Boolean).join(' · ')):'Non assegnato'}</span>
-                        ${computer?.os_name?`<span class="badge os os-${esc(computer.os_name.toLowerCase())}">${esc(computer.os_name.toUpperCase())}</span>`:''}
                         ${computer?smartNote(computer.notes):''}
                         <i class="summary-edit-hint">Modifica</i>
                       </button>
@@ -1369,9 +1372,9 @@ function rooms(){
                       <button type="button" class="summary-resource summary-avid summary-assignable ${avidLevel} ${avidLevel!=='ok'?'pulse-critical':''}" data-room-action="license" data-summary-assign="license" data-station="${station.id}" data-resource-type="licenses" data-resource-id="${avid?.id||''}">
                         ${compactRoomResource('avid',avid,station)}
                         <div class="resource-title-row"><small>AVID</small><span class="resource-expiry ${avidLevel}">${avidState.kind==='license'?esc(expiryLabel(avid)):avidState.kind==='trial'?esc(avidState.status.text):''}</span></div>
-                        <strong>${avidState.kind==='license'?esc(avid.code):avidState.kind.startsWith('trial')?'TRIAL':'—'}</strong>
+                        <div class="resource-code-row"><strong>${avidState.kind==='license'?esc(avid.code):avidState.kind.startsWith('trial')?'TRIAL':'—'}</strong>${avidState.kind==='license'?`<div class="badges"><span class="badge ${avid.avid_type==='Ultimate'?'ultimate':'singolo'}">${esc(avid.avid_type.toUpperCase())}</span><span class="badge ${avid.billing_cycle}">${cycleLabel(avid.billing_cycle)}</span></div>`:''}</div>
                         ${avidState.kind==='license'
-                          ? `<div class="badges"><span class="badge ${avid.avid_type==='Ultimate'?'ultimate':'singolo'}">${esc(avid.avid_type.toUpperCase())}</span><span class="badge ${avid.billing_cycle}">${cycleLabel(avid.billing_cycle)}</span></div><span class="resource-id"><small>SYSTEM ID</small><strong>${esc(avid.system_id||'—')}</strong></span>${smartNote(avid.notes)}`
+                          ? `<span class="resource-id"><small>SYSTEM ID</small><strong>${esc(avid.system_id||'—')}</strong></span>${smartNote(avid.notes)}`
                           : avidState.kind==='trial-pending'
                             ? '<div class="badges"><span class="badge trial-pending">TRIAL DA ATTIVARE</span></div>'
                             : avidState.kind==='trial'
@@ -1382,12 +1385,13 @@ function rooms(){
 
                       <button type="button" class="summary-resource summary-plugins summary-assignable ${pluginLevel} ${pluginLevel!=='ok'?'pulse-critical':''}" data-room-action="plugin" data-summary-assign="plugin" data-station="${station.id}" data-resource-type="licenses" data-resource-id="${plugins.length===1?plugins[0].id:''}" data-plugin-ids="${plugins.map(p=>p.id).join(',')}">
                         ${compactRoomResource('plugins',plugins,station)}
-                        <div class="resource-title-row"><small>PLUGIN</small><span></span></div>
+                        ${!plugins.length?'<div class="resource-title-row"><small>PLUGIN</small></div>':''}
                         ${plugins.length?plugins.map(plugin=>{
                           const status=licenseStatus(plugin);
                           return `<div class="summary-plugin ${status.level}">
-                            <div class="plugin-head"><strong>${esc(plugin.plugin_type)}</strong><span class="resource-expiry ${status.level}">${esc(expiryLabel(plugin))}</span></div>
-                            <div class="badges"><span class="badge ${plugin.billing_cycle}">${cycleLabel(plugin.billing_cycle)}</span></div>
+                            <div class="resource-title-row"><small>PLUGIN</small><span class="resource-expiry ${status.level}">${esc(expiryLabel(plugin))}</span></div>
+                            <div class="resource-code-row"><strong>${esc(plugin.code||'—')}</strong><div class="badges"><span class="badge ${plugin.billing_cycle}">${cycleLabel(plugin.billing_cycle)}</span></div></div>
+                            <span class="plugin-product-name">${esc(plugin.plugin_type||'—')}</span>
                             <span class="resource-id"><small>SERIALE</small><strong>${esc(plugin.plugin_serial||'—')}</strong></span>
                             ${smartNote(plugin.notes)}
                           </div>`;
@@ -2333,6 +2337,7 @@ function licenseEditor(x,isNew){
       updateCode();
       document.getElementById('code').readOnly=false;
     }else if(isNew){
+      document.getElementById('code').value=nextPluginCode();
       document.getElementById('code').readOnly=false;
     }
   };
@@ -2634,7 +2639,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=26-1';
+const SERVICE_WORKER_URL='./sw.js?v=26-2';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');

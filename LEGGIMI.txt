@@ -1,3 +1,13 @@
+DVS WORKSPACE — VERSIONE 26.2
+
+Sale desktop: badge del sistema operativo a destra del codice Mac; badge Avid
+a destra dell’ID. Plugin con intestazione e scadenza, codice registrato,
+badge durata, tipo Continuum/Sapphire e seriale. Rimossi i separatori interni.
+Creazione plugin: selezionando PLUGIN viene proposto PLUGIN XX con il primo
+numero libero tra i plugin operativi. Numerazione Avid separata dai plugin.
+Gli ID esistenti non vengono rinominati. Layout compatto iPhone mantenuto.
+Nessuna migrazione SQL. Pubblicare tutti i file.
+
 DVS WORKSPACE — VERSIONE 26.1
 
 RINNOVI LICENZE AVID
