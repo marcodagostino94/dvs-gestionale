@@ -3,11 +3,11 @@ import { supabase } from './supabase.js';
 import { saveLicenseMac, setMacTrial } from './api.js';
 import { visibleRooms, visibleStations } from './remote-rooms.js';
 import { loadAll, saveRow, removeRow, archiveRow, assignResource, assignPlugin, addAudit, listAssetAttachments, uploadAssetAttachment, openAssetAttachment, downloadAssetAttachment, deleteAssetAttachment } from './api.js';
-import { esc, fmtDate, numSort, licenseStatus, cycleLabel, todayISO } from './utils.js';
+import { esc, fmtDate, numSort, licenseStatus, effectiveExpiry, autoRenews, renewalToday, cycleLabel, todayISO } from './utils.js';
 
 const APP_NAME='DVS Workspace';
-const APP_VERSION='26.0';
-const APP_RELEASE='Workspace v26.0 · 11/2026';
+const APP_VERSION='26.1';
+const APP_RELEASE='Workspace v26.1 · 11/2026';
 const DATABASE_SCHEMA='4.3.1 + V19.1 allegati + V23 licenze e Trial sul Mac + V25 Compatibilità';
 
 const VAPID_PUBLIC_KEY='BLidTsO_r-SgpMHvPD0KC3jv39ZHLcdOfoTAR0IHDemM1dTQrLUM7WoUCA8FwfxXlCmA_KV4rnEXdBqlCXixNJc';
@@ -1131,16 +1131,7 @@ function inventoryCard(type,x){
 }
 
 
-function expiryLabel(license){
-  if(!license)return '';
-  if(!license.expiry_date)return licenseStatus(license).text.replace(/^Attiva • /,'');
-  const today=new Date();today.setHours(0,0,0,0);
-  const exp=new Date(license.expiry_date+'T00:00:00');
-  const days=Math.ceil((exp-today)/86400000);
-  if(days<0)return `Scaduta da ${Math.abs(days)} ${Math.abs(days)===1?'giorno':'giorni'}`;
-  if(days===0)return 'Scade oggi';
-  return `Scade tra ${days} ${days===1?'giorno':'giorni'}`;
-}
+function expiryLabel(license){return license?licenseStatus(license).text.replace(/^Attiva • /,''):'';}
 
 function productionClass(room){
   const type=(room?.client_type||'').toUpperCase();
@@ -1273,7 +1264,7 @@ function compactRoomResource(kind,item,station=null){
     if(item){
       const ultimate=item.avid_type==='Ultimate';
       const cycle={annual:'ANNUALE',monthly:'MENSILE',perpetual:'PERPETUA'}[item.billing_cycle]||cycleLabel(item.billing_cycle);
-      return wrap(`${id(item.code)}<span class="badges compact-avid-badges"><span class="badge ${ultimate?'ultimate':'singolo'}">${ultimate?'ULTIMATE':'SINGOLO'}</span><span class="badge ${esc(item.billing_cycle||'')}">${esc(cycle)}</span></span><span class="compact-system-id">${esc(item.system_id||'—')}</span>${expiry(item.expiry_date,true)}`);
+      return wrap(`${id(item.code)}<span class="badges compact-avid-badges"><span class="badge ${ultimate?'ultimate':'singolo'}">${ultimate?'ULTIMATE':'SINGOLO'}</span><span class="badge ${esc(item.billing_cycle||'')}">${esc(cycle)}</span></span><span class="compact-system-id">${esc(item.system_id||'—')}</span>${autoRenews(item)?`<span class="compact-expiry">${esc(expiryLabel(item))}</span>`:expiry(item.expiry_date,true)}`);
     }
     if(station?.avid_trial_status&&station.avid_trial_status!=='none')return wrap(`${id('TRIAL')}${expiry(station.avid_trial_expiry,true)}${station.avid_trial_status==='pending'?'<span class="badge trial-pending">DA ATT.</span>':''}`);
     return wrap('<span class="compact-empty">Non assegnato</span>');
@@ -2181,7 +2172,7 @@ function openDetail(type,id){
     ? [['ID',x.code],['Modello',x.model],['Anno',x.variant],['Processore',x.cpu],['RAM',x.ram],['GPU',x.gpu],['Seriale',x.serial],['macOS',`${x.os_name||''} ${x.os_version||''}`],['Formattazione',fmtDate(x.formatted_at)],['Postazione',historic?'Storico':currentLocation('computer',x.id)],['Motivo dismissione',x.dismissal_reason],['Data dismissione',fmtDate((x.dismissed_at||'').slice(0,10))],['Nota dismissione',x.dismissal_note]]
     : type==='hardware'
       ? [['ID',x.code],['Modello',x.model],['Seriale',x.serial],['Driver',x.driver_version],['Postazione',historic?'Storico':currentLocation('hardware',x.id)],['Motivo dismissione',x.dismissal_reason],['Data dismissione',fmtDate((x.dismissed_at||'').slice(0,10))],['Nota dismissione',x.dismissal_note]]
-      : [['ID',x.code],['Categoria',x.category==='avid'?'Avid':'Plugin'],['Tipo',x.category==='avid'?x.avid_type:x.plugin_type],['System ID',x.system_id],['Codice / Seriale',x.activation_code||x.plugin_serial],['Versione',x.version],['Durata',cycleLabel(x.billing_cycle)],['Scadenza',fmtDate(x.expiry_date)],['Postazione',historic?'Storico':currentLocation(x.category==='plugin'?'plugin':'license',x.id)],['Motivo dismissione',x.dismissal_reason],['Data dismissione',fmtDate((x.dismissed_at||'').slice(0,10))],['Nota dismissione',x.dismissal_note]];
+      : [['ID',x.code],['Categoria',x.category==='avid'?'Avid':'Plugin'],['Tipo',x.category==='avid'?x.avid_type:x.plugin_type],['System ID',x.system_id],['Codice / Seriale',x.activation_code||x.plugin_serial],['Versione',x.version],['Durata',cycleLabel(x.billing_cycle)],[autoRenews(x)?'Prossimo rinnovo':'Scadenza',fmtDate(effectiveExpiry(x))],['Postazione',historic?'Storico':currentLocation(x.category==='plugin'?'plugin':'license',x.id)],['Motivo dismissione',x.dismissal_reason],['Data dismissione',fmtDate((x.dismissed_at||'').slice(0,10))],['Nota dismissione',x.dismissal_note]];
   openModal(`<div class="modal-head"><h2>${esc(x.code)}</h2><button class="close" data-close>×</button></div>
     <div class="fields">${rows.filter(([,value])=>value).map(([label,value])=>`<div class="resource-row"><span class="subtle">${esc(label)}</span><strong>${esc(value||'—')}</strong></div>`).join('')}</div>
     <div class="actions">${historic?'<button class="primary" data-close>Chiudi</button>':'<button class="secondary" id="dismiss-item">Dismetti</button><button class="primary" id="edit-item">Modifica</button>'}</div>`);
@@ -2315,7 +2306,7 @@ function stationSelectHTML(id,label,value){
 function licenseEditor(x,isNew){
   const activation=x.activation_date||todayISO();
   const cycle=x.billing_cycle||'annual';
-  const expiry=x.expiry_date||calculateExpiry(activation,cycle);
+  const expiry=effectiveExpiry(x)||calculateExpiry(activation,cycle);
   openModal(`<div class="modal-head"><h2>${isNew?'Nuova licenza':esc(x.code)}</h2><button class="close" data-close>×</button></div>
   <div class="fields">
     ${segmented('category','Categoria',[['avid','AVID'],['plugin','PLUGIN']],x.category||'avid')}
@@ -2323,8 +2314,9 @@ function licenseEditor(x,isNew){
     <div id="license-fields"></div>
     ${segmented('cycle','Durata',[['monthly','MENSILE'],['annual','ANNUALE']],cycle)}
     ${field('activation','Data attivazione',activation,'date')}
-    ${field('expiry','Scadenza',expiry,'date')}
+    ${field('expiry','Scadenza / prossimo rinnovo',expiry,'date')}
     <label class="option-check"><input id="deactivation" type="checkbox" ${x.deactivation_requested?'checked':''}><span>Disattivazione richiesta</span></label>
+    <small class="subtle">Avid: senza disattivazione richiesta, dopo la data indicata il rinnovo avanza di 30 giorni, anche per le annuali. Non modifica l’abbonamento sul portale Avid.</small>
     ${licenseMacFields(x)}
     ${field('notes','Note',x.notes)}
   </div><div class="actions"><button class="secondary" data-close>Annulla</button><button class="primary" id="save">Salva</button></div>`);
@@ -2642,7 +2634,7 @@ function base64UrlToUint8Array(value){
 function pushSupported(){
   return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
 }
-const SERVICE_WORKER_URL='./sw.js?v=26-0';
+const SERVICE_WORKER_URL='./sw.js?v=26-1';
 let serviceWorkerRegistrationPromise=null;
 async function ensureServiceWorkerRegistration(){
   if(!('serviceWorker' in navigator))throw new Error('Il Service Worker non è supportato da questo browser.');
@@ -3073,3 +3065,17 @@ document.addEventListener('keydown',event=>{
 document.addEventListener('click',event=>{
   if(event.target?.id==='print-root')closePrintPreview();
 });
+
+// Refresh the renewal calendar after midnight (Rome) or returning to the app.
+let renewalDay=renewalToday();
+let renewalRefreshRunning=false;
+async function refreshRenewalDay(){
+  if(!state.session||!state.data||document.hidden||realtimeUiIsEditing()||isCompatibilityEditing()||renewalRefreshRunning)return;
+  const day=renewalToday();
+  if(day===renewalDay)return;
+  renewalRefreshRunning=true;
+  try{await refresh();renewalDay=day;}catch(error){console.warn('Aggiornamento rinnovi:',error);}
+  finally{renewalRefreshRunning=false;}
+}
+setInterval(refreshRenewalDay,30000);
+document.addEventListener('visibilitychange',refreshRenewalDay);

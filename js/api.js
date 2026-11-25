@@ -1,6 +1,7 @@
+import { effectiveExpiry } from './utils.js';
 import { supabase } from './supabase.js';
 const tables=['rooms','stations','computers','hardware','licenses','station_plugins','reminders','audit_log'];
-export async function loadAll(){const out={};for(const t of tables){let q=supabase.from(t).select('*');if(t==='rooms'||t==='stations')q=q.order('position');else if(['computers','hardware','licenses'].includes(t))q=q.order('code');else q=q.order('created_at',{ascending:false});const {data,error}=await q;if(error)throw error;out[t]=data||[]}const {data:compat,error:compatError}=await supabase.from('compatibility_entries').select('*');out.compatibility_entries=compat||[];if(compatError)out.compatibility_error=compatError.message;return out}
+export async function loadAll(){const out={};for(const t of tables){let q=supabase.from(t).select('*');if(t==='rooms'||t==='stations')q=q.order('position');else if(['computers','hardware','licenses'].includes(t))q=q.order('code');else q=q.order('created_at',{ascending:false});const {data,error}=await q;if(error)throw error;out[t]=data||[]}out.licenses=await renewDueLicenses(out.licenses);const {data:compat,error:compatError}=await supabase.from('compatibility_entries').select('*');out.compatibility_entries=compat||[];if(compatError)out.compatibility_error=compatError.message;return out}
 export async function saveRow(table,row){const payload={...row};delete payload._new;let query;if(table==='rooms'){delete payload.is_active;delete payload.remote_index;delete payload.id;query=supabase.from(table).update(payload).eq('id',row.id);}else if(table==='computers'||table==='licenses'){
   if(table==='computers'){delete payload.avid_trial_status;delete payload.avid_trial_expiry;}else delete payload.computer_id;
   const {data:existing,error:lookupError}=await supabase.from(table).select('id').eq('id',row.id).maybeSingle();if(lookupError)throw lookupError;
@@ -45,4 +46,24 @@ export async function deleteAssetAttachment(attachment){
   if(storageError)throw storageError;
   const {error}=await supabase.from('asset_attachments').delete().eq('id',attachment.id);
   if(error)throw error;
+}
+
+async function renewDueLicenses(licenses){
+  const result=[];
+  for(const license of licenses){
+    const next=effectiveExpiry(license);
+    if(!next||next===license.expiry_date){result.push(license);continue;}
+    const {data,error}=await supabase.from('licenses').update({expiry_date:next})
+      .eq('id',license.id).eq('expiry_date',license.expiry_date)
+      .eq('category','avid').eq('billing_cycle',license.billing_cycle)
+      .eq('deactivation_requested',false).eq('is_trial',false).is('archived_at',null)
+      .select('*').maybeSingle();
+    if(error)throw new Error(`Rinnovo ${license.code}: ${error.message}`);
+    if(data){result.push(data);continue;}
+    // Another device changed/deleted this row while we were loading it.
+    const {data:current,error:readError}=await supabase.from('licenses').select('*').eq('id',license.id).maybeSingle();
+    if(readError)throw readError;
+    if(current)result.push(current);
+  }
+  return result;
 }

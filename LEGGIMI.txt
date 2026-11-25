@@ -1,3 +1,23 @@
+DVS WORKSPACE — VERSIONE 26.1
+
+RINNOVI LICENZE AVID
+- Annuali e mensili senza Disattivazione richiesta: rinnovo di 30 giorni esatti.
+- Giallo negli ultimi 10 giorni: Si rinnova tra X giorni / domani / oggi.
+- La data avanza dal giorno successivo, preservando Si rinnova oggi per tutto il giorno.
+- Con Disattivazione richiesta: nessun rinnovo; Scade tra X giorni / Scade oggi / Scaduta da X giorni.
+- Calcolo sul calendario Europe/Rome, senza errori dovuti all’ora legale.
+- La nuova data viene salvata nel database quando l’app carica/aggiorna i dati.
+  Se l’app resta aperta, controlla il cambio del giorno ogni 30 secondi; se chiusa,
+  recupera automaticamente tutti i cicli trascorsi alla riapertura.
+- Nessun rinnovo delle Trial, dei plugin o delle licenze archiviate.
+- Gli avvisi aggiornati sono quelli interni all’app. La funzione Supabase delle
+  notifiche push ad app chiusa non è inclusa in questo progetto e non è stata modificata.
+- Il gestionale registra il rinnovo previsto; non acquista né disattiva abbonamenti Avid.
+
+AGGIORNAMENTO
+Pubblicare tutti i file. Nessuna migrazione SQL richiesta.
+Mantenuti la grafica originale, il blocco zoom V26 e le assegnazioni Mac/licenze.
+
 DVS WORKSPACE — VERSIONE 26.0
 
 Blocco dello zoom della pagina: doppio tocco/clic, pizzico e scorciatoie di zoom.

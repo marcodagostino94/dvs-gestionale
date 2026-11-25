@@ -1,13 +1,13 @@
-const CACHE='dvs-workspace-v26-0';
+const CACHE='dvs-workspace-v26-1';
 const ASSETS=[
   './',
   './index.html',
-  './js/zoom-guard.js?v=26-0',
-  './css/app.css?v=26-0',
-  './css/app-intro.css?v=26-0',
-  './js/app-intro.js?v=26-0',
-  './js/app.js?v=26-0',
-  './js/pdf-lib.min.js?v=26-0',
+  './js/zoom-guard.js?v=26-1',
+  './css/app.css?v=26-1',
+  './css/app-intro.css?v=26-1',
+  './js/app-intro.js?v=26-1',
+  './js/app.js?v=26-1',
+  './js/pdf-lib.min.js?v=26-1',
   './js/api.js',
   './js/compatibility.js',
   './js/config.js',
@@ -21,7 +21,7 @@ const ASSETS=[
   './assets/apple-touch-icon.png',
   './assets/workspace-icon-192.png',
   './assets/workspace-icon-512.png',
-  './manifest.webmanifest?v=26-0',
+  './manifest.webmanifest?v=26-1',
   './manifest.json'
 ];
 
